@@ -32,7 +32,7 @@ export default function LoginPage() {
           autoComplete="current-password"
           required
         />
-        {state?.error && (
+        {state && "error" in state && (
           <p className="text-sm text-danger" role="alert">
             {state.error}
           </p>

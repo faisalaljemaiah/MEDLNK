@@ -36,9 +36,14 @@ export default function SignUpPage() {
           minLength={8}
           required
         />
-        {state?.error && (
+        {state && "error" in state && (
           <p className="text-sm text-danger" role="alert">
             {state.error}
+          </p>
+        )}
+        {state && "message" in state && (
+          <p className="text-sm text-accent" role="status">
+            {state.message}
           </p>
         )}
         <SubmitButton>Create account</SubmitButton>

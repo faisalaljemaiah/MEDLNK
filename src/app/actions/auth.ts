@@ -3,7 +3,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type AuthFormState = { error: string } | undefined;
+export type AuthFormState =
+  | { error: string }
+  | { message: string }
+  | undefined;
 
 export async function signUpAction(
   _prevState: AuthFormState,
@@ -20,10 +23,17 @@ export async function signUpAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (!data.session) {
+    return {
+      message:
+        "Check your email to confirm your account, then sign in to finish setting up your profile.",
+    };
   }
 
   redirect("/onboarding");

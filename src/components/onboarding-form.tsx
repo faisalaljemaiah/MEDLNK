@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateProfileAction, ROLES } from "@/app/actions/profile";
+import { updateProfileAction } from "@/app/actions/profile";
+import { ROLES } from "@/lib/roles";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { Profile } from "@/lib/database.types";

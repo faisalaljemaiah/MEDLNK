@@ -2,16 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ROLES } from "@/lib/roles";
 
 export type ProfileFormState = { error: string } | undefined;
-
-const ROLES = [
-  "Clinical Pharmacist",
-  "Hospital Pharmacist",
-  "Community Pharmacist",
-  "Pharmacy Resident",
-  "Pharmacy Student",
-] as const;
 
 export async function updateProfileAction(
   _prevState: ProfileFormState,
@@ -69,5 +62,3 @@ export async function updateProfileAction(
 
   redirect("/");
 }
-
-export { ROLES };
