@@ -1,0 +1,44 @@
+/*
+ * MEDLNK design tokens — the ONLY place color and font decisions should live.
+ * Swap the values below to re-skin the whole app. Every component should
+ * reference the Tailwind utilities generated from these tokens (bg-bg,
+ * text-text, border-line, bg-accent, etc.) — never a raw hex/color name.
+ */
+
+:root {
+  /* --- Color tokens (neutral dark placeholder palette) --- */
+  --bg: #0b0e11; /* app background */
+  --surface: #14181d; /* cards, sheets, composer */
+  --surface-2: #1b2027; /* raised elements on top of surface */
+  --line: #262b33; /* borders/dividers */
+  --text: #eef1f4; /* primary text */
+  --muted: #8b93a1; /* secondary text, labels, timestamps */
+  --accent: #4f8dfd; /* primary brand accent (links, active states, logo) */
+  --accent-2: #7c5cfc; /* secondary accent (gradients, AI features) */
+  --positive: #34c77b; /* verified badges, success states */
+  --warning: #f0a63a; /* privacy/identifier warnings */
+  --danger: #f2545b; /* destructive actions, errors */
+
+  /* --- Font tokens (swappable defaults) --- */
+  --font-headline: var(--font-source-serif, Georgia, serif);
+  --font-body: var(--font-inter, system-ui, sans-serif);
+  --font-label: var(--font-jetbrains-mono, ui-monospace, monospace);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-headline: var(--font-headline);
+  --font-body: var(--font-body);
+  --font-label: var(--font-label);
+}

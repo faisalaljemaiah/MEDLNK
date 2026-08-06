@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+* {
+  border-color: var(--line);
+}
+
+/* Hide scrollbars for the reel/read swipe surfaces without disabling scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
