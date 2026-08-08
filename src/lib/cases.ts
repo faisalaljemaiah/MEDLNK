@@ -132,3 +132,18 @@ export async function getCaseById(
     viewerReactions,
   };
 }
+
+export async function getCaseByCaseNumber(
+  supabase: Client,
+  caseNumber: string,
+  viewerId: string | null,
+): Promise<FeedCase | null> {
+  const { data: c } = await supabase
+    .from("cases")
+    .select("id")
+    .eq("case_number", caseNumber)
+    .maybeSingle();
+
+  if (!c) return null;
+  return getCaseById(supabase, c.id, viewerId);
+}

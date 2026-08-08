@@ -1,14 +1,10 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { ReactionBar } from "@/components/reaction-bar";
-import { DiveDeepSheet } from "@/components/dive-deep-sheet";
 import { Avatar } from "@/components/avatar";
 import type { FeedCase } from "@/lib/cases";
 
 export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string }) {
-  const [open, setOpen] = useState(false);
+  const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
 
   return (
     <article
@@ -41,9 +37,11 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </p>
       </div>
 
-      <h3 className="mt-3 font-headline text-lg text-text">
-        {feedCase.title}
-      </h3>
+      <Link href={caseHref}>
+        <h3 className="mt-3 font-headline text-lg text-text hover:underline">
+          {feedCase.title}
+        </h3>
+      </Link>
       <p className="mt-1 text-sm leading-relaxed text-muted">
         {feedCase.short_caption}
       </p>
@@ -61,13 +59,12 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mt-3 text-sm font-medium text-accent hover:underline"
+      <Link
+        href={caseHref}
+        className="mt-3 inline-block text-sm font-medium text-accent hover:underline"
       >
         Let&apos;s dive deep →
-      </button>
+      </Link>
 
       <div className="mt-4">
         <ReactionBar
@@ -75,11 +72,8 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
           counts={feedCase.counts}
           viewerReactions={feedCase.viewerReactions}
           path={path}
-          onOpenComments={() => setOpen(true)}
         />
       </div>
-
-      {open && <DiveDeepSheet feedCase={feedCase} onClose={() => setOpen(false)} />}
     </article>
   );
 }

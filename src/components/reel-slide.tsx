@@ -3,17 +3,16 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
-import { DiveDeepSheet } from "@/components/dive-deep-sheet";
 import { Avatar } from "@/components/avatar";
 import type { FeedCase } from "@/lib/cases";
 
 const DOUBLE_TAP_MS = 300;
 
 export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string }) {
+  const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const [revealed, setRevealed] = useState(
     feedCase.viewerReactions.includes("like"),
   );
-  const [open, setOpen] = useState(false);
   const [burst, setBurst] = useState(false);
   const lastTapRef = useRef(0);
   const reactionBarRef = useRef<ReactionBarHandle>(null);
@@ -71,13 +70,12 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
         </Link>
 
         {revealed && (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
+          <Link
+            href={caseHref}
             className="pointer-events-auto mt-5 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur"
           >
             Let&apos;s dive deep →
-          </button>
+          </Link>
         )}
       </div>
 
@@ -89,14 +87,11 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
           viewerReactions={feedCase.viewerReactions}
           path={path}
           tone="dark"
-          onOpenComments={() => setOpen(true)}
           onToggle={(type, active) => {
             if (type === "like" && active) setRevealed(true);
           }}
         />
       </div>
-
-      {open && <DiveDeepSheet feedCase={feedCase} onClose={() => setOpen(false)} />}
     </section>
   );
 }
