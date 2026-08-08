@@ -56,14 +56,12 @@ export async function Nav() {
                   Sign out
                 </button>
               </form>
-              {profile?.handle && (
-                <Link href={`/u/${profile.handle}`}>
-                  <Avatar
-                    avatarUrl={profile.avatar_url}
-                    name={profile.full_name}
-                  />
-                </Link>
-              )}
+              <Link href={profile?.handle ? `/u/${profile.handle}` : "/onboarding"}>
+                <Avatar
+                  avatarUrl={profile?.avatar_url}
+                  name={profile?.full_name}
+                />
+              </Link>
             </>
           ) : (
             <>
