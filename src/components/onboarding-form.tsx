@@ -1,17 +1,43 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateProfileAction } from "@/app/actions/profile";
 import { ROLES } from "@/lib/roles";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Avatar } from "@/components/avatar";
 import type { Profile } from "@/lib/database.types";
 
 export function OnboardingForm({ profile }: { profile: Profile }) {
   const [state, action] = useActionState(updateProfileAction, undefined);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   return (
     <form action={action} className="flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-2">
+        <Avatar
+          avatarUrl={avatarPreview ?? profile.avatar_url}
+          name={profile.full_name}
+          size="lg"
+        />
+        <label
+          htmlFor="avatar"
+          className="cursor-pointer text-sm font-medium text-accent"
+        >
+          {profile.avatar_url ? "Change photo" : "Add a photo"}
+        </label>
+        <input
+          id="avatar"
+          name="avatar"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) setAvatarPreview(URL.createObjectURL(file));
+          }}
+        />
+      </div>
       <TextField
         label="Full name"
         name="full_name"

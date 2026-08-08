@@ -41,6 +41,24 @@ export async function updateProfileAction(
     return { error: "Please choose a valid role." };
   }
 
+  let avatar_url: string | undefined;
+  const avatar = formData.get("avatar");
+  if (avatar instanceof File && avatar.size > 0) {
+    const ext = avatar.name.split(".").pop() ?? "jpg";
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, avatar, { contentType: avatar.type });
+
+    if (uploadError) {
+      return { error: `Avatar upload failed: ${uploadError.message}` };
+    }
+    const { data: publicUrl } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(path);
+    avatar_url = publicUrl.publicUrl;
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -50,6 +68,7 @@ export async function updateProfileAction(
       city: city || null,
       specialty: specialty || null,
       license_number,
+      ...(avatar_url ? { avatar_url } : {}),
     })
     .eq("id", user.id);
 
@@ -60,5 +79,5 @@ export async function updateProfileAction(
     return { error: error.message };
   }
 
-  redirect("/");
+  redirect(`/u/${handle}`);
 }

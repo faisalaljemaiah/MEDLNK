@@ -23,6 +23,7 @@ export type Profile = {
   role: string | null;
   city: string | null;
   specialty: string | null;
+  avatar_url: string | null;
   verified: boolean;
   verification_status: VerificationStatus;
   license_number: string | null;

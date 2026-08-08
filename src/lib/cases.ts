@@ -3,7 +3,7 @@ import type { Database, Case, Profile, ReactionType } from "@/lib/database.types
 
 export type FeedAuthor = Pick<
   Profile,
-  "id" | "handle" | "full_name" | "role" | "verified"
+  "id" | "handle" | "full_name" | "role" | "verified" | "avatar_url"
 >;
 
 export type ReactionCounts = Record<ReactionType, number> & {
@@ -50,7 +50,7 @@ export async function getFeedCases(
     await Promise.all([
       supabase
         .from("profiles")
-        .select("id, handle, full_name, role, verified")
+        .select("id, handle, full_name, role, verified, avatar_url")
         .in("id", authorIds),
       supabase
         .from("reactions")
@@ -107,7 +107,7 @@ export async function getCaseById(
     await Promise.all([
       supabase
         .from("profiles")
-        .select("id, handle, full_name, role, verified")
+        .select("id, handle, full_name, role, verified, avatar_url")
         .eq("id", c.author_id)
         .single(),
       supabase

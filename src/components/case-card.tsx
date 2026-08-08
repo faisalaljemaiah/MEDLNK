@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ReactionBar } from "@/components/reaction-bar";
 import { DiveDeepSheet } from "@/components/dive-deep-sheet";
+import { Avatar } from "@/components/avatar";
 import type { FeedCase } from "@/lib/cases";
 
 export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string }) {
@@ -14,16 +16,22 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
       className="border-b border-line px-4 py-5"
     >
       <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 font-label text-xs text-muted">
-          {(feedCase.author?.full_name ?? "?").charAt(0)}
-        </div>
+        <Link href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}>
+          <Avatar
+            avatarUrl={feedCase.author?.avatar_url}
+            name={feedCase.author?.full_name}
+          />
+        </Link>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-text">
+          <Link
+            href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}
+            className="truncate text-sm font-medium text-text hover:underline"
+          >
             {feedCase.author?.full_name ?? "Unknown clinician"}
             {feedCase.author?.verified && (
               <span className="ml-1 text-positive">✓</span>
             )}
-          </p>
+          </Link>
           <p className="font-label text-xs text-muted">
             @{feedCase.author?.handle ?? "unknown"} · {feedCase.author?.role}
           </p>
