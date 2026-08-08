@@ -1,15 +1,31 @@
 "use client";
 
 import { useRef, useState, type TouchEvent } from "react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { ReelView } from "@/components/reel-view";
 import { CaseCard } from "@/components/case-card";
+import { Avatar } from "@/components/avatar";
 import type { FeedCase } from "@/lib/cases";
 
 type Mode = "reel" | "read";
 const SWIPE_THRESHOLD = 60;
 
-export function FeedShell({ cases, path }: { cases: FeedCase[]; path: string }) {
+type FeedProfile = {
+  handle: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+};
+
+export function FeedShell({
+  cases,
+  path,
+  profile,
+}: {
+  cases: FeedCase[];
+  path: string;
+  profile: FeedProfile | null;
+}) {
   const [mode, setMode] = useState<Mode>("read");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -36,7 +52,7 @@ export function FeedShell({ cases, path }: { cases: FeedCase[]; path: string }) 
 
   return (
     <div className="relative flex flex-1 flex-col">
-      <div className="pointer-events-none sticky top-[57px] z-10 flex justify-center py-2">
+      <div className="pointer-events-none sticky top-[57px] z-10 flex items-center justify-center gap-2 py-2">
         <div className="pointer-events-auto flex rounded-full border border-line bg-surface/95 p-0.5 font-label text-xs uppercase tracking-wide shadow-lg backdrop-blur">
           <button
             type="button"
@@ -59,6 +75,14 @@ export function FeedShell({ cases, path }: { cases: FeedCase[]; path: string }) 
             Read
           </button>
         </div>
+        {profile && (
+          <Link
+            href={profile.handle ? `/u/${profile.handle}` : "/onboarding"}
+            className="pointer-events-auto"
+          >
+            <Avatar avatarUrl={profile.avatar_url} name={profile.full_name} />
+          </Link>
+        )}
       </div>
 
       <div

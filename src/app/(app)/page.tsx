@@ -10,5 +10,15 @@ export default async function FeedPage() {
 
   const cases = await getFeedCases(supabase, user?.id ?? null);
 
-  return <FeedShell cases={cases} path="/" />;
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("handle, full_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
+
+  return <FeedShell cases={cases} path="/" profile={profile} />;
 }
