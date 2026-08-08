@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/logo";
+import { Avatar } from "@/components/avatar";
 import { signOutAction } from "@/app/actions/auth";
 
 export async function Nav() {
@@ -13,7 +14,7 @@ export async function Nav() {
   if (user) {
     const { data } = await supabase
       .from("profiles")
-      .select("handle, verified, is_admin")
+      .select("handle, full_name, avatar_url, verified, is_admin")
       .eq("id", user.id)
       .single();
     profile = data;
@@ -55,6 +56,14 @@ export async function Nav() {
                   Sign out
                 </button>
               </form>
+              {profile?.handle && (
+                <Link href={`/u/${profile.handle}`}>
+                  <Avatar
+                    avatarUrl={profile.avatar_url}
+                    name={profile.full_name}
+                  />
+                </Link>
+              )}
             </>
           ) : (
             <>

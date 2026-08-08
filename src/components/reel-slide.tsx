@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
 import { DiveDeepSheet } from "@/components/dive-deep-sheet";
+import { Avatar } from "@/components/avatar";
 import type { FeedCase } from "@/lib/cases";
 
 const DOUBLE_TAP_MS = 300;
@@ -52,10 +54,21 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
         <p className="mt-3 text-base leading-relaxed text-white/80">
           {feedCase.short_caption}
         </p>
-        <p className="mt-4 text-sm text-white/60">
-          {feedCase.author?.full_name ?? "Unknown clinician"}
-          {feedCase.author?.verified && <span className="ml-1 text-positive">✓</span>}
-        </p>
+        <Link
+          href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}
+          className="pointer-events-auto mt-4 flex items-center gap-2 text-sm text-white/60 hover:text-white"
+        >
+          <Avatar
+            avatarUrl={feedCase.author?.avatar_url}
+            name={feedCase.author?.full_name}
+          />
+          <span>
+            {feedCase.author?.full_name ?? "Unknown clinician"}
+            {feedCase.author?.verified && (
+              <span className="ml-1 text-positive">✓</span>
+            )}
+          </span>
+        </Link>
 
         {revealed && (
           <button

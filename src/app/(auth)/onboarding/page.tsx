@@ -23,16 +23,19 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
+  const isEdit = Boolean(profile.handle);
+
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
       <div className="flex flex-col items-center gap-3 text-center">
         <Logo size={44} />
         <h1 className="font-headline text-2xl text-text">
-          Set up your profile
+          {isEdit ? "Edit your profile" : "Set up your profile"}
         </h1>
         <p className="text-sm text-muted">
-          We manually review every license before you can post a case. You
-          can browse MEDLNK while you wait.
+          {isEdit
+            ? "Update your picture, details, and specialty."
+            : "We manually review every license before you can post a case. You can browse MEDLNK while you wait."}
         </p>
       </div>
 
