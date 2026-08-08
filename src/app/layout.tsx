@@ -1,21 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Source_Serif_4, Inter, JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Swappable font placeholders — see theme.css for how these map to
-// --font-headline / --font-body / --font-label.
-const headlineFont = Source_Serif_4({
-  variable: "--font-source-serif",
-  subsets: ["latin"],
-});
-
+// Single clean sans-serif for the whole app — see theme.css for how this
+// maps to --font-headline / --font-body / --font-label.
 const bodyFont = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const labelFont = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
@@ -36,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${headlineFont.variable} ${bodyFont.variable} ${labelFont.variable} h-full antialiased`}
+      className={`${bodyFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg text-text">
         {children}
