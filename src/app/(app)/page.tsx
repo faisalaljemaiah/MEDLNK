@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getFeedCases } from "@/lib/cases";
-import { FeedShell } from "@/components/feed-shell";
+import { CaseCard } from "@/components/case-card";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -10,15 +10,15 @@ export default async function FeedPage() {
 
   const cases = await getFeedCases(supabase, user?.id ?? null);
 
-  let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("handle, full_name, avatar_url")
-      .eq("id", user.id)
-      .single();
-    profile = data;
-  }
-
-  return <FeedShell cases={cases} path="/" profile={profile} />;
+  return (
+    <div>
+      {cases.length === 0 ? (
+        <p className="px-4 py-10 text-center text-sm text-muted">
+          No cases yet — be the first to share one.
+        </p>
+      ) : (
+        cases.map((c) => <CaseCard key={c.id} feedCase={c} path="/" />)
+      )}
+    </div>
+  );
 }

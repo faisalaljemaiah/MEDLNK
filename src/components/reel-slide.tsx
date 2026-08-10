@@ -29,7 +29,7 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
   }
 
   return (
-    <section className="relative flex h-[calc(100dvh-56px)] w-full shrink-0 snap-start flex-col justify-center overflow-hidden bg-gradient-to-b from-surface-2 to-bg px-6 py-10">
+    <section className="relative flex h-[calc(100dvh-80px)] w-full shrink-0 snap-start flex-col justify-center overflow-hidden bg-gradient-to-b from-surface-2 to-bg px-6 py-10">
       <div
         className="absolute inset-0"
         onClick={handleTap}

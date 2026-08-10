@@ -66,3 +66,44 @@ export function ShareIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function HomeIcon(
+  props: SVGProps<SVGSVGElement> & { filled?: boolean },
+) {
+  const { filled, ...rest } = props;
+  return (
+    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+    </svg>
+  );
+}
+
+export function ReelIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M10 9.5v5l4.5-2.5Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function SendIcon(
+  props: SVGProps<SVGSVGElement> & { filled?: boolean },
+) {
+  const { filled, ...rest } = props;
+  return (
+    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
+      <path d="m3 11 18-8-8 18-2.5-7.5L3 11Z" />
+    </svg>
+  );
+}
+
+export function SearchIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}

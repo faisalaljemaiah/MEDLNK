@@ -5,6 +5,7 @@ import { getProfileByHandle } from "@/lib/profile";
 import { Avatar } from "@/components/avatar";
 import { FollowButton } from "@/components/follow-button";
 import { CaseCard } from "@/components/case-card";
+import { signOutAction } from "@/app/actions/auth";
 
 export default async function ProfilePage({
   params,
@@ -55,12 +56,26 @@ export default async function ProfilePage({
         </div>
 
         {isOwnProfile ? (
-          <Link
-            href="/onboarding"
-            className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
-          >
-            Edit profile
-          </Link>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Link
+              href="/onboarding"
+              className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+            >
+              Edit profile
+            </Link>
+            <div className="flex items-center gap-3 text-xs text-muted">
+              {profile.is_admin && (
+                <Link href="/admin" className="hover:text-text">
+                  Admin
+                </Link>
+              )}
+              <form action={signOutAction}>
+                <button type="submit" className="hover:text-text">
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </div>
         ) : user ? (
           <FollowButton
             followeeId={profile.id}
