@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-dvh flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
         <TopHeader loggedIn={Boolean(user)} />
-        <main className="flex flex-1 flex-col pb-20">{children}</main>
+        <main className="flex flex-1 flex-col pb-24">{children}</main>
       </div>
       <BottomNav profile={user ? profile : null} />
     </div>
