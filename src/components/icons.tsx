@@ -107,3 +107,13 @@ export function SearchIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function PlusSquareIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M12 8v8" />
+      <path d="M8 12h8" />
+    </svg>
+  );
+}

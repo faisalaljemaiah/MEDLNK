@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { HomeIcon, ReelIcon, SendIcon, SearchIcon } from "@/components/icons";
+import { HomeIcon, ReelIcon, PlusSquareIcon, SearchIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 
 type NavProfile = {
@@ -34,7 +34,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
           <ReelIcon />
         </NavLink>
         <NavLink href="/compose" active={pathname === "/compose"}>
-          <SendIcon filled={pathname === "/compose"} />
+          <PlusSquareIcon />
         </NavLink>
         <NavLink href="/search" active={pathname === "/search"}>
           <SearchIcon />
