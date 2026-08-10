@@ -73,6 +73,21 @@ export type AiRecap = {
   generated_at: string;
 };
 
+export type Conversation = {
+  id: string;
+  user_a: string;
+  user_b: string;
+  created_at: string;
+};
+
+export type Message = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -122,6 +137,22 @@ export type Database = {
         Row: AiRecap;
         Insert: Partial<AiRecap> & { case_id: string };
         Update: Partial<AiRecap>;
+        Relationships: [];
+      };
+      conversations: {
+        Row: Conversation;
+        Insert: Partial<Conversation> & { user_a: string; user_b: string };
+        Update: Partial<Conversation>;
+        Relationships: [];
+      };
+      messages: {
+        Row: Message;
+        Insert: Partial<Message> & {
+          conversation_id: string;
+          sender_id: string;
+          body: string;
+        };
+        Update: Partial<Message>;
         Relationships: [];
       };
     };

@@ -7,6 +7,8 @@ type Client = SupabaseClient<Database>;
 export type ProfilePageData = {
   profile: Profile;
   cases: FeedCase[];
+  likedCases: FeedCase[];
+  savedCases: FeedCase[];
   followerCount: number;
   followingCount: number;
   viewerFollows: boolean;
@@ -46,15 +48,26 @@ export async function getProfileByHandle(
         : Promise.resolve({ data: null }),
     ]);
 
+  const isOwnProfile = viewerId === profile.id;
   const allCases = await getFeedCases(supabase, viewerId);
   const cases = allCases.filter((c) => c.author_id === profile.id);
+  // viewerReactions reflects viewerId's own reactions, so these are only
+  // meaningful (and only ever rendered) when isOwnProfile is true.
+  const likedCases = isOwnProfile
+    ? allCases.filter((c) => c.viewerReactions.includes("like"))
+    : [];
+  const savedCases = isOwnProfile
+    ? allCases.filter((c) => c.viewerReactions.includes("save"))
+    : [];
 
   return {
     profile,
     cases,
+    likedCases,
+    savedCases,
     followerCount: followerCount ?? 0,
     followingCount: followingCount ?? 0,
     viewerFollows: Boolean(viewerFollowRow.data),
-    isOwnProfile: viewerId === profile.id,
+    isOwnProfile,
   };
 }

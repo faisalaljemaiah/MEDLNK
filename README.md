@@ -36,6 +36,11 @@ Supabase with Row Level Security. There is no mock data layer.
   Supabase Storage, gated by an AI identifier-privacy check
 - **Reactions & follow**: like / repost / save / follow, live counts, backed
   by RLS-protected tables
+- **Profile tabs**: a clinician's own profile shows Posts / Liked / Saved,
+  reusing their existing reactions rather than a separate table
+- **Direct messages**: `/messages` — verified clinicians can message each
+  other 1:1 from a profile's Message button; RLS restricts every
+  conversation/message row to its two participants
 - **Admin verification queue**: `/admin` (admin-only) lists pending sign-ups
   with Approve/Reject buttons — no automated license checking, you review
   manually
@@ -98,7 +103,7 @@ a rounded square — swap the SVG there when you have a final mark.
 
 Create a project at [supabase.com](https://supabase.com/dashboard). In the
 SQL Editor, run every file in `supabase/migrations/` **in order** (0001 →
-0005). If you use the [Supabase CLI](https://supabase.com/docs/guides/cli)
+0007). If you use the [Supabase CLI](https://supabase.com/docs/guides/cli)
 instead:
 
 ```bash
