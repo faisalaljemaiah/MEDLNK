@@ -42,7 +42,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
         <Link
           href={profileHref}
           className={clsx(
-            "flex items-center justify-center rounded-full p-0.5",
+            "flex items-center justify-center rounded-full p-0.5 transition-transform duration-150 ease-out active:scale-90",
             isProfileActive && "ring-2 ring-text",
           )}
         >
@@ -70,8 +70,8 @@ function NavLink({
     <Link
       href={href}
       className={clsx(
-        "flex items-center justify-center rounded-full p-2.5 transition-colors",
-        active ? "text-text" : "text-muted",
+        "flex items-center justify-center rounded-full p-2.5 transition-[color,transform] duration-150 ease-out active:scale-90",
+        active ? "text-text" : "text-muted hover:text-text",
       )}
     >
       {children}

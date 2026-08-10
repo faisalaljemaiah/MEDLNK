@@ -15,7 +15,7 @@ export function TopHeader({ loggedIn }: { loggedIn: boolean }) {
       </Link>
       <Link
         href={loggedIn ? "/messages" : "/login"}
-        className="flex w-9 shrink-0 items-center justify-center text-text"
+        className="flex w-9 shrink-0 items-center justify-center text-text transition-transform duration-150 ease-out active:scale-90"
         aria-label="Messages"
       >
         <SendIcon />

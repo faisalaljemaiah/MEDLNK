@@ -19,3 +19,48 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/*
+ * Touch responsiveness. Mobile browsers wait ~300ms before firing a tap to see
+ * if it's a double-tap, and paint a grey overlay while they wait — both read as
+ * lag even when the app responds instantly. touch-action: manipulation opts out
+ * of that delay; the tap-highlight reset removes the flash.
+ */
+a,
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Momentum scrolling on the reel and feed surfaces. */
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Content settling in after a navigation, kept short so it never reads as lag. */
+@keyframes medlnk-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-enter {
+  animation: medlnk-fade-in 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

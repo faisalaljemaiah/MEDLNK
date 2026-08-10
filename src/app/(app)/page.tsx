@@ -1,12 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { CaseCard } from "@/components/case-card";
 
 export default async function FeedPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   const cases = await getFeedCases(supabase, user?.id ?? null);
 

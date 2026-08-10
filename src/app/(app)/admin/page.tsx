@@ -1,20 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { approveUserAction, rejectUserAction } from "@/app/actions/admin";
 
 export default async function AdminPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   if (!user) redirect("/login");
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
+  const me = await getViewerProfile();
 
   if (!me?.is_admin) redirect("/");
 

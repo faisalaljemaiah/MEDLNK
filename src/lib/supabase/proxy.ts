@@ -25,7 +25,12 @@ export async function updateSession(request: NextRequest) {
   });
 
   // Required so an expiring/expired session gets refreshed — don't remove.
-  await supabase.auth.getUser();
+  //
+  // getClaims() rather than getUser(): both refresh a session that's about to
+  // expire, but getUser() always asks the Auth server (~250ms on every single
+  // request, including static pages). This project signs with ES256, so
+  // getClaims() verifies the JWT locally against a cached JWKS in ~1-2ms.
+  await supabase.auth.getClaims();
 
   return response;
 }

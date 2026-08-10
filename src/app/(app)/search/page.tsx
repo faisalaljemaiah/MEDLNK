@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { CaseCard } from "@/components/case-card";
 
@@ -11,9 +12,7 @@ export default async function SearchPage({
   const query = q?.trim().toLowerCase() ?? "";
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   const results = query
     ? (await getFeedCases(supabase, user?.id ?? null)).filter((c) => {

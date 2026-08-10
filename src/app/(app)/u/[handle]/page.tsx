@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/auth";
 import { getProfileByHandle } from "@/lib/profile";
 import { Avatar } from "@/components/avatar";
 import { FollowButton } from "@/components/follow-button";
@@ -25,9 +26,7 @@ export default async function ProfilePage({
   const { handle } = await params;
   const { tab: rawTab } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   const data = await getProfileByHandle(supabase, handle, user?.id ?? null);
   if (!data) notFound();
@@ -134,10 +133,10 @@ export default async function ProfilePage({
               key={t.key}
               href={t.key === "posts" ? path : `${path}?tab=${t.key}`}
               className={clsx(
-                "flex-1 border-b-2 py-2.5 text-center text-sm font-medium",
+                "flex-1 border-b-2 py-2.5 text-center text-sm font-medium transition-colors duration-150",
                 tab === t.key
                   ? "border-text text-text"
-                  : "border-transparent text-muted",
+                  : "border-transparent text-muted hover:text-text",
               )}
             >
               {t.label}

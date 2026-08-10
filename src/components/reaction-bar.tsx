@@ -115,7 +115,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
           type="button"
           onClick={() => toggle("like")}
           className={clsx(
-            "flex items-center gap-1.5 transition-colors",
+            "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
             optimistic.active.has("like")
               ? "text-danger"
               : `${mutedClass} hover:text-danger`,
@@ -131,7 +131,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
           type="button"
           onClick={onOpenComments}
           className={clsx(
-            "flex items-center gap-1.5 transition-colors",
+            "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
             `${mutedClass} hover:text-accent`,
           )}
           aria-label="Comments"
@@ -144,7 +144,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
           type="button"
           onClick={() => toggle("repost")}
           className={clsx(
-            "flex items-center gap-1.5 transition-colors",
+            "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
             optimistic.active.has("repost")
               ? "text-positive"
               : `${mutedClass} hover:text-positive`,
@@ -160,7 +160,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
           type="button"
           onClick={() => toggle("save")}
           className={clsx(
-            "flex items-center gap-1.5 transition-colors",
+            "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
             optimistic.active.has("save")
               ? "text-accent"
               : `${mutedClass} hover:text-accent`,
@@ -175,7 +175,10 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
         <button
           type="button"
           onClick={share}
-          className={clsx("transition-colors", `${mutedClass} hover:text-text`)}
+          className={clsx(
+            "transition-[color,transform] duration-150 ease-out active:scale-90",
+            `${mutedClass} hover:text-text`,
+          )}
           aria-label="Share"
         >
           <ShareIcon />

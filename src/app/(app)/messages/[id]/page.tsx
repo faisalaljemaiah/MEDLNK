@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/auth";
 import { getConversationThread } from "@/lib/messages";
 import { Avatar } from "@/components/avatar";
 import { MessageComposer } from "@/components/message-composer";
@@ -13,9 +14,7 @@ export default async function ConversationPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   if (!user) redirect("/login");
 

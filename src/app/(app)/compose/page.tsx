@@ -1,20 +1,13 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { ComposeForm } from "@/components/compose-form";
 
 export default async function ComposePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("verified, verification_status")
-    .eq("id", user.id)
-    .single();
+  const profile = await getViewerProfile();
 
   if (!profile?.verified) {
     return (

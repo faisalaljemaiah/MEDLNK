@@ -1,22 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getConversations } from "@/lib/messages";
 import { Avatar } from "@/components/avatar";
 
 export default async function MessagesPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("verified, verification_status")
-    .eq("id", user.id)
-    .single();
+  const profile = await getViewerProfile();
 
   if (!profile?.verified) {
     return (

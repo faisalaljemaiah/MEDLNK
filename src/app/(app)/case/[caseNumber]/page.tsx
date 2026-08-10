@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/auth";
 import { getCaseByCaseNumber } from "@/lib/cases";
 import { getDiveDeepDataAction } from "@/app/actions/recap";
 import { Avatar } from "@/components/avatar";
@@ -13,9 +14,7 @@ export default async function CasePage({
 }) {
   const { caseNumber } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getViewer();
 
   const feedCase = await getCaseByCaseNumber(supabase, caseNumber, user?.id ?? null);
   if (!feedCase) notFound();
