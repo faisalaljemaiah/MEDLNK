@@ -25,6 +25,25 @@ export type CaseType =
 
 export type RevealMode = "none" | "staged";
 
+export type ModerationStatus = "visible" | "removed";
+
+/** Mirrors the reason check constraint in 0009_reports_moderation.sql. */
+export type ReportReason =
+  | "patient_privacy"
+  | "incorrect_clinical_information"
+  | "harassment"
+  | "inappropriate_content"
+  | "misleading_information"
+  | "spam"
+  | "other";
+
+export type ReportStatus =
+  | "pending"
+  | "reviewed"
+  | "approved"
+  | "removed"
+  | "escalated";
+
 /** Shape of cases.near_miss (jsonb) — the five patient-safety prompts. */
 export type NearMiss = {
   almost: string;
@@ -53,6 +72,9 @@ export type Profile = {
   verification_status: VerificationStatus;
   license_number: string | null;
   is_admin: boolean;
+  /** Set by an admin. Makes is_verified() false, which blocks every write. */
+  suspended_at: string | null;
+  suspended_reason: string | null;
   created_at: string;
 };
 
@@ -69,6 +91,7 @@ export type Case = {
   case_type: CaseType;
   near_miss: NearMiss | null;
   reveal_mode: RevealMode;
+  moderation_status: ModerationStatus;
   created_at: string;
 };
 
@@ -146,6 +169,32 @@ export type Comment = {
   case_id: string;
   user_id: string;
   body: string;
+  moderation_status: ModerationStatus;
+  created_at: string;
+};
+
+export type Report = {
+  id: string;
+  reporter_id: string;
+  case_id: string | null;
+  comment_id: string | null;
+  reported_profile_id: string | null;
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reviewer_note: string | null;
+  created_at: string;
+};
+
+export type ModerationEvent = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  target_kind: "case" | "comment" | "profile" | "report";
+  target_id: string;
+  note: string | null;
   created_at: string;
 };
 
@@ -289,6 +338,22 @@ export type Database = {
         Row: CaseFollower;
         Insert: Partial<CaseFollower> & { case_id: string; user_id: string };
         Update: Partial<CaseFollower>;
+        Relationships: [];
+      };
+      reports: {
+        Row: Report;
+        Insert: Partial<Report> & { reporter_id: string; reason: ReportReason };
+        Update: Partial<Report>;
+        Relationships: [];
+      };
+      moderation_events: {
+        Row: ModerationEvent;
+        Insert: Partial<ModerationEvent> & {
+          action: string;
+          target_kind: ModerationEvent["target_kind"];
+          target_id: string;
+        };
+        Update: Partial<ModerationEvent>;
         Relationships: [];
       };
       notifications: {

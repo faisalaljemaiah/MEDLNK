@@ -14,6 +14,7 @@ import { CaseQuestion } from "@/components/case-question";
 import { CaseFollowButton } from "@/components/case-follow-button";
 import { CaseTimeline } from "@/components/case-timeline";
 import { RevealSection } from "@/components/reveal-section";
+import { ReportButton } from "@/components/report-button";
 
 export default async function CasePage({
   params,
@@ -65,6 +66,13 @@ export default async function CasePage({
       )}
 
       <h1 className="mt-1 font-headline text-2xl text-text">{feedCase.title}</h1>
+
+      {feedCase.moderation_status === "removed" && (
+        <p className="mt-3 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-2.5 text-sm text-danger">
+          This case has been removed by a moderator. Only you and the
+          moderation team can see it.
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <Link
@@ -194,6 +202,12 @@ export default async function CasePage({
           path={path}
         />
       </div>
+
+      {user && !isAuthor && (
+        <div className="mt-6 border-t border-line pt-4">
+          <ReportButton caseId={feedCase.id} />
+        </div>
+      )}
 
       <section className="mt-6 border-t border-line pt-4">
         <p className="font-label text-xs uppercase tracking-wide text-muted">

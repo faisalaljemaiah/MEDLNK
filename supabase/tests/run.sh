@@ -49,7 +49,9 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   echo "applied $(basename "$f")"
 done
 
-echo
-psql -h "$WORK" -p "$PORT" -U postgres -d medlnk \
-  -f "$ROOT/supabase/tests/0008_interactive_cases.test.sql" 2>&1 \
-  | grep -v '^SET$\|^RESET\|^INSERT\|^UPDATE'
+for t in "$ROOT"/supabase/tests/*.test.sql; do
+  echo
+  echo "=== $(basename "$t") ==="
+  psql -h "$WORK" -p "$PORT" -U postgres -d medlnk -f "$t" 2>&1 \
+    | grep -v '^SET$\|^RESET\|^INSERT\|^UPDATE'
+done

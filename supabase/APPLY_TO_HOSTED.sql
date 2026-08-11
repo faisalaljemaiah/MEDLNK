@@ -1,10 +1,11 @@
 -- MEDLNK — everything the hosted project is still missing, in one paste.
 --
--- Migrations 0005 (storage), 0007 (messaging) and 0008 (interactive cases) have
--- never been applied to the hosted Supabase project. Until they are, image
--- upload fails with "Bucket not found", /messages shows an empty inbox, and
--- every interactive feature (What Would You Do?, Case Evolution, Follow Case,
--- Blind Cases, Near Miss, notifications) stays inert.
+-- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases) and
+-- 0009 (reports/moderation) have never been applied to the hosted Supabase
+-- project. Until they are, image upload fails with "Bucket not found",
+-- /messages shows an empty inbox, every interactive feature (What Would You
+-- Do?, Case Evolution, Follow Case, Blind Cases, Near Miss, notifications)
+-- stays inert, and there is no way to report content or suspend a user.
 --
 -- HOW TO RUN
 --   Supabase Dashboard -> SQL Editor -> New query -> paste this whole file ->
@@ -506,6 +507,174 @@ grant execute on function public.case_answer_distribution(uuid) to anon, authent
 grant execute on function public.fan_out_case_update(uuid, text, text) to authenticated;
 
 -- ============================================================================
+-- 0009_reports_moderation.sql — reports, content removal, suspension, audit log
+-- ============================================================================
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select is_admin from public.profiles where id = auth.uid()), false);
+$$;
+
+alter table public.profiles add column if not exists suspended_at timestamptz;
+alter table public.profiles add column if not exists suspended_reason text;
+
+-- Suspension is routed through is_verified() rather than added to every
+-- policy, so it takes effect on every write in the schema at once.
+create or replace function public.is_verified()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select verified and suspended_at is null from public.profiles where id = auth.uid()),
+    false
+  );
+$$;
+
+alter table public.cases add column if not exists moderation_status text
+  not null default 'visible' check (moderation_status in ('visible', 'removed'));
+alter table public.comments add column if not exists moderation_status text
+  not null default 'visible' check (moderation_status in ('visible', 'removed'));
+
+create index if not exists cases_visible_idx on public.cases (created_at desc)
+  where moderation_status = 'visible';
+create index if not exists comments_visible_idx on public.comments (case_id)
+  where moderation_status = 'visible';
+
+drop policy if exists "cases_select_all" on public.cases;
+drop policy if exists "cases_select_visible" on public.cases;
+create policy "cases_select_visible"
+  on public.cases for select
+  using (
+    moderation_status = 'visible'
+    or auth.uid() = author_id
+    or public.is_admin()
+  );
+
+drop policy if exists "comments_select_all" on public.comments;
+drop policy if exists "comments_select_visible" on public.comments;
+create policy "comments_select_visible"
+  on public.comments for select
+  using (
+    moderation_status = 'visible'
+    or auth.uid() = user_id
+    or public.is_admin()
+  );
+
+drop policy if exists "cases_update_admin" on public.cases;
+create policy "cases_update_admin"
+  on public.cases for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "comments_update_admin" on public.comments;
+create policy "comments_update_admin"
+  on public.comments for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "profiles_update_admin" on public.profiles;
+create policy "profiles_update_admin"
+  on public.profiles for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create table if not exists public.reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references public.profiles (id) on delete cascade,
+  case_id uuid references public.cases (id) on delete cascade,
+  comment_id uuid references public.comments (id) on delete cascade,
+  reported_profile_id uuid references public.profiles (id) on delete cascade,
+  reason text not null check (reason in (
+    'patient_privacy', 'incorrect_clinical_information', 'harassment',
+    'inappropriate_content', 'misleading_information', 'spam', 'other'
+  )),
+  details text,
+  status text not null default 'pending' check (status in (
+    'pending', 'reviewed', 'approved', 'removed', 'escalated'
+  )),
+  reviewed_by uuid references public.profiles (id) on delete set null,
+  reviewed_at timestamptz,
+  reviewer_note text,
+  created_at timestamptz not null default now(),
+  constraint reports_single_target
+    check (num_nonnulls(case_id, comment_id, reported_profile_id) = 1)
+);
+
+create index if not exists reports_pending_idx on public.reports (created_at)
+  where status = 'pending';
+create index if not exists reports_case_idx on public.reports (case_id);
+create index if not exists reports_reporter_idx on public.reports (reporter_id);
+
+create unique index if not exists reports_one_open_per_case
+  on public.reports (reporter_id, case_id)
+  where case_id is not null and status = 'pending';
+create unique index if not exists reports_one_open_per_comment
+  on public.reports (reporter_id, comment_id)
+  where comment_id is not null and status = 'pending';
+create unique index if not exists reports_one_open_per_profile
+  on public.reports (reporter_id, reported_profile_id)
+  where reported_profile_id is not null and status = 'pending';
+
+alter table public.reports enable row level security;
+
+-- Not gated on is_verified(): a privacy breach should be reportable by anyone
+-- who can see it, including a member still waiting on approval.
+drop policy if exists "reports_insert_own" on public.reports;
+create policy "reports_insert_own"
+  on public.reports for insert
+  with check (auth.uid() = reporter_id);
+
+drop policy if exists "reports_select_own_or_admin" on public.reports;
+create policy "reports_select_own_or_admin"
+  on public.reports for select
+  using (auth.uid() = reporter_id or public.is_admin());
+
+drop policy if exists "reports_update_admin" on public.reports;
+create policy "reports_update_admin"
+  on public.reports for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Append-only audit log: no update/delete policy, so a moderation decision
+-- cannot be quietly rewritten later.
+create table if not exists public.moderation_events (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references public.profiles (id) on delete set null,
+  action text not null,
+  target_kind text not null check (target_kind in ('case', 'comment', 'profile', 'report')),
+  target_id uuid not null,
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists moderation_events_created_idx
+  on public.moderation_events (created_at desc);
+create index if not exists moderation_events_target_idx
+  on public.moderation_events (target_kind, target_id);
+
+alter table public.moderation_events enable row level security;
+
+drop policy if exists "moderation_events_select_admin" on public.moderation_events;
+create policy "moderation_events_select_admin"
+  on public.moderation_events for select
+  using (public.is_admin());
+
+drop policy if exists "moderation_events_insert_admin" on public.moderation_events;
+create policy "moderation_events_insert_admin"
+  on public.moderation_events for insert
+  with check (public.is_admin() and auth.uid() = actor_id);
+
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -558,5 +727,23 @@ from (
          and column_name = 'is_correct'
          and grantee in ('anon', 'authenticated')
          and privilege_type = 'SELECT'
+     )),
+    ('table: reports',
+     to_regclass('public.reports') is not null),
+    ('table: moderation_events',
+     to_regclass('public.moderation_events') is not null),
+    ('function: is_admin',
+     to_regprocedure('public.is_admin()') is not null),
+    ('column: profiles.suspended_at',
+     exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'profiles'
+         and column_name = 'suspended_at'
+     )),
+    ('column: cases.moderation_status',
+     exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'cases'
+         and column_name = 'moderation_status'
      ))
 ) as checks(item, present);
