@@ -1,18 +1,20 @@
 -- MEDLNK — everything the hosted project is still missing, in one paste.
 --
--- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases) and
--- 0009 (reports/moderation) have never been applied to the hosted Supabase
--- project. Until they are, image upload fails with "Bucket not found",
--- /messages shows an empty inbox, every interactive feature (What Would You
--- Do?, Case Evolution, Follow Case, Blind Cases, Near Miss, notifications)
--- stays inert, and there is no way to report content or suspend a user.
+-- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
+-- 0009 (reports/moderation) and 0010 (clinical reactions) have never been
+-- applied to the hosted Supabase project. Until they are, image upload fails
+-- with "Bucket not found", /messages shows an empty inbox, every interactive
+-- feature (What Would You Do?, Case Evolution, Follow Case, Blind Cases, Near
+-- Miss, notifications) stays inert, there is no way to report content or
+-- suspend a user, and reacting to a case fails outright — the app now writes
+-- 💡/🧠/⚠️, which the live check constraint still rejects.
 --
 -- HOW TO RUN
 --   Supabase Dashboard -> SQL Editor -> New query -> paste this whole file ->
 --   Run. The editor wraps it in a transaction, so it either applies completely
 --   or not at all. The last statement prints a checklist of what now exists.
 --
--- This file is a re-runnable union of those three migrations, not a
+-- This file is a re-runnable union of those migrations, not a
 -- replacement for them: supabase/migrations/ stays the canonical, ordered
 -- history, and this exists purely because the hosted project is applied by
 -- hand. Every statement is guarded (if not exists / drop policy if exists /
@@ -675,6 +677,36 @@ create policy "moderation_events_insert_admin"
 grant execute on function public.is_admin() to anon, authenticated;
 
 -- ============================================================================
+-- 0010_clinical_reactions.sql — 💡 / 🧠 / ⚠️ replace the bare like
+-- ============================================================================
+-- This is the one section here that rewrites existing rows rather than only
+-- adding to the schema. Every stored 'like' becomes 'interesting' — the closest
+-- honest reading of a like, and it keeps historical rows counted instead of
+-- orphaning them under a value the new constraint rejects.
+--
+-- Safe on re-run: the second pass matches no rows. Safe against the
+-- unique (case_id, user_id, type) constraint: 'interesting' did not exist
+-- before this, so no row can collide with itself.
+
+update public.reactions set type = 'interesting' where type = 'like';
+
+alter table public.reactions drop constraint if exists reactions_type_check;
+
+alter table public.reactions add constraint reactions_type_check
+  check (type in (
+    'repost',
+    'save',
+    'interesting',
+    'changed_thinking',
+    'patient_safety'
+  ));
+
+-- Serves the profile's "marked" tab, which asks what one user marked across
+-- every case — the opposite of the per-case read reactions_case_id_idx covers.
+create index if not exists reactions_user_type_idx
+  on public.reactions (user_id, type);
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -745,5 +777,16 @@ from (
        select 1 from information_schema.columns
        where table_schema = 'public' and table_name = 'cases'
          and column_name = 'moderation_status'
-     ))
+     )),
+    ('reactions accept clinical values',
+     exists (
+       select 1 from pg_constraint
+       where conname = 'reactions_type_check'
+         and conrelid = 'public.reactions'::regclass
+         and pg_get_constraintdef(oid) like '%changed_thinking%'
+     )),
+    -- Not just "the constraint changed": any surviving like would now be a row
+    -- the app cannot count, so this checks the data moved too.
+    ('no bare likes left behind',
+     not exists (select 1 from public.reactions where type = 'like'))
 ) as checks(item, present);

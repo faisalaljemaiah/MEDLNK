@@ -1,13 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Profile } from "@/lib/database.types";
 import { getFeedCases, type FeedCase } from "@/lib/cases";
+import { isClinicalReaction } from "@/lib/reaction-types";
 
 type Client = SupabaseClient<Database>;
 
 export type ProfilePageData = {
   profile: Profile;
   cases: FeedCase[];
-  likedCases: FeedCase[];
+  /** Cases the viewer gave any clinical-value reaction to (0010 replaced likes). */
+  markedCases: FeedCase[];
   savedCases: FeedCase[];
   followerCount: number;
   followingCount: number;
@@ -60,8 +62,10 @@ export async function getProfileByHandle(
   const cases = allCases.filter((c) => c.author_id === profile.id);
   // viewerReactions reflects viewerId's own reactions, so these are only
   // meaningful (and only ever rendered) when isOwnProfile is true.
-  const likedCases = isOwnProfile
-    ? allCases.filter((c) => c.viewerReactions.includes("like"))
+  // Any of the three, not one specific one: a reader looking for "that case I
+  // marked" doesn't remember which button they pressed, only that they did.
+  const markedCases = isOwnProfile
+    ? allCases.filter((c) => c.viewerReactions.some(isClinicalReaction))
     : [];
   const savedCases = isOwnProfile
     ? allCases.filter((c) => c.viewerReactions.includes("save"))
@@ -70,7 +74,7 @@ export async function getProfileByHandle(
   return {
     profile,
     cases,
-    likedCases,
+    markedCases,
     savedCases,
     followerCount: followerCount ?? 0,
     followingCount: followingCount ?? 0,

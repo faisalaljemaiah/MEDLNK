@@ -6,6 +6,7 @@ import Image from "next/image";
 import { clsx } from "clsx";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
+import { DOUBLE_TAP_REACTION } from "@/lib/reaction-types";
 import type { FeedCase } from "@/lib/cases";
 
 const DOUBLE_TAP_MS = 300;
@@ -13,7 +14,7 @@ const DOUBLE_TAP_MS = 300;
 export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string }) {
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const [revealed, setRevealed] = useState(
-    feedCase.viewerReactions.includes("like"),
+    feedCase.viewerReactions.includes(DOUBLE_TAP_REACTION),
   );
   const [burst, setBurst] = useState(false);
   const lastTapRef = useRef(0);
@@ -22,7 +23,7 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
   function handleTap() {
     const now = Date.now();
     if (now - lastTapRef.current < DOUBLE_TAP_MS) {
-      reactionBarRef.current?.likeIfNotAlready();
+      reactionBarRef.current?.reactIfNotAlready();
       setRevealed(true);
       setBurst(true);
       setTimeout(() => setBurst(false), 600);
@@ -72,7 +73,8 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
 
         {burst && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="animate-ping text-8xl text-white/90">♥</span>
+            {/* Matches what the gesture now records — a lightbulb, not a heart. */}
+            <span className="animate-ping text-8xl">💡</span>
           </div>
         )}
 
@@ -123,7 +125,7 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
               path={path}
               tone="dark"
               onToggle={(type, active) => {
-                if (type === "like" && active) setRevealed(true);
+                if (type === DOUBLE_TAP_REACTION && active) setRevealed(true);
               }}
             />
           </div>

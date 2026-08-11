@@ -6,16 +6,19 @@ import { toggleReactionAction } from "@/app/actions/reactions";
 import {
   BookmarkIcon,
   CommentIcon,
-  HeartIcon,
   RepostIcon,
   ShareIcon,
 } from "@/components/icons";
+import {
+  CLINICAL_REACTIONS,
+  DOUBLE_TAP_REACTION,
+} from "@/lib/reaction-types";
 import type { ReactionCounts } from "@/lib/cases";
 import type { ReactionType } from "@/lib/database.types";
 
 export type ReactionBarHandle = {
-  /** Used by the reel's double-tap-to-like gesture. */
-  likeIfNotAlready: () => void;
+  /** Used by the reel's double-tap gesture. */
+  reactIfNotAlready: () => void;
 };
 
 type ReactionBarProps = {
@@ -26,6 +29,13 @@ type ReactionBarProps = {
   onOpenComments?: () => void;
   /** "light" for surfaces on top of bg-surface, "dark" for full-bleed reel backgrounds */
   tone?: "light" | "dark";
+  /**
+   * "full" spells the clinical reactions out on their own row — the case page,
+   * where the reader has just finished the case and the question "what did this
+   * change for you" is the point. "compact" keeps them to emoji and a count so
+   * the whole bar still fits one line on a phone while scrolling.
+   */
+  variant?: "full" | "compact";
   /** Fires immediately (optimistically) whenever a reaction is toggled on/off. */
   onToggle?: (type: ReactionType, active: boolean) => void;
 };
@@ -39,6 +49,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
       path,
       onOpenComments,
       tone = "light",
+      variant = "compact",
       onToggle,
     },
     ref,
@@ -51,8 +62,10 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
   const [error, setError] = useState<string | null>(null);
 
   useImperativeHandle(ref, () => ({
-    likeIfNotAlready: () => {
-      if (!optimistic.active.has("like")) toggle("like");
+    reactIfNotAlready: () => {
+      if (!optimistic.active.has(DOUBLE_TAP_REACTION)) {
+        toggle(DOUBLE_TAP_REACTION);
+      }
     },
   }));
 
@@ -106,27 +119,50 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
     await navigator.clipboard.writeText(url);
   }
 
-  const mutedClass = tone === "dark" ? "text-white/70" : "text-muted";
+  const dark = tone === "dark";
+  const mutedClass = dark ? "text-white/70" : "text-muted";
+  const idleChip = dark
+    ? "border-white/25 text-white/80 hover:border-white/50"
+    : "border-line text-muted hover:text-text";
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-5">
-        <button
-          type="button"
-          onClick={() => toggle("like")}
-          className={clsx(
-            "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
-            optimistic.active.has("like")
-              ? "text-danger"
-              : `${mutedClass} hover:text-danger`,
-          )}
-          aria-pressed={optimistic.active.has("like")}
-          aria-label="Like"
-        >
-          <HeartIcon filled={optimistic.active.has("like")} />
-          <span className="text-sm">{optimistic.counts.like}</span>
-        </button>
+    <div className="flex flex-col gap-2">
+      <div
+        className={clsx(
+          "flex flex-wrap gap-2",
+          // The reel centres its bar; everywhere else the row starts at the
+          // text margin like the rest of the card.
+          dark && "justify-center",
+        )}
+      >
+        {CLINICAL_REACTIONS.map((r) => {
+          const active = optimistic.active.has(r.value);
+          return (
+            <button
+              key={r.value}
+              type="button"
+              onClick={() => toggle(r.value)}
+              aria-pressed={active}
+              aria-label={r.hint}
+              title={r.hint}
+              className={clsx(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-label text-xs transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-95",
+                active
+                  ? dark
+                    ? "border-white/70 bg-white/20 text-white"
+                    : r.activeClass
+                  : idleChip,
+              )}
+            >
+              <span aria-hidden>{r.emoji}</span>
+              {variant === "full" && <span>{r.label}</span>}
+              <span className="tabular-nums">{optimistic.counts[r.value]}</span>
+            </button>
+          );
+        })}
+      </div>
 
+      <div className={clsx("flex items-center gap-5", dark && "justify-center")}>
         <button
           type="button"
           onClick={onOpenComments}

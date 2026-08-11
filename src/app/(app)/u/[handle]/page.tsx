@@ -12,7 +12,9 @@ import { startConversationAction } from "@/app/actions/messages";
 
 const TABS = [
   { key: "posts", label: "Posts" },
-  { key: "liked", label: "Liked" },
+  // "Marked", not "Liked": 0010 replaced the bare like with the three
+  // clinical-value reactions, and this tab collects all of them.
+  { key: "marked", label: "Marked" },
   { key: "saved", label: "Saved" },
 ] as const;
 
@@ -34,7 +36,7 @@ export default async function ProfilePage({
   const {
     profile,
     cases,
-    likedCases,
+    markedCases,
     savedCases,
     followerCount,
     followingCount,
@@ -45,10 +47,10 @@ export default async function ProfilePage({
 
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "posts";
   const visibleCases =
-    tab === "liked" ? likedCases : tab === "saved" ? savedCases : cases;
+    tab === "marked" ? markedCases : tab === "saved" ? savedCases : cases;
   const emptyMessage =
-    tab === "liked"
-      ? "No liked cases yet."
+    tab === "marked"
+      ? "Nothing marked yet. 💡 🧠 ⚠️ on a case and it collects here."
       : tab === "saved"
         ? "No saved cases yet."
         : "No cases shared yet.";

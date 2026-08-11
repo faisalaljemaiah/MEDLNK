@@ -14,16 +14,8 @@ function base(props: SVGProps<SVGSVGElement>) {
   };
 }
 
-export function HeartIcon(
-  props: SVGProps<SVGSVGElement> & { filled?: boolean },
-) {
-  const { filled, ...rest } = props;
-  return (
-    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
-      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
-    </svg>
-  );
-}
+// The heart went with the like (0010). Nothing renders it any more, so it is
+// gone rather than left around for someone to reintroduce a bare like with.
 
 export function CommentIcon(props: SVGProps<SVGSVGElement>) {
   return (

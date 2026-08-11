@@ -200,6 +200,7 @@ export default async function CasePage({
           counts={feedCase.counts}
           viewerReactions={feedCase.viewerReactions}
           path={path}
+          variant="full"
         />
       </div>
 

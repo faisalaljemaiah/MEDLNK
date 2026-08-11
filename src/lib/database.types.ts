@@ -7,7 +7,18 @@
 // An `interface` here silently breaks insert()/update() typing (Row: never).
 
 export type VerificationStatus = "pending" | "approved" | "rejected";
-export type ReactionType = "like" | "repost" | "save";
+/**
+ * The clinical-value reactions from 0010. These replaced the bare "like": on a
+ * clinical network the useful question is *why* a case mattered, and these are
+ * what profile stats and reputation read from.
+ */
+export type ClinicalReactionType =
+  | "interesting"
+  | "changed_thinking"
+  | "patient_safety";
+
+/** repost and save are distribution/bookmarking, not a judgement on the case. */
+export type ReactionType = ClinicalReactionType | "repost" | "save";
 
 /** Mirrors the case_type check constraint in 0008_interactive_cases.sql. */
 export type CaseType =

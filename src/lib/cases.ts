@@ -48,10 +48,22 @@ type FeedRow = Case & {
 };
 
 function toFeedCase(row: FeedRow, viewerId: string | null): FeedCase {
-  const counts: ReactionCounts = { like: 0, repost: 0, save: 0, comments: 0 };
+  const counts: ReactionCounts = {
+    interesting: 0,
+    changed_thinking: 0,
+    patient_safety: 0,
+    repost: 0,
+    save: 0,
+    comments: 0,
+  };
   const viewerReactions: ReactionType[] = [];
 
   for (const r of row.reactions ?? []) {
+    // Skip types this build doesn't know. Until 0010 is applied to the hosted
+    // project every stored reaction is still a 'like', and counting one would
+    // put NaN on the card rather than a number — the sort of thing that reads
+    // as a rendering bug long after the actual cause is forgotten.
+    if (!(r.type in counts)) continue;
     counts[r.type] += 1;
     if (viewerId && r.user_id === viewerId) viewerReactions.push(r.type);
   }
