@@ -1,10 +1,12 @@
-// Reel slides are full-bleed, so a card skeleton would flash the wrong shape.
+// Mirrors ReelSlide's inset card so the placeholder doesn't jump on swap.
 export default function Loading() {
   return (
     <div
       aria-busy="true"
       aria-label="Loading"
-      className="h-[calc(100dvh-145px)] w-full shrink-0 animate-pulse bg-gradient-to-br from-accent to-accent-2"
-    />
+      className="flex h-[calc(100dvh-145px)] w-full shrink-0 items-stretch px-3 py-2"
+    >
+      <div className="mx-auto h-full w-full max-w-sm animate-pulse rounded-3xl bg-gradient-to-br from-accent to-accent-2 shadow-lg shadow-slate-900/10" />
+    </div>
   );
 }
