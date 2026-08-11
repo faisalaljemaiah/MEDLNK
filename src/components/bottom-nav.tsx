@@ -26,7 +26,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-4">
-      <div className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full border border-line/60 bg-surface/75 px-3 py-2 shadow-lg shadow-black/20 backdrop-blur-2xl backdrop-saturate-150">
+      <div className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full border border-line/60 bg-surface/75 px-3 py-2 shadow-lg shadow-slate-900/10 backdrop-blur-2xl backdrop-saturate-150">
         <NavLink href="/" active={pathname === "/"}>
           <HomeIcon filled={pathname === "/"} />
         </NavLink>

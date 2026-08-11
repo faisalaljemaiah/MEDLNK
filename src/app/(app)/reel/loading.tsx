@@ -4,7 +4,7 @@ export default function Loading() {
     <div
       aria-busy="true"
       aria-label="Loading"
-      className="h-[calc(100dvh-145px)] w-full shrink-0 animate-pulse bg-gradient-to-b from-surface-2 to-bg"
+      className="h-[calc(100dvh-145px)] w-full shrink-0 animate-pulse bg-gradient-to-br from-accent to-accent-2"
     />
   );
 }
