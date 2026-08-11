@@ -2,8 +2,8 @@
 --
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
 -- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels),
--- 0012 (Ask a Specialist) and 0013 (moderation guard) have never been applied
--- to the hosted Supabase project.
+-- 0012 (Ask a Specialist), 0013 (moderation guard) and 0014 (student mode)
+-- have never been applied to the hosted Supabase project.
 --
 -- Until they are, image upload fails with "Bucket not found",
 -- /messages shows an empty inbox, every interactive feature (What Would You
@@ -1001,6 +1001,18 @@ create trigger specialist_answers_guard_moderation_status
   for each row execute function public.guard_moderation_status();
 
 -- ============================================================================
+-- 0014_student_mode.sql — lead with Learn
+-- ============================================================================
+-- A preference, not a role. profiles.role is free text and already says
+-- "Medical student" for some people, but a resident revising and a consultant
+-- reading outside their specialty want the same thing. Defaults false, so every
+-- existing profile keeps exactly the app it has. profiles_update_own (0004)
+-- already covers setting it.
+
+alter table public.profiles
+  add column if not exists student_mode boolean not null default false;
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1105,5 +1117,9 @@ from (
         'cases_guard_moderation_status',
         'comments_guard_moderation_status',
         'specialist_answers_guard_moderation_status'
-      ) and not tgisinternal) = 3)
+      ) and not tgisinternal) = 3),
+    ('column: profiles.student_mode',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'student_mode'))
 ) as checks(item, present);

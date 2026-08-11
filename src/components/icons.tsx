@@ -100,6 +100,16 @@ export function SearchIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** An open book — the Learn tab in Student Mode. */
+export function LearnIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 6.5S10 4.5 3 4.5v13c7 0 9 2 9 2s2-2 9-2v-13c-7 0-9 2-9 2Z" />
+      <path d="M12 6.5v13" />
+    </svg>
+  );
+}
+
 export function BellIcon(
   props: SVGProps<SVGSVGElement> & { filled?: boolean },
 ) {

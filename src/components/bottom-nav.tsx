@@ -3,13 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { HomeIcon, ReelIcon, PlusSquareIcon, SearchIcon } from "@/components/icons";
+import {
+  HomeIcon,
+  ReelIcon,
+  LearnIcon,
+  PlusSquareIcon,
+  SearchIcon,
+} from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 
 type NavProfile = {
   handle: string | null;
   full_name: string | null;
   avatar_url: string | null;
+  student_mode?: boolean | null;
 };
 
 export function BottomNav({ profile }: { profile: NavProfile | null }) {
@@ -30,9 +37,19 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
         <NavLink href="/" active={pathname === "/"}>
           <HomeIcon filled={pathname === "/"} />
         </NavLink>
-        <NavLink href="/reel" active={pathname === "/reel"}>
-          <ReelIcon />
-        </NavLink>
+        {/* Student Mode swaps this one slot rather than adding a sixth: five
+            targets is already the most a thumb wants at the bottom of a phone,
+            and the point of the mode is what the app leads with, not more of
+            it. Reel stays reachable at /reel. */}
+        {profile?.student_mode ? (
+          <NavLink href="/learn" active={pathname === "/learn"}>
+            <LearnIcon />
+          </NavLink>
+        ) : (
+          <NavLink href="/reel" active={pathname === "/reel"}>
+            <ReelIcon />
+          </NavLink>
+        )}
         <NavLink href="/compose" active={pathname === "/compose"}>
           <PlusSquareIcon />
         </NavLink>

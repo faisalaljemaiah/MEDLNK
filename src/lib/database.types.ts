@@ -83,6 +83,8 @@ export type Profile = {
   verification_status: VerificationStatus;
   license_number: string | null;
   is_admin: boolean;
+  /** Student Mode (0014) — a preference, not a role. Leads with Learn. */
+  student_mode: boolean;
   /** Set by an admin. Makes is_verified() false, which blocks every write. */
   suspended_at: string | null;
   suspended_reason: string | null;

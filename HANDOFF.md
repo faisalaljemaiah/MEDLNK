@@ -47,20 +47,33 @@ All on branch `claude/medlnk-e2e-testing-i0vawy`, PR #4.
 - **Priority 1 close-out**: home feed chip row (All / Near miss / What would you
   do? / Following), the Following area, and the notifications inbox — bell in
   the header with an unread dot, `/notifications`, per-item and mark-all read
+- **Reporting and moderation** (§23/§29): reports, content removal, suspension
+  routed through `is_verified()`, admin queue and audit log
+- **Priority 2, complete**:
+  - Clinical-value reactions (§9) — 💡 / 🧠 / ⚠️ replacing the bare like
+  - The case discussion thread, with structured reply labels (§25). There was
+    no comment UI at all before this; the table existed and was counted, but
+    nothing could read or write one.
+  - Profile contribution stats (§12) and advanced search filters (§20)
+  - Ask a Specialist (§10), with `/consults` as the specialty queue
+  - Student Mode + Learn (§11, §26)
 
 ## ⚠️ Blocking manual steps
 
 Nothing below has been applied to the hosted Supabase project. Most recent
-features are inert until it is. The app degrades gracefully rather than
-erroring — but see "Telling inert from empty" below for how to spot it.
+features are inert until it is — and since 0010, two of them **fail outright**
+rather than degrading: the app writes clinical reaction values and a reply
+label that the live schema still rejects. See "Telling inert from empty".
 
 **1. Run `supabase/APPLY_TO_HOSTED.sql` in the Supabase SQL Editor.**
 
-One paste, one Run. It is a re-runnable union of the three migrations the
-hosted project is missing — `0005_storage.sql` (the `case-images` bucket;
-without it image upload fails with "Bucket not found"), `0007_messaging.sql`
-(DM tables) and `0008_interactive_cases.sql` (everything interactive) — and it
-ends by printing a checklist that should read `ok` on every row.
+One paste, one Run. It is a re-runnable union of every migration the hosted
+project is missing — 0005 (the `case-images` bucket; without it image upload
+fails with "Bucket not found"), 0007 (DM tables), 0008 (everything
+interactive), 0009 (reports/moderation), 0010 (clinical reactions), 0011
+(comment labels), 0012 (Ask a Specialist), 0013 (moderation guard) and 0014
+(student mode) — and it ends by printing a 31-row checklist that should read
+`ok` throughout.
 
 `supabase/migrations/` stays the canonical ordered history; that file exists
 only because the hosted project is applied by hand. Every statement in it is
@@ -94,20 +107,27 @@ see that copy anywhere, step 1 hasn't been run.
 ## Testing
 
 `./supabase/tests/run.sh` spins up a throwaway local Postgres, applies every
-migration and asserts the RLS/privilege behaviour (14 checks). Needs
-`postgresql-16` locally. It does not touch the hosted project. Run it after any
-schema change.
+migration and runs every `*.test.sql` against it. Needs `postgresql-16`
+locally. It does not touch the hosted project. Run it after any schema change.
 
 `./supabase/tests/apply-file.sh` is the same idea aimed at the paste-file: it
 rebuilds the hosted project's actual state (0001-0004 and 0006 only), applies
-`APPLY_TO_HOSTED.sql` twice, and then runs the 0008 tests against the resulting
-schema — so "the paste-file is complete and re-runnable" is asserted rather than
-assumed. Run it after touching either that file or a migration.
+`APPLY_TO_HOSTED.sql` twice, and runs the same tests against the result — so
+"the paste-file is complete and re-runnable" is asserted rather than assumed.
+Run it after touching either that file or a migration.
 
-Two real bugs came out of local end-to-end testing last session, so it is worth
-the effort: the notification fan-out was missing its case filter (would have
-notified every follower on the platform), and the interactive question embed
-arrives as an object rather than an array because of its unique constraint.
+**Read the output.** The suite prints results; it does not fail on them. A
+wrong answer scrolls past looking like every other row, and one already has:
+0009's "a member cannot un-remove their own case" printed `visible` for a
+whole session before anyone read it, which is how a real moderation bypass
+shipped (fixed in 0013). Each section says what it expects — check that it
+got it. Turning this into a harness that exits non-zero is the highest-value
+thing anyone could do to it.
+
+Three real bugs have come out of it so far, so it earns its keep: the
+notification fan-out missing its case filter (would have notified every
+follower on the platform), the interactive question embed arriving as an
+object rather than an array, and the takedown bypass above.
 
 To exercise DB-dependent features locally, the previous session ran the app
 against local Postgres via PostgREST with a small proxy standing in for the
@@ -115,40 +135,49 @@ Supabase edge. Worth rebuilding if you're doing more schema work.
 
 ## What needs doing
 
-Priority 1 is complete. None of it is visible on the hosted project until the
-SQL above is run.
+Priorities 1 and 2 are complete, as is the reporting/moderation work. None of
+it is visible on the hosted project until the SQL above is run.
 
-### Priority 2 (from PLAN.md)
-Ask a Specialist · clinical-value reactions (💡 Interesting, 🧠 Changed My
-Thinking, ⚠️ Patient Safety) replacing bare likes · Student Mode + a `Learn`
-nav tab · advanced search filters · profile contribution stats · structured
-comment labels.
-
-### Priority 3
+### Priority 3 — the whole of what's left
 Case → Quiz and My Learning · AI "Explain This Case" · clinical reasoning trees
 · Case vs Case · Global Case Exchange · Safety Alerts · reputation ·
-Things I Wish I Knew · analytics · expanded admin/moderation (reports, audit
-logs, moderation states).
+Things I Wish I Knew · analytics.
+
+`/learn` is the obvious place for Case → Quiz and My Learning to land — it
+already holds the practise queue and the attempt record, and `getLearnData`
+already does the set difference those would build on. The admin/moderation
+half of Priority 3 is done (0009 + 0013).
 
 ### First thing to eyeball after running the SQL
-Two new PostgREST reads have never met a live PostgREST — this session had no
-Supabase credentials and no network route to install one locally, so they are
-verified by type and by review only:
+Every PostgREST read added this session — `getCaseComments`,
+`getCaseSpecialistThreads`, `getOpenConsults`, `getLearnData` — is verified by
+type and review only. This session had no Supabase credentials and no network
+route to install a local PostgREST, so no embed here has met a live one. They
+all return `null` rather than `[]` on failure and surface `UnavailableNotice`,
+so a wrong foreign-key hint announces itself instead of rendering as an empty
+thread. Load a case page, `/consults` and `/learn` straight after applying the
+SQL and you'll know in a minute.
 
-- `getFollowedCases` (`src/lib/cases.ts`) — the only two-level embed in the
-  codebase (`case_followers` → `cases` → author/reactions/comments).
-- `getNotifications` (`src/lib/notifications.ts`) — two embeds off one table.
-
-Both surface `UnavailableNotice` rather than an empty list if they 400, so a
-wrong FK hint announces itself instead of hiding. Load `/?filter=following` and
-`/notifications` right after applying the SQL and you'll know in ten seconds.
+An earlier note flagged `getFollowedCases` (`src/lib/cases.ts`, the only
+two-level embed in the codebase) and `getNotifications`
+(`src/lib/notifications.ts`, two embeds off one table) for the same reason. A
+later session confirmed both against a local PostgREST instance, so those two
+are known good.
 
 ### Known gaps worth flagging
 - `media_url` is only rendered in the reel. Feed cards and the case page ignore
   uploaded images entirely.
-- No reporting/moderation infrastructure yet (spec §23/§29) — this matters for
-  a clinical platform and is currently unbuilt.
-- The composer's identifier scan is a nudge, not a gate, by design.
+- The test suite prints rather than fails — see Testing above. This has already
+  cost one shipped security bug.
+- Search and the feed still fetch every case and filter in JS. Correct at MVP
+  scale, and every place that does it says where the tradeoff expires, but
+  they all expire at the same moment and it will need doing in one go.
+- The composer's identifier scan is a nudge, not a gate, by design. It now
+  covers replies, specialist questions and specialist answers as well as cases.
+- `is_specialist_in()` matches on free-text `profiles.specialty`. "Cardiology"
+  and "cardiology" are handled; "Cardiology (interventional)" is a different
+  specialty as far as it is concerned. A controlled vocabulary is a data
+  migration on one column when it matters.
 
 ## Non-negotiables
 
