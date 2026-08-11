@@ -14,21 +14,30 @@ update public.profiles set verified=true, suspended_at=null, student_mode=false
   where id in (:'author', :'reader');
 
 \echo ''
-\echo '### 1. every existing profile defaults to off -- expect 0 on'
-select count(*) as student_mode_on from public.profiles where student_mode;
+\echo '### 1. every existing profile defaults to off'
+select test.check(
+  '0014.1 defaults to off for every existing profile',
+  (select count(*)::text from public.profiles where student_mode),
+  '0');
 
 \echo ''
-\echo '### 2. a member turns it on for themselves -- expect t'
+\echo '### 2. a member turns it on for themselves'
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 update public.profiles set student_mode = true where id = :'reader';
-select student_mode from public.profiles where id = :'reader';
+select test.check(
+  '0014.2 a member can set it for themselves',
+  (select student_mode::text from public.profiles where id = :'reader'),
+  'true');
 
 \echo ''
-\echo '### 3. turning it on for somebody else -- must change nothing'
+\echo '### 3. turning it on for somebody else changes nothing'
 update public.profiles set student_mode = true where id = :'author';
 reset role;
-select student_mode as author_untouched from public.profiles where id = :'author';
+select test.check(
+  '0014.3 cannot set it for somebody else',
+  (select student_mode::text from public.profiles where id = :'author'),
+  'false');
 
 \echo ''
 \echo '### 4. it is not gated on verification -- a pending member can still set it'
@@ -41,7 +50,10 @@ set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 update public.profiles set student_mode = true where id = :'author';
 reset role;
-select student_mode as unverified_can_set from public.profiles where id = :'author';
+select test.check(
+  '0014.4 not gated on verification',
+  (select student_mode::text from public.profiles where id = :'author'),
+  'true');
 
 reset role;
 update public.profiles set verified = true, student_mode = false

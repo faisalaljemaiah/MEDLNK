@@ -68,10 +68,10 @@ $PSQL --single-transaction -f "$ROOT/supabase/APPLY_TO_HOSTED.sql" >/dev/null
 echo "re-applied cleanly"
 
 # Applying the paste-file must leave the same schema the migrations would have,
-# so the same behavioural tests run.sh uses are the real check on it.
-for t in "$ROOT"/supabase/tests/*.test.sql; do
-  echo
-  echo "### $(basename "$t") against the pasted schema"
-  psql -h "$WORK" -p "$PORT" -U postgres -d medlnk -f "$t" 2>&1 \
-    | grep -v '^SET$\|^RESET\|^INSERT\|^UPDATE'
-done
+# so the same behavioural tests run.sh uses are the real check on it — including
+# failing this script when one of them fails.
+$PSQL -f "$ROOT/supabase/tests/00_assert.sql" >/dev/null
+
+# shellcheck disable=SC1090
+. "$ROOT/supabase/tests/lib/report.sh"
+run_test_files "$WORK" "$PORT" "$ROOT"

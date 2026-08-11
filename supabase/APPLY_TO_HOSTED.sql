@@ -969,14 +969,20 @@ grant execute on function public.fan_out_specialist_answer(uuid) to authenticate
 -- trigger sees both the old and the new row, which is what "this column may not
 -- change unless you are an admin" needs and what WITH CHECK cannot express.
 
+-- Security INVOKER, deliberately: under SECURITY DEFINER `current_user` reads as
+-- the function's owner rather than the caller, so the role test below would
+-- never match and the guard would silently never fire.
 create or replace function public.guard_moderation_status()
 returns trigger
 language plpgsql
-security definer
 set search_path = public
 as $$
 begin
+  -- Scoped to the roles a browser can reach the database as. service_role and
+  -- the owner are already fully trusted, and catching them here would block
+  -- backfills and admin scripts from ever setting the column.
   if new.moderation_status is distinct from old.moderation_status
+     and current_user in ('anon', 'authenticated')
      and not public.is_admin() then
     raise exception 'Only a moderator can change moderation status';
   end if;

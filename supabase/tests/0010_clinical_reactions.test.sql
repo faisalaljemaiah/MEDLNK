@@ -23,44 +23,62 @@ values (:'kase', :'author', 'Two ACE inhibitors', 'caption')
 delete from public.reactions where case_id = :'kase';
 
 \echo ''
-\echo '### 1. a verified member records each clinical reaction -- expect 3 rows'
+\echo '### 1. a verified member records each clinical reaction'
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 insert into public.reactions (case_id, user_id, type) values
   (:'kase', :'reader', 'interesting'),
   (:'kase', :'reader', 'changed_thinking'),
   (:'kase', :'reader', 'patient_safety');
-select count(*) as clinical_reactions from public.reactions where case_id = :'kase';
+select test.check(
+  '0010.1 all three clinical values store',
+  (select count(*)::text from public.reactions where case_id = :'kase'),
+  '3');
 
 \echo ''
-\echo '### 2. repost and save still work -- expect 5 rows total'
+\echo '### 2. repost and save are untouched'
 insert into public.reactions (case_id, user_id, type) values
   (:'kase', :'reader', 'repost'),
   (:'kase', :'reader', 'save');
-select count(*) as all_reactions from public.reactions where case_id = :'kase';
+select test.check(
+  '0010.2 repost and save still accepted',
+  (select count(*)::text from public.reactions where case_id = :'kase'),
+  '5');
 
 \echo ''
-\echo '### 3. the retired like value -- MUST FAIL (check constraint)'
-insert into public.reactions (case_id, user_id, type)
-values (:'kase', :'reader', 'like');
+\echo '### 3. the retired like value must be rejected'
+select test.expect_error(
+  '0010.3 bare like no longer accepted',
+  $$insert into public.reactions (case_id, user_id, type)
+    values ('33333333-3333-3333-3333-333333333333',
+            '22222222-2222-2222-2222-222222222222', 'like')$$);
 
 \echo ''
-\echo '### 4. an invented reaction type -- MUST FAIL'
-insert into public.reactions (case_id, user_id, type)
-values (:'kase', :'reader', 'thumbs_up');
+\echo '### 4. an invented reaction type must be rejected'
+select test.expect_error(
+  '0010.4 unknown reaction type rejected',
+  $$insert into public.reactions (case_id, user_id, type)
+    values ('33333333-3333-3333-3333-333333333333',
+            '22222222-2222-2222-2222-222222222222', 'thumbs_up')$$);
 
 \echo ''
-\echo '### 5. the same reaction twice -- MUST FAIL (unique case/user/type)'
-insert into public.reactions (case_id, user_id, type)
-values (:'kase', :'reader', 'interesting');
+\echo '### 5. the same reaction twice must be rejected'
+select test.expect_error(
+  '0010.5 one reaction per case/user/type',
+  $$insert into public.reactions (case_id, user_id, type)
+    values ('33333333-3333-3333-3333-333333333333',
+            '22222222-2222-2222-2222-222222222222', 'interesting')$$);
 
 \echo ''
-\echo '### 6. reacting as somebody else -- MUST FAIL (RLS)'
-insert into public.reactions (case_id, user_id, type)
-values (:'kase', :'author', 'interesting');
+\echo '### 6. reacting as somebody else must be refused'
+select test.expect_error(
+  '0010.6 can only react as yourself',
+  $$insert into public.reactions (case_id, user_id, type)
+    values ('33333333-3333-3333-3333-333333333333',
+            '11111111-1111-1111-1111-111111111111', 'interesting')$$);
 
 \echo ''
-\echo '### 7. a suspended member reacting -- MUST FAIL (0009 routes through is_verified)'
+\echo '### 7. a suspended member cannot react (0009 routes through is_verified)'
 -- Clear the row first, or this would fail on the unique constraint and read as
 -- a pass without RLS ever being consulted.
 reset role;
@@ -69,8 +87,11 @@ delete from public.reactions
 update public.profiles set suspended_at = now() where id = :'reader';
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
-insert into public.reactions (case_id, user_id, type)
-values (:'kase', :'reader', 'changed_thinking');
+select test.expect_error(
+  '0010.7 suspension blocks reacting',
+  $$insert into public.reactions (case_id, user_id, type)
+    values ('33333333-3333-3333-3333-333333333333',
+            '22222222-2222-2222-2222-222222222222', 'changed_thinking')$$);
 
 reset role;
 update public.profiles set suspended_at = null where id = :'reader';

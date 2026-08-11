@@ -49,9 +49,8 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   echo "applied $(basename "$f")"
 done
 
-for t in "$ROOT"/supabase/tests/*.test.sql; do
-  echo
-  echo "=== $(basename "$t") ==="
-  psql -h "$WORK" -p "$PORT" -U postgres -d medlnk -f "$t" 2>&1 \
-    | grep -v '^SET$\|^RESET\|^INSERT\|^UPDATE'
-done
+$PSQL -f "$ROOT/supabase/tests/00_assert.sql" >/dev/null
+
+# shellcheck disable=SC1090
+. "$ROOT/supabase/tests/lib/report.sh"
+run_test_files "$WORK" "$PORT" "$ROOT"

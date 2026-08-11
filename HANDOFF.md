@@ -116,18 +116,27 @@ rebuilds the hosted project's actual state (0001-0004 and 0006 only), applies
 "the paste-file is complete and re-runnable" is asserted rather than assumed.
 Run it after touching either that file or a migration.
 
-**Read the output.** The suite prints results; it does not fail on them. A
-wrong answer scrolls past looking like every other row, and one already has:
-0009's "a member cannot un-remove their own case" printed `visible` for a
-whole session before anyone read it, which is how a real moderation bypass
-shipped (fixed in 0013). Each section says what it expects — check that it
-got it. Turning this into a harness that exits non-zero is the highest-value
-thing anyone could do to it.
+**Both scripts exit non-zero when an assertion fails.** They did not always:
+until recently the suite printed results and left reading them to a human,
+which is exactly how a real moderation bypass shipped — 0009's "a member
+cannot un-remove their own case" printed `visible` for a whole session before
+anyone noticed (fixed in 0013).
 
-Three real bugs have come out of it so far, so it earns its keep: the
+Assertions go through `test.check` and `test.expect_error`
+(`supabase/tests/00_assert.sql`), which record failures into `test.failures`
+rather than raising. psql's own exit code is useless here: half these
+assertions are "this write MUST FAIL", so `ON_ERROR_STOP` has to be off and
+errors in the transcript are expected. Use `test.expect_error` for anything
+the database should refuse — a dropped policy turns such a write into a silent
+`INSERT 0 1`, which is the regression that hides best.
+
+Five real bugs have come out of this suite, so it earns its keep: the
 notification fan-out missing its case filter (would have notified every
 follower on the platform), the interactive question embed arriving as an
-object rather than an array, and the takedown bypass above.
+object rather than an array, the takedown bypass above, and — within minutes
+of the assertions landing — two in 0013's own guard: it blocked trusted
+server-side writes, and `current_user` inside a `SECURITY DEFINER` function
+reads as the owner, so the role check never fired at all.
 
 To exercise DB-dependent features locally, the previous session ran the app
 against local Postgres via PostgREST with a small proxy standing in for the
@@ -167,8 +176,6 @@ are known good.
 ### Known gaps worth flagging
 - `media_url` is only rendered in the reel. Feed cards and the case page ignore
   uploaded images entirely.
-- The test suite prints rather than fails — see Testing above. This has already
-  cost one shipped security bug.
 - Search and the feed still fetch every case and filter in JS. Correct at MVP
   scale, and every place that does it says where the tradeoff expires, but
   they all expire at the same moment and it will need doing in one go.
