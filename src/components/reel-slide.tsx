@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { clsx } from "clsx";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
 import type { FeedCase } from "@/lib/cases";
@@ -34,11 +35,15 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
     // colour, so the page background shows through the gutters between posts.
     <section className="flex h-[calc(100dvh-145px)] w-full shrink-0 snap-start items-stretch px-3 py-2">
       {/* max-w-sm keeps the card portrait on desktop; on a phone the viewport
-          is already narrower than that, so it just fills the gutters. */}
-      {/* max-w-sm keeps the card portrait on desktop; on a phone the viewport
           is already narrower than that, so it just fills the gutters.
-          The accent gradient is the backdrop for cases with no image. */}
-      <div className="relative mx-auto flex h-full w-full max-w-sm flex-col justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-accent to-accent-2 px-5 py-10 shadow-lg shadow-slate-900/10">
+          With no photo there is nothing to see through to, so the accent
+          sheet stays opaque rather than letting the page show through. */}
+      <div
+        className={clsx(
+          "relative mx-auto flex h-full w-full max-w-sm flex-col justify-center overflow-hidden rounded-3xl px-5 py-10 shadow-lg shadow-slate-900/10",
+          !feedCase.media_url && "bg-gradient-to-br from-accent to-accent-2",
+        )}
+      >
         {feedCase.media_url && (
           <>
             <Image
@@ -48,10 +53,14 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
               sizes="(max-width: 640px) 100vw, 384px"
               className="object-cover"
             />
-            {/* Case photos are arbitrary, so the glass panel below can't be
-                trusted on its own to keep white text legible — this scrim
-                guarantees a dark floor even under a near-white image. */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/55" />
+            {/* The accent sheet itself becomes the glass: tinted and frosted,
+                so the photo reads through the colour instead of being hidden
+                behind it. */}
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/60 to-accent-2/60 backdrop-blur-md" />
+            {/* Case photos are arbitrary and a near-white one would lift the
+                tint far too pale for white copy, so this holds a dark floor
+                through the middle of the card where the text sits. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/45 to-black/20" />
           </>
         )}
 
@@ -67,10 +76,7 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
           </div>
         )}
 
-        {/* The glass itself: frosts whatever is behind it — the photo, or the
-            accent gradient when the case has none — so the copy stays legible
-            while the image is still visible around and through it. */}
-        <div className="relative z-[1] mx-auto w-full rounded-2xl border border-white/20 bg-black/25 px-4 py-6 shadow-lg shadow-black/10 backdrop-blur-md">
+        <div className="relative z-[1] mx-auto w-full">
           <div className="pointer-events-none flex w-full flex-col items-center text-center">
             <p className="font-label text-xs uppercase tracking-wide text-white/80">
               {feedCase.case_number}
