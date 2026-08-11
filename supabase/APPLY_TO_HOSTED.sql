@@ -3,7 +3,8 @@
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
 -- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels),
 -- 0012 (Ask a Specialist), 0013 (moderation guard), 0014 (student mode) and
--- 0015 (safety alerts) have never been applied to the hosted Supabase project.
+-- 0015 (safety alerts) and 0016 (Case vs Case) have never been applied to the
+-- hosted Supabase project.
 --
 -- Until they are, image upload fails with "Bucket not found",
 -- /messages shows an empty inbox, every interactive feature (What Would You
@@ -1116,6 +1117,86 @@ revoke all on function public.fan_out_safety_alert(uuid) from public;
 grant execute on function public.fan_out_safety_alert(uuid) to authenticated;
 
 -- ============================================================================
+-- 0016_case_comparisons.sql — Case vs Case
+-- ============================================================================
+-- The comparison points at two real cases rather than restating them: the
+-- reader can open either side in full, the original authors keep the credit,
+-- and the pair stays correct if either case is edited.
+
+create table if not exists public.case_comparisons (
+  id uuid primary key default gen_random_uuid(),
+
+  -- The case_vs_case post itself. One comparison per post: a post that
+  -- compared three different pairs would have no coherent title.
+  case_id uuid not null unique references public.cases (id) on delete cascade,
+
+  left_case_id uuid not null references public.cases (id) on delete cascade,
+  right_case_id uuid not null references public.cases (id) on delete cascade,
+
+  -- The point of the post: what actually changes the management between them.
+  discriminator text not null,
+
+  created_at timestamptz not null default now(),
+
+  -- A case compared with itself is not a comparison.
+  constraint case_comparisons_distinct_sides check (left_case_id <> right_case_id),
+  -- ...and neither is one that compares the post to something.
+  constraint case_comparisons_not_self
+    check (case_id <> left_case_id and case_id <> right_case_id)
+);
+
+create index if not exists case_comparisons_left_idx on public.case_comparisons (left_case_id);
+create index if not exists case_comparisons_right_idx on public.case_comparisons (right_case_id);
+
+alter table public.case_comparisons enable row level security;
+
+-- Readable by everyone, like the cases it points at — the feed works signed
+-- out. Note this exposes only *that* two cases were compared; whether either
+-- side is actually visible to the reader is still decided by cases' own RLS, so
+-- a removed case doesn't leak its content through here.
+drop policy if exists "case_comparisons_select_all" on public.case_comparisons;
+create policy "case_comparisons_select_all"
+  on public.case_comparisons for select
+  using (true);
+
+drop policy if exists "case_comparisons_insert_own_case" on public.case_comparisons;
+create policy "case_comparisons_insert_own_case"
+  on public.case_comparisons for insert
+  with check (
+    public.is_verified()
+    and exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+drop policy if exists "case_comparisons_update_own_case" on public.case_comparisons;
+create policy "case_comparisons_update_own_case"
+  on public.case_comparisons for update
+  using (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+drop policy if exists "case_comparisons_delete_own_case" on public.case_comparisons;
+create policy "case_comparisons_delete_own_case"
+  on public.case_comparisons for delete
+  using (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1228,5 +1309,7 @@ from (
     ('table: safety_alert_acks',
      to_regclass('public.safety_alert_acks') is not null),
     ('function: fan_out_safety_alert',
-     to_regprocedure('public.fan_out_safety_alert(uuid)') is not null)
+     to_regprocedure('public.fan_out_safety_alert(uuid)') is not null),
+    ('table: case_comparisons',
+     to_regclass('public.case_comparisons') is not null)
 ) as checks(item, present);

@@ -61,6 +61,7 @@ All on branch `claude/medlnk-e2e-testing-i0vawy`, PR #4.
   - Safety Alerts (§17) — platform-wide broadcast, banner, acknowledgement
   - Things I Wish I Knew (§16) — feed chip
   - Case → Quiz and My Learning (§14) — `/learn/quiz`, per-specialty record
+  - Case vs Case (§15) — two real cases side by side, plus what separates them
   - Uploaded images now render on feed cards and the case page, not only in
     the reel
 
@@ -78,8 +79,8 @@ project is missing — 0005 (the `case-images` bucket; without it image upload
 fails with "Bucket not found"), 0007 (DM tables), 0008 (everything
 interactive), 0009 (reports/moderation), 0010 (clinical reactions), 0011
 (comment labels), 0012 (Ask a Specialist), 0013 (moderation guard), 0014
-(student mode) and 0015 (safety alerts) — and it ends by printing a 33-row
-checklist that should read `ok` throughout.
+(student mode), 0015 (safety alerts) and 0016 (Case vs Case) — and it ends by
+printing a 34-row checklist that should read `ok` throughout.
 
 `supabase/migrations/` stays the canonical ordered history; that file exists
 only because the hosted project is applied by hand. Every statement in it is
@@ -156,8 +157,6 @@ it is visible on the hosted project until the SQL above is run.
 ### Priority 3 — what's left
 Still unbuilt:
 
-- **Case vs Case (§15)** — the `case_vs_case` post type and badge exist; the
-  side-by-side comparison around them doesn't.
 - **Clinical reasoning trees (§8)** — the largest remaining piece, and the
   least specified. Worth designing before building.
 - **Global Case Exchange (§19)**
@@ -169,7 +168,8 @@ Still unbuilt:
 Explicitly descoped by the owner: AI "Explain This Case" (§13).
 
 Done: Safety Alerts (§17), Things I Wish I Knew (§16), Case → Quiz and My
-Learning (§14), and the admin/moderation half (0009 + 0013).
+Learning (§14), Case vs Case (§15), and the admin/moderation half
+(0009 + 0013).
 
 ### First thing to eyeball after running the SQL
 Every PostgREST read added this session — `getCaseComments`,

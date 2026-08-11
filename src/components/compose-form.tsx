@@ -206,6 +206,45 @@ export function ComposeForm() {
         </div>
       )}
 
+      {typeMeta.usesComparison && (
+        <div className="rounded-xl border border-line bg-surface-2/50 p-4">
+          <p className="font-label mb-1 text-xs uppercase tracking-wide text-muted">
+            The two cases
+          </p>
+          <p className="mb-3 text-xs text-muted">
+            Reference cases already on MEDLNK by their number, so readers can
+            open each one in full. Yours or anyone else&apos;s.
+          </p>
+          <div className="flex flex-col gap-4">
+            {/* Stacked on a phone: two short fields side by side at 360px
+                leaves neither wide enough to read what you typed. */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:gap-3">
+              <div className="min-w-0 flex-1">
+                <TextField
+                  label="First case"
+                  name="compare_left"
+                  placeholder="CASE-0006"
+                  required
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <TextField
+                  label="Second case"
+                  name="compare_right"
+                  placeholder="CASE-0012"
+                  required
+                />
+              </div>
+            </div>
+            <Textarea
+              label="What changes the management?"
+              name="compare_what"
+              required
+            />
+          </div>
+        </div>
+      )}
+
       {typeMeta.usesQuestion && (
         <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
           <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">

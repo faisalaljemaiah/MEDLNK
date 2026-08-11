@@ -26,6 +26,8 @@ export type CaseTypeMeta = {
   usesStagedReveal?: boolean;
   /** Short-form: only the caption is required, full body is optional. */
   shortForm?: boolean;
+  /** Author names two existing cases and what changes the management. */
+  usesComparison?: boolean;
 };
 
 export const CASE_TYPES: CaseTypeMeta[] = [
@@ -105,6 +107,7 @@ export const CASE_TYPES: CaseTypeMeta[] = [
     hint: "Two cases side by side — what changes the management?",
     badge: "Case vs case",
     badgeClass: "border-line bg-surface-2 text-muted",
+    usesComparison: true,
   },
   {
     value: "research_finding",

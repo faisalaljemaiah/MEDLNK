@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
+import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
 import type { CaseType, NearMiss } from "@/lib/database.types";
 
@@ -97,6 +98,40 @@ export async function createCaseAction(
     return { error: "A title and a short caption are required." };
   }
 
+  // Case vs Case names two existing cases by their case number and says what
+  // separates them. Resolved before the insert so a typo'd case number is an
+  // error the author can fix, not a post with half a comparison attached.
+  let comparison: { left: string; right: string; discriminator: string } | null =
+    null;
+  if (typeMeta.usesComparison) {
+    const leftNumber = String(formData.get("compare_left") ?? "").trim();
+    const rightNumber = String(formData.get("compare_right") ?? "").trim();
+    const discriminator = String(formData.get("compare_what") ?? "").trim();
+
+    if (!leftNumber || !rightNumber || !discriminator) {
+      return {
+        error:
+          "Both case numbers and what changes the management are required for this format.",
+      };
+    }
+    if (leftNumber.toUpperCase() === rightNumber.toUpperCase()) {
+      return { error: "Pick two different cases to compare." };
+    }
+
+    const resolved = await resolveCaseNumbers(supabase, [leftNumber, rightNumber]);
+    const left = resolved.get(leftNumber.toUpperCase());
+    const right = resolved.get(rightNumber.toUpperCase());
+    const missing = [
+      left ? null : leftNumber,
+      right ? null : rightNumber,
+    ].filter(Boolean);
+
+    if (missing.length > 0) {
+      return { error: `No case found with number ${missing.join(" or ")}.` };
+    }
+    comparison = { left: left!, right: right!, discriminator };
+  }
+
   const needsFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
   if (
     needsFullBody &&
@@ -121,6 +156,7 @@ export async function createCaseAction(
     ...(near_miss ? Object.values(near_miss) : []),
     questionPrompt,
     ...optionBodies,
+    comparison?.discriminator ?? "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -235,6 +271,26 @@ export async function createCaseAction(
       return {
         error:
           "The case was posted, but its answers could not be saved. Open the case to add them.",
+      };
+    }
+  }
+
+  if (comparison) {
+    const { error: comparisonError } = await supabase
+      .from("case_comparisons")
+      .insert({
+        case_id: inserted.id,
+        left_case_id: comparison.left,
+        right_case_id: comparison.right,
+        discriminator: comparison.discriminator,
+      });
+
+    if (comparisonError) {
+      // The case itself is saved. Say so plainly rather than implying the whole
+      // post was lost, exactly as the question path above does.
+      return {
+        error:
+          "The case was posted, but the two cases it compares could not be linked. Open the case to add them.",
       };
     }
   }

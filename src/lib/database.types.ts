@@ -236,6 +236,18 @@ export type SafetyAlertAck = {
   created_at: string;
 };
 
+/** Case vs Case (0016). Points at two real cases rather than restating them. */
+export type CaseComparison = {
+  id: string;
+  /** The case_vs_case post this belongs to. */
+  case_id: string;
+  left_case_id: string;
+  right_case_id: string;
+  /** What actually changes the management between the two. */
+  discriminator: string;
+  created_at: string;
+};
+
 export type Report = {
   id: string;
   reporter_id: string;
@@ -407,6 +419,17 @@ export type Database = {
         Row: Report;
         Insert: Partial<Report> & { reporter_id: string; reason: ReportReason };
         Update: Partial<Report>;
+        Relationships: [];
+      };
+      case_comparisons: {
+        Row: CaseComparison;
+        Insert: Partial<CaseComparison> & {
+          case_id: string;
+          left_case_id: string;
+          right_case_id: string;
+          discriminator: string;
+        };
+        Update: Partial<CaseComparison>;
         Relationships: [];
       };
       safety_alert_acks: {

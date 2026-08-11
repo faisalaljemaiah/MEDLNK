@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getCaseDetailByCaseNumber } from "@/lib/cases";
 import { getCaseComments } from "@/lib/comments";
+import { getCaseComparison } from "@/lib/comparisons";
 import { getCaseSpecialistThreads } from "@/lib/specialists";
 import { getInteractiveState } from "@/lib/interactive";
 import { getDiveDeepDataAction } from "@/app/actions/recap";
@@ -19,6 +20,7 @@ import { CaseTimeline } from "@/components/case-timeline";
 import { RevealSection } from "@/components/reveal-section";
 import { ReportButton } from "@/components/report-button";
 import { CaseComments } from "@/components/case-comments";
+import { CaseComparison } from "@/components/case-comparison";
 import { SpecialistThreads } from "@/components/specialist-threads";
 
 export default async function CasePage({
@@ -49,6 +51,7 @@ export default async function CasePage({
     comments,
     specialistThreads,
     viewerProfile,
+    comparison,
   ] = await Promise.all([
     getDiveDeepDataAction(feedCase.id),
     getInteractiveState(supabase, feedCase.id, question?.id ?? null, user?.id ?? null),
@@ -58,6 +61,7 @@ export default async function CasePage({
     getCaseComments(supabase, feedCase.id),
     getCaseSpecialistThreads(supabase, feedCase.id),
     getViewerProfile(),
+    getCaseComparison(supabase, feedCase.id),
   ]);
 
   const staged = feedCase.reveal_mode === "staged";
@@ -135,6 +139,8 @@ export default async function CasePage({
           />
         </div>
       )}
+
+      <CaseComparison comparison={comparison} />
 
       {question && (
         <CaseQuestion
