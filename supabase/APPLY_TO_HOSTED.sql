@@ -1,9 +1,11 @@
 -- MEDLNK — everything the hosted project is still missing, in one paste.
 --
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
--- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels)
--- and 0012 (Ask a Specialist) have never been applied to the hosted Supabase
--- project. Until they are, image upload fails with "Bucket not found",
+-- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels),
+-- 0012 (Ask a Specialist) and 0013 (moderation guard) have never been applied
+-- to the hosted Supabase project.
+--
+-- Until they are, image upload fails with "Bucket not found",
 -- /messages shows an empty inbox, every interactive feature (What Would You
 -- Do?, Case Evolution, Follow Case, Blind Cases, Near Miss, notifications)
 -- stays inert, there is no way to report content or suspend a user, the
@@ -954,6 +956,51 @@ grant execute on function public.fan_out_specialist_request(uuid) to authenticat
 grant execute on function public.fan_out_specialist_answer(uuid) to authenticated;
 
 -- ============================================================================
+-- 0013_moderation_status_guard.sql — a takedown the author cannot reverse
+-- ============================================================================
+-- 0009 made removed content invisible but left the author able to write the
+-- column back: cases_update_own / comments_update_own (0004) grant UPDATE on
+-- the row, and RLS is row-level, so an author could set moderation_status back
+-- to 'visible' on their own removed case.
+--
+-- Column privileges fixed the equivalent problem for case_options.is_correct in
+-- 0008, but they can't fix this one: admins connect as the same `authenticated`
+-- role as everyone else, so revoking the column would lock moderators out. A
+-- trigger sees both the old and the new row, which is what "this column may not
+-- change unless you are an admin" needs and what WITH CHECK cannot express.
+
+create or replace function public.guard_moderation_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.moderation_status is distinct from old.moderation_status
+     and not public.is_admin() then
+    raise exception 'Only a moderator can change moderation status';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists cases_guard_moderation_status on public.cases;
+create trigger cases_guard_moderation_status
+  before update on public.cases
+  for each row execute function public.guard_moderation_status();
+
+drop trigger if exists comments_guard_moderation_status on public.comments;
+create trigger comments_guard_moderation_status
+  before update on public.comments
+  for each row execute function public.guard_moderation_status();
+
+drop trigger if exists specialist_answers_guard_moderation_status
+  on public.specialist_answers;
+create trigger specialist_answers_guard_moderation_status
+  before update on public.specialist_answers
+  for each row execute function public.guard_moderation_status();
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1049,5 +1096,14 @@ from (
     ('function: fan_out_specialist_request',
      to_regprocedure('public.fan_out_specialist_request(uuid)') is not null),
     ('function: fan_out_specialist_answer',
-     to_regprocedure('public.fan_out_specialist_answer(uuid)') is not null)
+     to_regprocedure('public.fan_out_specialist_answer(uuid)') is not null),
+    -- Without this trigger an author can reverse their own takedown, so it is
+    -- checked by name rather than assumed to have come along with the rest.
+    ('takedowns are author-proof',
+     (select count(*) from pg_trigger
+      where tgname in (
+        'cases_guard_moderation_status',
+        'comments_guard_moderation_status',
+        'specialist_answers_guard_moderation_status'
+      ) and not tgisinternal) = 3)
 ) as checks(item, present);
