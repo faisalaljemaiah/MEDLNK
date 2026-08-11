@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
-import { getViewer } from "@/lib/auth";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getCaseDetailByCaseNumber } from "@/lib/cases";
 import { getCaseComments } from "@/lib/comments";
+import { getCaseSpecialistThreads } from "@/lib/specialists";
 import { getInteractiveState } from "@/lib/interactive";
 import { getDiveDeepDataAction } from "@/app/actions/recap";
 import { getRevealIfAnswered } from "@/app/actions/interactive";
@@ -17,6 +18,7 @@ import { CaseTimeline } from "@/components/case-timeline";
 import { RevealSection } from "@/components/reveal-section";
 import { ReportButton } from "@/components/report-button";
 import { CaseComments } from "@/components/case-comments";
+import { SpecialistThreads } from "@/components/specialist-threads";
 
 export default async function CasePage({
   params,
@@ -39,15 +41,23 @@ export default async function CasePage({
   const typeMeta = caseTypeMeta(feedCase.case_type);
   const isAuthor = user?.id === feedCase.author_id;
 
-  const [{ recapSummary, similar }, interactive, reveal, comments] =
-    await Promise.all([
-      getDiveDeepDataAction(feedCase.id),
-      getInteractiveState(supabase, feedCase.id, question?.id ?? null, user?.id ?? null),
-      // Null unless this reader has already answered, so a page render can never
-      // be what leaks the author's write-up.
-      question ? getRevealIfAnswered(question.id, user?.id ?? null) : Promise.resolve(null),
-      getCaseComments(supabase, feedCase.id),
-    ]);
+  const [
+    { recapSummary, similar },
+    interactive,
+    reveal,
+    comments,
+    specialistThreads,
+    viewerProfile,
+  ] = await Promise.all([
+    getDiveDeepDataAction(feedCase.id),
+    getInteractiveState(supabase, feedCase.id, question?.id ?? null, user?.id ?? null),
+    // Null unless this reader has already answered, so a page render can never
+    // be what leaks the author's write-up.
+    question ? getRevealIfAnswered(question.id, user?.id ?? null) : Promise.resolve(null),
+    getCaseComments(supabase, feedCase.id),
+    getCaseSpecialistThreads(supabase, feedCase.id),
+    getViewerProfile(),
+  ]);
 
   const staged = feedCase.reveal_mode === "staged";
 
@@ -208,6 +218,16 @@ export default async function CasePage({
           commentsHref="#comments"
         />
       </div>
+
+      <SpecialistThreads
+        caseId={feedCase.id}
+        caseSpecialty={feedCase.specialty}
+        path={path}
+        threads={specialistThreads}
+        viewerId={user?.id ?? null}
+        viewerSpecialty={viewerProfile?.specialty ?? null}
+        canAsk={Boolean(viewerProfile?.verified)}
+      />
 
       <CaseComments
         caseId={feedCase.id}

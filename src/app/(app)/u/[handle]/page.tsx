@@ -99,6 +99,9 @@ export default async function ProfilePage({
               <Link href="/messages" className="hover:text-text">
                 Messages
               </Link>
+              <Link href="/consults" className="hover:text-text">
+                Consults
+              </Link>
               {profile.is_admin && (
                 <Link href="/admin" className="hover:text-text">
                   Admin

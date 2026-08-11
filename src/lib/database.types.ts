@@ -194,6 +194,34 @@ export type Comment = {
   created_at: string;
 };
 
+/** Ask a Specialist (0012). */
+/**
+ * Two states by design — see 0012. "Has answers" is a fact about the answers
+ * table, not a status the answering specialist could write (they don't own the
+ * request row, so the update would no-op under RLS).
+ */
+export type SpecialistRequestStatus = "open" | "closed";
+
+export type SpecialistRequest = {
+  id: string;
+  case_id: string;
+  requester_id: string;
+  /** Free text, matched case- and whitespace-insensitively against profiles.specialty. */
+  specialty: string;
+  question: string;
+  status: SpecialistRequestStatus;
+  created_at: string;
+};
+
+export type SpecialistAnswer = {
+  id: string;
+  request_id: string;
+  responder_id: string;
+  body: string;
+  moderation_status: ModerationStatus;
+  created_at: string;
+};
+
 export type Report = {
   id: string;
   reporter_id: string;
@@ -367,6 +395,27 @@ export type Database = {
         Update: Partial<Report>;
         Relationships: [];
       };
+      specialist_requests: {
+        Row: SpecialistRequest;
+        Insert: Partial<SpecialistRequest> & {
+          case_id: string;
+          requester_id: string;
+          specialty: string;
+          question: string;
+        };
+        Update: Partial<SpecialistRequest>;
+        Relationships: [];
+      };
+      specialist_answers: {
+        Row: SpecialistAnswer;
+        Insert: Partial<SpecialistAnswer> & {
+          request_id: string;
+          responder_id: string;
+          body: string;
+        };
+        Update: Partial<SpecialistAnswer>;
+        Relationships: [];
+      };
       moderation_events: {
         Row: ModerationEvent;
         Insert: Partial<ModerationEvent> & {
@@ -403,6 +452,21 @@ export type Database = {
       /** Notifies a case's followers. Security definer — clients can't insert. */
       fan_out_case_update: {
         Args: { p_case_id: string; p_type: string; p_body: string };
+        Returns: undefined;
+      };
+      /** True when the caller is a verified, unsuspended member of that specialty. */
+      is_specialist_in: {
+        Args: { p_specialty: string };
+        Returns: boolean;
+      };
+      /** Notifies that specialty a question is waiting. Security definer. */
+      fan_out_specialist_request: {
+        Args: { p_request_id: string };
+        Returns: undefined;
+      };
+      /** Notifies the requester and the case's followers. Security definer. */
+      fan_out_specialist_answer: {
+        Args: { p_request_id: string };
         Returns: undefined;
       };
     };
