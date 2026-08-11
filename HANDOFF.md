@@ -57,6 +57,12 @@ All on branch `claude/medlnk-e2e-testing-i0vawy`, PR #4.
   - Profile contribution stats (§12) and advanced search filters (§20)
   - Ask a Specialist (§10), with `/consults` as the specialty queue
   - Student Mode + Learn (§11, §26)
+- **Priority 3, in progress**:
+  - Safety Alerts (§17) — platform-wide broadcast, banner, acknowledgement
+  - Things I Wish I Knew (§16) — feed chip
+  - Case → Quiz and My Learning (§14) — `/learn/quiz`, per-specialty record
+  - Uploaded images now render on feed cards and the case page, not only in
+    the reel
 
 ## ⚠️ Blocking manual steps
 
@@ -71,9 +77,9 @@ One paste, one Run. It is a re-runnable union of every migration the hosted
 project is missing — 0005 (the `case-images` bucket; without it image upload
 fails with "Bucket not found"), 0007 (DM tables), 0008 (everything
 interactive), 0009 (reports/moderation), 0010 (clinical reactions), 0011
-(comment labels), 0012 (Ask a Specialist), 0013 (moderation guard) and 0014
-(student mode) — and it ends by printing a 31-row checklist that should read
-`ok` throughout.
+(comment labels), 0012 (Ask a Specialist), 0013 (moderation guard), 0014
+(student mode) and 0015 (safety alerts) — and it ends by printing a 33-row
+checklist that should read `ok` throughout.
 
 `supabase/migrations/` stays the canonical ordered history; that file exists
 only because the hosted project is applied by hand. Every statement in it is
@@ -147,15 +153,23 @@ Supabase edge. Worth rebuilding if you're doing more schema work.
 Priorities 1 and 2 are complete, as is the reporting/moderation work. None of
 it is visible on the hosted project until the SQL above is run.
 
-### Priority 3 — the whole of what's left
-Case → Quiz and My Learning · AI "Explain This Case" · clinical reasoning trees
-· Case vs Case · Global Case Exchange · Safety Alerts · reputation ·
-Things I Wish I Knew · analytics.
+### Priority 3 — what's left
+Still unbuilt:
 
-`/learn` is the obvious place for Case → Quiz and My Learning to land — it
-already holds the practise queue and the attempt record, and `getLearnData`
-already does the set difference those would build on. The admin/moderation
-half of Priority 3 is done (0009 + 0013).
+- **Case vs Case (§15)** — the `case_vs_case` post type and badge exist; the
+  side-by-side comparison around them doesn't.
+- **Clinical reasoning trees (§8)** — the largest remaining piece, and the
+  least specified. Worth designing before building.
+- **Global Case Exchange (§19)**
+- **Reputation (§18)** — note that profile stats (§12) deliberately avoid a
+  single score, for the reasons in `ProfileStats`. Reputation should be
+  designed with that in mind rather than against it.
+- **Analytics (§30)**
+
+Explicitly descoped by the owner: AI "Explain This Case" (§13).
+
+Done: Safety Alerts (§17), Things I Wish I Knew (§16), Case → Quiz and My
+Learning (§14), and the admin/moderation half (0009 + 0013).
 
 ### First thing to eyeball after running the SQL
 Every PostgREST read added this session — `getCaseComments`,
@@ -174,8 +188,6 @@ later session confirmed both against a local PostgREST instance, so those two
 are known good.
 
 ### Known gaps worth flagging
-- `media_url` is only rendered in the reel. Feed cards and the case page ignore
-  uploaded images entirely.
 - Search and the feed still fetch every case and filter in JS. Correct at MVP
   scale, and every place that does it says where the tradeoff expires, but
   they all expire at the same moment and it will need doing in one go.

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
@@ -118,6 +119,22 @@ export default async function CasePage({
       <p className="mt-4 text-sm leading-relaxed text-text">
         {feedCase.short_caption}
       </p>
+
+      {feedCase.media_url && (
+        // Empty alt: the caption above carries the meaning, and a clinical
+        // image has no useful text equivalent a poster could be relied on to
+        // write. It sits above the body so the reader has seen the image before
+        // the presentation refers to it.
+        <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2">
+          <Image
+            src={feedCase.media_url}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="object-contain"
+          />
+        </div>
+      )}
 
       {question && (
         <CaseQuestion

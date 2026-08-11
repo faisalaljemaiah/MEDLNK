@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { clsx } from "clsx";
 import { ReactionBar } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
@@ -64,6 +65,25 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
       <p className="mt-1 text-sm leading-relaxed text-muted">
         {feedCase.short_caption}
       </p>
+
+      {feedCase.media_url && (
+        // Fixed aspect box rather than intrinsic sizing: case photos are
+        // arbitrary, and letting one set its own height makes the feed jump as
+        // images load. Empty alt — the caption above already carries the
+        // meaning, so announcing the file again is noise to a screen reader.
+        <Link
+          href={caseHref}
+          className="relative mt-3 block aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2"
+        >
+          <Image
+            src={feedCase.media_url}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="object-cover"
+          />
+        </Link>
+      )}
 
       {feedCase.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
