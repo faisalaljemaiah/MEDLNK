@@ -25,6 +25,7 @@ export function CaseQuestion({
   initialReveal,
   path,
   signedIn,
+  onAnswered,
 }: {
   question: CaseQuestionView;
   initialAttempt: ViewerAttempt | null;
@@ -33,6 +34,11 @@ export function CaseQuestion({
   initialReveal: QuestionReveal | null;
   path: string;
   signedIn: boolean;
+  /**
+   * Fires once an answer has been recorded. Used by the quiz runner to keep a
+   * running score; the case page doesn't pass it.
+   */
+  onAnswered?: (isCorrect: boolean) => void;
 }) {
   const [attempt, setAttempt] = useState<ViewerAttempt | null>(initialAttempt);
   const [reveal, setReveal] = useState<QuestionReveal | null>(initialReveal);
@@ -54,6 +60,8 @@ export function CaseQuestion({
       }
       setAttempt({ optionId, isCorrect: result.isCorrect });
       setReveal(result.reveal);
+      // Only on a first answer: a revision shouldn't score twice.
+      if (!attempt) onAnswered?.(result.isCorrect);
       // Reflect this answer locally so the bars move immediately; the
       // revalidate behind the action reconciles the real counts.
       setDistribution((prev) => {
