@@ -44,9 +44,11 @@ Supabase with Row Level Security. There is no mock data layer.
 - **Admin verification queue**: `/admin` (admin-only) lists pending sign-ups
   with Approve/Reject buttons — no automated license checking, you review
   manually
-- **AI Edge Functions**: `generate-recap` (auto-summary + cache) and
-  `scan-identifiers` (patient-privacy nudge before posting) — Claude is
-  never called from the browser, and the app works fine if AI is down
+- **AI Edge Functions**: `generate-recap` (auto-summary + cache),
+  `scan-identifiers` (patient-privacy nudge before posting) and
+  `polish-text` (spelling/grammar/clarity suggestions in the composer) —
+  Claude is never called from the browser, and the app works fine if AI is
+  down
 
 **Deliberately not built yet** (data model leaves room, per the brief):
 video/live cases, a native app, payments.
@@ -67,7 +69,7 @@ src/
     cases.ts            feed/case data-fetching helpers
 supabase/
   migrations/           schema + RLS, run in order
-  functions/            Edge Functions (generate-recap, scan-identifiers)
+  functions/            Edge Functions (generate-recap, scan-identifiers, polish-text)
 scripts/
   seed.ts               seeds ~6 realistic sample cases + verified authors
 ```
@@ -163,6 +165,7 @@ yourself.
 ```bash
 supabase functions deploy generate-recap
 supabase functions deploy scan-identifiers
+supabase functions deploy polish-text
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 ```
 
@@ -187,7 +190,9 @@ is only ever called from these functions, never from the browser.
   quality needs improving.
 - **AI call frequency**: one `generate-recap` call per case posted (cached
   in `ai_recaps` permanently — never re-called for the same case) and one
-  `scan-identifiers` call per compose submission attempt.
+  `scan-identifiers` call per compose submission attempt, and one
+  `polish-text` call each time an author asks the composer to check their
+  writing (user-initiated, so it scales with intent rather than traffic).
 - **Reaction/comment counts**: computed by fetching all reaction/comment
   rows for the visible cases and aggregating in JS (`src/lib/cases.ts`).
   Fine at MVP scale; once reaction volume grows, replace with a Postgres

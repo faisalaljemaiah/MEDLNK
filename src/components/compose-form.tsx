@@ -1,9 +1,29 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { createCaseAction } from "@/app/actions/case";
+import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+
+/** Free-text fields worth copy-editing — specialty and tags are controlled vocabulary. */
+const POLISH_FIELDS = [
+  "title",
+  "short_caption",
+  "presentation",
+  "tricky",
+  "actions",
+  "lesson",
+] as const;
+
+const FIELD_LABELS: Record<string, string> = {
+  title: "Title",
+  short_caption: "Short caption",
+  presentation: "Presentation",
+  tricky: "What was tricky",
+  actions: "What we did",
+  lesson: "The lesson",
+};
 
 function Textarea({
   label,
@@ -31,8 +51,61 @@ export function ComposeForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const acknowledgeRef = useRef<HTMLInputElement>(null);
 
+  const [suggestions, setSuggestions] = useState<PolishedField[]>([]);
+  const [polishNote, setPolishNote] = useState<string | null>(null);
+  const [isPolishing, startPolish] = useTransition();
+
   const warning = state && "warning" in state ? state.warning : null;
   const error = state && "error" in state ? state.error : null;
+
+  function fieldElement(name: string) {
+    return formRef.current?.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | null;
+  }
+
+  function handlePolish() {
+    const form = formRef.current;
+    if (!form) return;
+
+    const data = new FormData(form);
+    const fields: Record<string, string> = {};
+    for (const name of POLISH_FIELDS) {
+      const value = String(data.get(name) ?? "");
+      if (value.trim()) fields[name] = value;
+    }
+
+    setSuggestions([]);
+    setPolishNote(null);
+
+    if (Object.keys(fields).length === 0) {
+      setPolishNote("Write something first and I'll tidy it up.");
+      return;
+    }
+
+    startPolish(async () => {
+      const result = await polishDraftAction(fields);
+      setSuggestions(result.suggestions);
+      setPolishNote(result.message ?? null);
+    });
+  }
+
+  function acceptOne(field: string) {
+    const suggestion = suggestions.find((s) => s.field === field);
+    if (!suggestion) return;
+    const el = fieldElement(field);
+    if (el) el.value = suggestion.after;
+    setSuggestions((prev) => prev.filter((s) => s.field !== field));
+  }
+
+  function acceptAll() {
+    for (const suggestion of suggestions) {
+      const el = fieldElement(suggestion.field);
+      if (el) el.value = suggestion.after;
+    }
+    setSuggestions([]);
+  }
 
   return (
     <form ref={formRef} action={action} className="flex flex-col gap-5">
@@ -81,6 +154,93 @@ export function ComposeForm() {
           className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
         />
       </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handlePolish}
+            disabled={isPolishing}
+            className="rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
+          >
+            {isPolishing ? "Checking…" : "✨ Check spelling & clarity"}
+          </button>
+          <p className="text-xs text-muted">
+            Suggests wording only — you approve every change.
+          </p>
+        </div>
+        {polishNote && <p className="text-xs text-muted">{polishNote}</p>}
+      </div>
+
+      {suggestions.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-text">
+              {suggestions.length} suggested{" "}
+              {suggestions.length === 1 ? "edit" : "edits"}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={acceptAll}
+                className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white"
+              >
+                Use all
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestions([])}
+                className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+
+          {suggestions.map((s) => (
+            <div
+              key={s.field}
+              className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface p-3"
+            >
+              <p className="font-label text-xs uppercase tracking-wide text-muted">
+                {FIELD_LABELS[s.field] ?? s.field}
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-muted line-through decoration-danger/40">
+                {s.before}
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-text">{s.after}</p>
+
+              {s.numbersChanged && (
+                <p className="text-xs text-warning">
+                  ⚠ A number changed in this edit — check any dose or value
+                  before using it.
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => acceptOne(s.field)}
+                  className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent"
+                >
+                  Use this
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSuggestions((prev) =>
+                      prev.filter((p) => p.field !== s.field),
+                    )
+                  }
+                  className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted"
+                >
+                  Keep mine
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && (
         <p className="text-sm text-danger" role="alert">
