@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { clsx } from "clsx";
 import { ReactionBar } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
+import { caseTypeMeta } from "@/lib/case-types";
 import type { FeedCase } from "@/lib/cases";
 
 export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string }) {
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
+  const typeMeta = caseTypeMeta(feedCase.case_type);
 
   return (
     <article
@@ -37,8 +40,24 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </p>
       </div>
 
+      {typeMeta.badge && (
+        <span
+          className={clsx(
+            "mt-3 inline-block rounded-full border px-2.5 py-0.5 font-label text-xs",
+            typeMeta.badgeClass,
+          )}
+        >
+          {typeMeta.badge}
+        </span>
+      )}
+
       <Link href={caseHref}>
-        <h3 className="mt-3 font-headline text-lg text-text hover:underline">
+        <h3
+          className={clsx(
+            "font-headline text-lg text-text hover:underline",
+            typeMeta.badge ? "mt-2 block" : "mt-3 block",
+          )}
+        >
           {feedCase.title}
         </h3>
       </Link>

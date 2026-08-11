@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
+import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
+import type { CaseType, NearMiss } from "@/lib/database.types";
 
 export type ComposeFormState =
   | { error: string }
@@ -49,23 +51,78 @@ export async function createCaseAction(
   const image = formData.get("image");
   const acknowledgeWarning = formData.get("acknowledge_warning") === "true";
 
+  // Post type decides which fields are required and which payloads are built.
+  // caseTypeMeta falls back to the standard format, so an unknown value from a
+  // tampered form degrades to a plain clinical case rather than erroring.
+  const rawType = String(formData.get("case_type") ?? "clinical_case");
+  const typeMeta = caseTypeMeta(rawType);
+  const case_type = typeMeta.value as CaseType;
+
+  let near_miss: NearMiss | null = null;
+  if (typeMeta.usesNearMiss) {
+    const entries = NEAR_MISS_PROMPTS.map(
+      (p) => [p.name, String(formData.get(`near_miss_${p.name}`) ?? "").trim()] as const,
+    );
+    if (entries.some(([, value]) => !value)) {
+      return { error: "Every patient-safety prompt needs an answer." };
+    }
+    near_miss = Object.fromEntries(entries) as unknown as NearMiss;
+  }
+
+  const questionPrompt = String(formData.get("question_prompt") ?? "").trim();
+  const optionBodies = [0, 1, 2, 3].map((i) =>
+    String(formData.get(`option_${i}`) ?? "").trim(),
+  );
+  const correctIndex = Number(formData.get("correct_option") ?? -1);
+
+  if (typeMeta.usesQuestion) {
+    const filled = optionBodies.filter(Boolean);
+    if (!questionPrompt) {
+      return { error: "An interactive case needs a question." };
+    }
+    if (filled.length < 2) {
+      return { error: "Give readers at least two answers to choose between." };
+    }
+    if (!Number.isInteger(correctIndex) || !optionBodies[correctIndex]) {
+      return { error: "Mark which answer is correct." };
+    }
+  }
+
+  // Every format needs a headline and a caption; only the long-form clinical
+  // formats require the full structured body. Short-form posts ("I saw this
+  // today") and the safety formats carry their content elsewhere, and demanding
+  // a four-part write-up would defeat the point of them.
+  if (!title || !short_caption) {
+    return { error: "A title and a short caption are required." };
+  }
+
+  const needsFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
   if (
-    !title ||
-    !short_caption ||
-    !presentation ||
-    !tricky ||
-    actions.length === 0 ||
-    !lesson
+    needsFullBody &&
+    (!presentation || !tricky || actions.length === 0 || !lesson)
   ) {
     return {
       error:
-        "Title, caption, presentation, what was tricky, at least one action, and the lesson are all required.",
+        "Presentation, what was tricky, at least one action, and the lesson are all required for this format.",
     };
   }
 
-  const combinedText = [title, short_caption, presentation, tricky, ...actions, lesson].join(
-    "\n",
-  );
+  // Everything a reader could see goes through the identifier scan, not just
+  // the standard body — a Near Miss prompt or an answer option is exactly as
+  // capable of naming a patient.
+  const combinedText = [
+    title,
+    short_caption,
+    presentation,
+    tricky,
+    ...actions,
+    lesson,
+    ...(near_miss ? Object.values(near_miss) : []),
+    questionPrompt,
+    ...optionBodies,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   // Best-effort patient-identifier check (calls the Edge Function, which
   // calls Claude). Never blocks posting if the AI is unavailable — privacy
@@ -95,27 +152,90 @@ export async function createCaseAction(
     media_url = publicUrl.publicUrl;
   }
 
-  const { data: inserted, error } = await supabase
+  const baseRow = {
+    author_id: user.id,
+    title,
+    short_caption,
+    full_body: { presentation, tricky, actions, lesson },
+    tags,
+    specialty: specialty || null,
+    media_url,
+  };
+
+  let { data: inserted, error } = await supabase
     .from("cases")
     .insert({
-      author_id: user.id,
-      title,
-      short_caption,
-      full_body: { presentation, tricky, actions, lesson },
-      tags,
-      specialty: specialty || null,
-      media_url,
+      ...baseRow,
+      case_type,
+      near_miss,
+      reveal_mode: typeMeta.usesStagedReveal ? "staged" : "none",
     })
     .select("id")
     .single();
 
-  if (error) {
-    if (error.code === "42501") {
+  // 42703 = undefined_column: 0008 hasn't been applied to this project yet.
+  // Posting a plain case worked before that migration existed and must keep
+  // working, so retry without the new columns rather than failing the author.
+  if (error?.code === "42703") {
+    ({ data: inserted, error } = await supabase
+      .from("cases")
+      .insert(baseRow)
+      .select("id")
+      .single());
+  }
+
+  if (error || !inserted) {
+    if (error?.code === "42501") {
       return {
         error: "Only verified members can post cases — finish verification first.",
       };
     }
-    return { error: error.message };
+    return { error: error?.message ?? "Could not save the case." };
+  }
+
+  if (typeMeta.usesQuestion) {
+    const { data: question, error: questionError } = await supabase
+      .from("case_questions")
+      .insert({
+        case_id: inserted.id,
+        prompt: questionPrompt,
+        explanation: String(formData.get("question_explanation") ?? "").trim() || null,
+        reasoning: String(formData.get("question_reasoning") ?? "").trim() || null,
+        evidence: String(formData.get("question_evidence") ?? "").trim() || null,
+        allow_change: formData.get("allow_change") === "on",
+      })
+      .select("id")
+      .single();
+
+    if (questionError || !question) {
+      // The case itself is saved. Say so plainly rather than implying the whole
+      // post was lost — the author can add the question from the case page.
+      return {
+        error:
+          "The case was posted, but its question could not be saved. Open the case to add it.",
+      };
+    }
+
+    const options = optionBodies
+      .map((body, position) => ({ body, position }))
+      .filter((o) => o.body)
+      .map((o) => ({
+        question_id: question.id,
+        body: o.body,
+        position: o.position,
+        is_correct: o.position === correctIndex,
+      }));
+
+    const { error: optionsError } = await supabase
+      .from("case_options")
+      .insert(options);
+
+    if (optionsError) {
+      return {
+        error:
+          "The case was posted, but its answers could not be saved. Open the case to add them.",
+      };
+    }
   }
 
   await triggerRecapAction(inserted.id);

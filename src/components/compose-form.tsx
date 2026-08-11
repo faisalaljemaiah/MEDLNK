@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
+import { clsx } from "clsx";
 import { createCaseAction } from "@/app/actions/case";
 import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
+import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -54,6 +56,10 @@ export function ComposeForm() {
   const [suggestions, setSuggestions] = useState<PolishedField[]>([]);
   const [polishNote, setPolishNote] = useState<string | null>(null);
   const [isPolishing, startPolish] = useTransition();
+  const [caseType, setCaseType] = useState<string>("clinical_case");
+
+  const typeMeta = caseTypeMeta(caseType);
+  const showFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
 
   const warning = state && "warning" in state ? state.warning : null;
   const error = state && "error" in state ? state.error : null;
@@ -111,30 +117,152 @@ export function ComposeForm() {
     <form ref={formRef} action={action} className="flex flex-col gap-5">
       <input type="hidden" name="acknowledge_warning" ref={acknowledgeRef} defaultValue="false" />
 
+      <input type="hidden" name="case_type" value={caseType} />
+
+      <div className="flex flex-col gap-1.5">
+        <span className="font-label text-xs uppercase tracking-wide text-muted">
+          Post type
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {CASE_TYPES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setCaseType(t.value)}
+              aria-pressed={caseType === t.value}
+              className={clsx(
+                "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
+                caseType === t.value
+                  ? "border-accent bg-accent/10 font-medium text-accent"
+                  : "border-line text-muted hover:text-text",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-muted">{typeMeta.hint}</p>
+      </div>
+
+      <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
+        <span className="font-medium text-text">Keep it de-identified.</span> No
+        patient names, medical record numbers, exact dates of birth, addresses,
+        phone numbers, or photographs that could identify someone. Post cases as
+        educational discussion — not advice about a specific patient.
+      </p>
+
       <TextField label="Title" name="title" placeholder="Hydralazine, meet hydroxyzine" required />
       <Textarea
-        label="Short caption"
+        label={typeMeta.shortForm ? "What happened?" : "Short caption"}
         name="short_caption"
-        placeholder="One or two sentences that hook a reader in the feed."
+        placeholder={
+          typeMeta.shortForm
+            ? "A sentence or two — what you saw and why it stuck with you."
+            : "One or two sentences that hook a reader in the feed."
+        }
         required
       />
 
-      <div className="rounded-xl border border-line bg-surface-2/40 p-4">
-        <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
-          Full case
-        </p>
-        <div className="flex flex-col gap-4">
-          <Textarea label="Presentation" name="presentation" required />
-          <Textarea label="What was tricky" name="tricky" required />
-          <Textarea
-            label="What we did (one action per line)"
-            name="actions"
-            placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
-            required
-          />
-          <Textarea label="The lesson" name="lesson" required />
+      {showFullBody && (
+        <div className="rounded-xl border border-line bg-surface-2/40 p-4">
+          <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
+            Full case
+          </p>
+          <div className="flex flex-col gap-4">
+            <Textarea label="Presentation" name="presentation" required />
+            <Textarea label="What was tricky" name="tricky" required />
+            <Textarea
+              label="What we did (one action per line)"
+              name="actions"
+              placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
+              required
+            />
+            <Textarea
+              label={
+                typeMeta.usesStagedReveal ? "The lesson (hidden until reveal)" : "The lesson"
+              }
+              name="lesson"
+              required
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {typeMeta.usesNearMiss && (
+        <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
+          <p className="font-label mb-3 text-xs uppercase tracking-wide text-warning">
+            Patient safety
+          </p>
+          <div className="flex flex-col gap-4">
+            {NEAR_MISS_PROMPTS.map((prompt) => (
+              <Textarea
+                key={prompt.name}
+                label={prompt.label}
+                name={`near_miss_${prompt.name}`}
+                required
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {typeMeta.usesQuestion && (
+        <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
+          <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
+            The question
+          </p>
+          <div className="flex flex-col gap-4">
+            <Textarea
+              label="What are you asking?"
+              name="question_prompt"
+              placeholder="What would you do?"
+              required
+            />
+
+            <div className="flex flex-col gap-2">
+              <span className="font-label text-xs uppercase tracking-wide text-muted">
+                Answers — select the correct one
+              </span>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="correct_option"
+                    value={i}
+                    aria-label={`Mark answer ${String.fromCharCode(65 + i)} correct`}
+                    className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                  />
+                  <span className="font-label w-4 shrink-0 text-xs text-muted">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  <input
+                    type="text"
+                    name={`option_${i}`}
+                    placeholder={i < 2 ? "Required" : "Optional"}
+                    className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <Textarea
+              label="Explanation (shown after they answer)"
+              name="question_explanation"
+            />
+            <Textarea label="Clinical reasoning" name="question_reasoning" />
+            <Textarea label="References / evidence" name="question_evidence" />
+
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input
+                type="checkbox"
+                name="allow_change"
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              Let readers change their answer after seeing the results
+            </label>
+          </div>
+        </div>
+      )}
 
       <TextField label="Specialty" name="specialty" placeholder="Internal Medicine" />
       <TextField label="Tags (comma separated)" name="tags" placeholder="LASA, medication-error" />

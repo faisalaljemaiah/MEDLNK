@@ -93,6 +93,101 @@ export async function getCaseById(
   return toFeedCase(data as unknown as FeedRow, viewerId);
 }
 
+/**
+ * Deliberately excludes explanation / reasoning / evidence.
+ *
+ * This object is handed to a Client Component, and everything in it is
+ * serialised into the page the browser downloads — so carrying the author's
+ * write-up here would publish it to readers who haven't answered, no matter
+ * what the UI chooses to render. It is fetched separately, gated on an
+ * existing attempt: see getRevealIfAnswered / submitAnswerAction.
+ */
+export type CaseQuestionView = {
+  id: string;
+  prompt: string;
+  allow_change: boolean;
+  options: { id: string; body: string; position: number }[];
+};
+
+/**
+ * Detail select = the feed select plus the interactive question.
+ *
+ * The option columns are listed explicitly and `is_correct` is absent on
+ * purpose: the anon/authenticated roles have no privilege on that column
+ * (0008), so `case_options(*)` would fail outright. Correctness is only ever
+ * returned by the submit_case_answer RPC, after an attempt is recorded.
+ */
+const CASE_DETAIL_SELECT =
+  FEED_SELECT +
+  ",case_questions(id,prompt,allow_change,case_options(id,body,position))";
+
+type EmbeddedQuestion = Omit<CaseQuestionView, "options"> & {
+  case_options: { id: string; body: string; position: number }[] | null;
+};
+
+/**
+ * PostgREST decides an embed's shape from the constraints it finds: because
+ * case_questions has `unique (case_id)` it reads as to-one and arrives as a
+ * bare object, where a plain foreign key would arrive as an array. Accept both
+ * — the shape flips if that constraint is ever lifted for multi-step stems.
+ */
+type DetailRow = FeedRow & {
+  case_questions: EmbeddedQuestion | EmbeddedQuestion[] | null;
+};
+
+export type CaseDetail = {
+  feedCase: FeedCase;
+  question: CaseQuestionView | null;
+};
+
+export async function getCaseDetailByCaseNumber(
+  supabase: Client,
+  caseNumber: string,
+  viewerId: string | null,
+): Promise<CaseDetail | null> {
+  const { data, error } = await supabase
+    .from("cases")
+    .select(CASE_DETAIL_SELECT)
+    .eq("case_number", caseNumber)
+    .maybeSingle();
+
+  // 0008 has to be applied by hand on the hosted project. Until it is, the
+  // case_questions embed makes PostgREST reject the whole query (PGRST200),
+  // which would take the case page down with it. Fall back to the plain case
+  // so the clinical content still renders; interactive features simply stay
+  // absent until the migration runs.
+  if (error) {
+    const feedCase = await getCaseByCaseNumber(supabase, caseNumber, viewerId);
+    return feedCase ? { feedCase, question: null } : null;
+  }
+
+  if (!data) return null;
+  const row = data as unknown as DetailRow;
+
+  const embedded = row.case_questions;
+  const rawQuestion: EmbeddedQuestion | null = Array.isArray(embedded)
+    ? (embedded[0] ?? null)
+    : (embedded ?? null);
+  const question: CaseQuestionView | null = rawQuestion
+    ? {
+        id: rawQuestion.id,
+        prompt: rawQuestion.prompt,
+        allow_change: rawQuestion.allow_change,
+        options: [...(rawQuestion.case_options ?? [])].sort(
+          (a, b) => a.position - b.position,
+        ),
+      }
+    : null;
+
+  const withoutQuestion = { ...row } as Partial<DetailRow>;
+  delete withoutQuestion.case_questions;
+
+  return {
+    feedCase: toFeedCase(withoutQuestion as FeedRow, viewerId),
+    question,
+  };
+}
+
 export async function getCaseByCaseNumber(
   supabase: Client,
   caseNumber: string,
