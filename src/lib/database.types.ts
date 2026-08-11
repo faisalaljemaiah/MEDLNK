@@ -224,6 +224,18 @@ export type SpecialistAnswer = {
   created_at: string;
 };
 
+/**
+ * A reader has seen a safety alert (0015).
+ *
+ * Not a reaction: a reaction says what you thought of a case, this says "this
+ * is no longer news to me" and is what takes the alert off your banner.
+ */
+export type SafetyAlertAck = {
+  case_id: string;
+  user_id: string;
+  created_at: string;
+};
+
 export type Report = {
   id: string;
   reporter_id: string;
@@ -397,6 +409,12 @@ export type Database = {
         Update: Partial<Report>;
         Relationships: [];
       };
+      safety_alert_acks: {
+        Row: SafetyAlertAck;
+        Insert: Partial<SafetyAlertAck> & { case_id: string; user_id: string };
+        Update: Partial<SafetyAlertAck>;
+        Relationships: [];
+      };
       specialist_requests: {
         Row: SpecialistRequest;
         Insert: Partial<SpecialistRequest> & {
@@ -469,6 +487,14 @@ export type Database = {
       /** Notifies the requester and the case's followers. Security definer. */
       fan_out_specialist_answer: {
         Args: { p_request_id: string };
+        Returns: undefined;
+      };
+      /**
+       * The one deliberately platform-wide fan-out. Refuses to fire for a post
+       * that isn't a safety alert, or for anyone but its author.
+       */
+      fan_out_safety_alert: {
+        Args: { p_case_id: string };
         Returns: undefined;
       };
     };

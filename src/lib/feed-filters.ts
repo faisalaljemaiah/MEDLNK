@@ -39,6 +39,13 @@ export const FEED_FILTERS: FeedFilter[] = [
     empty: "No cases to answer yet.",
   },
   {
+    key: "wish_i_knew",
+    label: "Wish I knew",
+    caseTypes: ["things_i_wish_i_knew"],
+    empty:
+      "Nothing here yet. What would you tell yourself before that rotation?",
+  },
+  {
     key: "following",
     label: "Following",
     requiresViewer: true,
