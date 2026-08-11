@@ -1,0 +1,562 @@
+-- MEDLNK — everything the hosted project is still missing, in one paste.
+--
+-- Migrations 0005 (storage), 0007 (messaging) and 0008 (interactive cases) have
+-- never been applied to the hosted Supabase project. Until they are, image
+-- upload fails with "Bucket not found", /messages shows an empty inbox, and
+-- every interactive feature (What Would You Do?, Case Evolution, Follow Case,
+-- Blind Cases, Near Miss, notifications) stays inert.
+--
+-- HOW TO RUN
+--   Supabase Dashboard -> SQL Editor -> New query -> paste this whole file ->
+--   Run. The editor wraps it in a transaction, so it either applies completely
+--   or not at all. The last statement prints a checklist of what now exists.
+--
+-- This file is a re-runnable union of those three migrations, not a
+-- replacement for them: supabase/migrations/ stays the canonical, ordered
+-- history, and this exists purely because the hosted project is applied by
+-- hand. Every statement is guarded (if not exists / drop policy if exists /
+-- create or replace), so running it a second time is a no-op rather than an
+-- error — safe if you are unsure how much of it already went through.
+--
+-- Prerequisite: 0001-0004 and 0006 are already applied (public.profiles,
+-- public.cases and public.is_verified() must exist). If they are not, run
+-- supabase/migrations/0001..0004 and 0006 first, in order.
+--
+-- After this runs, deploy the Edge Functions too — they are a separate step
+-- and nothing below affects them:
+--   supabase secrets set ANTHROPIC_API_KEY=...
+--   supabase functions deploy generate-recap
+--   supabase functions deploy scan-identifiers
+--   supabase functions deploy polish-text
+
+-- ============================================================================
+-- 0005_storage.sql — case image bucket
+-- ============================================================================
+-- Convention: object path is "<author_id>/<uuid>.<ext>" so ownership can be
+-- checked from the path itself without an extra lookup table.
+
+insert into storage.buckets (id, name, public)
+values ('case-images', 'case-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "case_images_read_all" on storage.objects;
+create policy "case_images_read_all"
+  on storage.objects for select
+  using (bucket_id = 'case-images');
+
+drop policy if exists "case_images_insert_verified_own_folder" on storage.objects;
+create policy "case_images_insert_verified_own_folder"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'case-images'
+    and public.is_verified()
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "case_images_delete_own_folder" on storage.objects;
+create policy "case_images_delete_own_folder"
+  on storage.objects for delete
+  using (
+    bucket_id = 'case-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ============================================================================
+-- 0007_messaging.sql — 1:1 direct messages
+-- ============================================================================
+-- A conversation is the unordered pair of participants, stored in canonical
+-- (user_a < user_b) order so there's exactly one row per pair — callers must
+-- insert with the smaller uuid as user_a.
+
+create table if not exists public.conversations (
+  id uuid primary key default gen_random_uuid(),
+  user_a uuid not null references public.profiles (id) on delete cascade,
+  user_b uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  check (user_a < user_b),
+  unique (user_a, user_b)
+);
+
+create index if not exists conversations_user_a_idx on public.conversations (user_a);
+create index if not exists conversations_user_b_idx on public.conversations (user_b);
+
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references public.conversations (id) on delete cascade,
+  sender_id uuid not null references public.profiles (id) on delete cascade,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists messages_conversation_id_idx
+  on public.messages (conversation_id, created_at);
+
+-- Same shape as reactions/comments/follows in 0004_rls.sql: readable only by
+-- participants, writable only by a verified participant, reusing
+-- public.is_verified() defined there.
+
+alter table public.conversations enable row level security;
+
+drop policy if exists "conversations_select_participant" on public.conversations;
+create policy "conversations_select_participant"
+  on public.conversations for select
+  using (auth.uid() = user_a or auth.uid() = user_b);
+
+drop policy if exists "conversations_insert_verified_participant" on public.conversations;
+create policy "conversations_insert_verified_participant"
+  on public.conversations for insert
+  with check (
+    (auth.uid() = user_a or auth.uid() = user_b)
+    and public.is_verified()
+  );
+
+alter table public.messages enable row level security;
+
+drop policy if exists "messages_select_participant" on public.messages;
+create policy "messages_select_participant"
+  on public.messages for select
+  using (
+    exists (
+      select 1 from public.conversations c
+      where c.id = conversation_id
+        and (c.user_a = auth.uid() or c.user_b = auth.uid())
+    )
+  );
+
+drop policy if exists "messages_insert_verified_participant" on public.messages;
+create policy "messages_insert_verified_participant"
+  on public.messages for insert
+  with check (
+    auth.uid() = sender_id
+    and public.is_verified()
+    and exists (
+      select 1 from public.conversations c
+      where c.id = conversation_id
+        and (c.user_a = auth.uid() or c.user_b = auth.uid())
+    )
+  );
+
+-- ============================================================================
+-- 0008_interactive_cases.sql — post types, questions, evolution, follow
+-- ============================================================================
+-- Everything here is additive. New columns are defaulted or nullable so every
+-- existing case row stays valid and the current UI keeps rendering untouched.
+
+alter table public.cases
+  add column if not exists case_type text not null default 'clinical_case'
+    check (case_type in (
+      'clinical_case',
+      'what_would_you_do',
+      'blind_case',
+      'case_evolution',
+      'near_miss',
+      'safety_alert',
+      'saw_this_today',
+      'clinical_pearl',
+      'things_i_wish_i_knew',
+      'case_vs_case',
+      'research_finding'
+    ));
+
+-- Near Miss answers the five patient-safety prompts. Sparse and only present
+-- on one post type, so jsonb rather than five mostly-null columns.
+-- Shape: { almost, caught_by, prevention, learned, system_change }
+alter table public.cases add column if not exists near_miss jsonb;
+
+-- Blind Cases hide the closing sections until the reader chooses to reveal.
+alter table public.cases
+  add column if not exists reveal_mode text not null default 'none'
+    check (reveal_mode in ('none', 'staged'));
+
+create index if not exists cases_case_type_idx on public.cases (case_type);
+
+-- Interactive question ------------------------------------------------------
+-- v1 is one question per case (see the unique constraint). Lifting that to a
+-- multi-step stem later means dropping the constraint and adding a position
+-- column — no data migration.
+
+create table if not exists public.case_questions (
+  id uuid primary key default gen_random_uuid(),
+  case_id uuid not null references public.cases (id) on delete cascade,
+  prompt text not null,
+  explanation text,
+  reasoning text,
+  evidence text,
+  -- Authors decide whether a reader may revise after seeing the distribution.
+  allow_change boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (case_id)
+);
+
+create table if not exists public.case_options (
+  id uuid primary key default gen_random_uuid(),
+  question_id uuid not null references public.case_questions (id) on delete cascade,
+  body text not null,
+  is_correct boolean not null default false,
+  position int not null,
+  unique (question_id, position)
+);
+
+create index if not exists case_options_question_idx
+  on public.case_options (question_id, position);
+
+create table if not exists public.case_attempts (
+  id uuid primary key default gen_random_uuid(),
+  question_id uuid not null references public.case_questions (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  option_id uuid not null references public.case_options (id) on delete cascade,
+  is_correct boolean not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (question_id, user_id)
+);
+
+create index if not exists case_attempts_question_idx
+  on public.case_attempts (question_id);
+create index if not exists case_attempts_user_idx
+  on public.case_attempts (user_id, created_at desc);
+
+-- Case Evolution ------------------------------------------------------------
+
+create table if not exists public.case_updates (
+  id uuid primary key default gen_random_uuid(),
+  case_id uuid not null references public.cases (id) on delete cascade,
+  author_id uuid not null references public.profiles (id) on delete cascade,
+  stage text not null,
+  body text not null,
+  position int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists case_updates_case_idx
+  on public.case_updates (case_id, position, created_at);
+
+-- Follow Case ---------------------------------------------------------------
+
+create table if not exists public.case_followers (
+  case_id uuid not null references public.cases (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (case_id, user_id)
+);
+
+create index if not exists case_followers_user_idx
+  on public.case_followers (user_id, created_at desc);
+
+-- Notifications -------------------------------------------------------------
+-- Generic on purpose: `type` widens without a schema change as §24 fills in.
+
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  type text not null,
+  body text not null,
+  case_id uuid references public.cases (id) on delete cascade,
+  actor_id uuid references public.profiles (id) on delete set null,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_user_idx
+  on public.notifications (user_id, created_at desc);
+create index if not exists notifications_unread_idx on public.notifications (user_id)
+  where read_at is null;
+
+-- RLS -----------------------------------------------------------------------
+-- Same shape as 0004: readable by everyone (the feed works signed out), writable
+-- only by a verified author of the parent case.
+
+alter table public.case_questions enable row level security;
+
+drop policy if exists "case_questions_select_all" on public.case_questions;
+create policy "case_questions_select_all"
+  on public.case_questions for select
+  using (true);
+
+drop policy if exists "case_questions_write_own_case" on public.case_questions;
+create policy "case_questions_write_own_case"
+  on public.case_questions for insert
+  with check (
+    public.is_verified()
+    and exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+drop policy if exists "case_questions_update_own_case" on public.case_questions;
+create policy "case_questions_update_own_case"
+  on public.case_questions for update
+  using (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+alter table public.case_options enable row level security;
+
+drop policy if exists "case_options_select_all" on public.case_options;
+create policy "case_options_select_all"
+  on public.case_options for select
+  using (true);
+
+drop policy if exists "case_options_write_own_case" on public.case_options;
+create policy "case_options_write_own_case"
+  on public.case_options for insert
+  with check (
+    public.is_verified()
+    and exists (
+      select 1
+      from public.case_questions q
+      join public.cases c on c.id = q.case_id
+      where q.id = question_id and c.author_id = auth.uid()
+    )
+  );
+
+-- Keeping the answer out of the browser.
+--
+-- RLS is row-level, so a "select all" policy would happily hand `is_correct` to
+-- anyone who asks — the reveal would be one devtools request away, and hiding it
+-- in the UI would be theatre. Column privileges are the actual control: the
+-- client roles can read everything about an option EXCEPT whether it is right.
+-- Grading goes through submit_case_answer() below, which is security definer and
+-- so reads the column as the owner.
+revoke select on public.case_options from anon, authenticated;
+grant select (id, question_id, body, position) on public.case_options to anon, authenticated;
+
+alter table public.case_attempts enable row level security;
+
+-- An attempt is the reader's own answer. Aggregate distribution is exposed
+-- separately by case_answer_distribution(), which is security definer.
+drop policy if exists "case_attempts_select_own" on public.case_attempts;
+create policy "case_attempts_select_own"
+  on public.case_attempts for select
+  using (auth.uid() = user_id);
+
+alter table public.case_updates enable row level security;
+
+drop policy if exists "case_updates_select_all" on public.case_updates;
+create policy "case_updates_select_all"
+  on public.case_updates for select
+  using (true);
+
+drop policy if exists "case_updates_insert_own_case" on public.case_updates;
+create policy "case_updates_insert_own_case"
+  on public.case_updates for insert
+  with check (
+    auth.uid() = author_id
+    and public.is_verified()
+    and exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+drop policy if exists "case_updates_delete_own" on public.case_updates;
+create policy "case_updates_delete_own"
+  on public.case_updates for delete
+  using (auth.uid() = author_id);
+
+alter table public.case_followers enable row level security;
+
+drop policy if exists "case_followers_select_own" on public.case_followers;
+create policy "case_followers_select_own"
+  on public.case_followers for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "case_followers_insert_own" on public.case_followers;
+create policy "case_followers_insert_own"
+  on public.case_followers for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "case_followers_delete_own" on public.case_followers;
+create policy "case_followers_delete_own"
+  on public.case_followers for delete
+  using (auth.uid() = user_id);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "notifications_select_own" on public.notifications;
+create policy "notifications_select_own"
+  on public.notifications for select
+  using (auth.uid() = user_id);
+
+-- Marking read is the only field a recipient may change; the using/with check
+-- pair keeps a row from being reassigned to someone else.
+drop policy if exists "notifications_update_own" on public.notifications;
+create policy "notifications_update_own"
+  on public.notifications for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- No insert policy: notifications are written by fan_out_case_update() below,
+-- which is security definer. Clients must never mint their own.
+
+-- Functions -----------------------------------------------------------------
+
+-- Records an answer and reports whether it was right. Security definer because
+-- case_options.is_correct is not readable by the caller — this is the only path
+-- by which correctness is revealed, and it only reveals it *after* the attempt
+-- is stored.
+create or replace function public.submit_case_answer(p_question_id uuid, p_option_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_correct boolean;
+  v_allow_change boolean;
+  v_existing uuid;
+begin
+  if v_user is null then
+    raise exception 'Not signed in';
+  end if;
+
+  -- The option must belong to the question being answered, or a caller could
+  -- submit a correct option borrowed from a different case.
+  select o.is_correct into v_correct
+  from public.case_options o
+  where o.id = p_option_id and o.question_id = p_question_id;
+
+  if v_correct is null then
+    raise exception 'Option does not belong to that question';
+  end if;
+
+  select q.allow_change into v_allow_change
+  from public.case_questions q
+  where q.id = p_question_id;
+
+  select a.id into v_existing
+  from public.case_attempts a
+  where a.question_id = p_question_id and a.user_id = v_user;
+
+  if v_existing is not null then
+    if not coalesce(v_allow_change, false) then
+      -- Already answered and the author didn't allow revision: report the
+      -- stored result rather than overwriting it.
+      select a.is_correct into v_correct
+      from public.case_attempts a
+      where a.id = v_existing;
+      return v_correct;
+    end if;
+
+    update public.case_attempts
+      set option_id = p_option_id,
+          is_correct = v_correct,
+          updated_at = now()
+      where id = v_existing;
+    return v_correct;
+  end if;
+
+  insert into public.case_attempts (question_id, user_id, option_id, is_correct)
+  values (p_question_id, v_user, p_option_id, v_correct);
+
+  return v_correct;
+end;
+$$;
+
+-- Per-option answer counts for a question. Security definer so it can aggregate
+-- across every attempt while case_attempts itself stays private to its owner —
+-- callers get counts, never who answered what.
+create or replace function public.case_answer_distribution(p_question_id uuid)
+returns table (option_id uuid, votes bigint)
+language sql
+security definer
+set search_path = public
+as $$
+  select o.id, count(a.id)
+  from public.case_options o
+  left join public.case_attempts a on a.option_id = o.id
+  where o.question_id = p_question_id
+  group by o.id
+$$;
+
+-- Notifies every follower of a case (except the actor) that something happened.
+-- Security definer because notifications has no client insert policy.
+create or replace function public.fan_out_case_update(
+  p_case_id uuid,
+  p_type text,
+  p_body text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_actor uuid := auth.uid();
+begin
+  insert into public.notifications (user_id, type, body, case_id, actor_id)
+  select f.user_id, p_type, p_body, p_case_id, v_actor
+  from public.case_followers f
+  where f.case_id = p_case_id
+    and f.user_id is distinct from v_actor;
+end;
+$$;
+
+revoke all on function public.submit_case_answer(uuid, uuid) from public;
+revoke all on function public.case_answer_distribution(uuid) from public;
+revoke all on function public.fan_out_case_update(uuid, text, text) from public;
+
+grant execute on function public.submit_case_answer(uuid, uuid) to authenticated;
+grant execute on function public.case_answer_distribution(uuid) to anon, authenticated;
+grant execute on function public.fan_out_case_update(uuid, text, text) to authenticated;
+
+-- ============================================================================
+-- Checklist — every row should read "ok"
+-- ============================================================================
+
+select
+  item,
+  case when present then 'ok' else 'MISSING' end as status
+from (
+  values
+    ('bucket: case-images',
+     exists (select 1 from storage.buckets where id = 'case-images')),
+    ('table: conversations',
+     to_regclass('public.conversations') is not null),
+    ('table: messages',
+     to_regclass('public.messages') is not null),
+    ('column: cases.case_type',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'cases'
+               and column_name = 'case_type')),
+    ('column: cases.near_miss',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'cases'
+               and column_name = 'near_miss')),
+    ('column: cases.reveal_mode',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'cases'
+               and column_name = 'reveal_mode')),
+    ('table: case_questions',
+     to_regclass('public.case_questions') is not null),
+    ('table: case_options',
+     to_regclass('public.case_options') is not null),
+    ('table: case_attempts',
+     to_regclass('public.case_attempts') is not null),
+    ('table: case_updates',
+     to_regclass('public.case_updates') is not null),
+    ('table: case_followers',
+     to_regclass('public.case_followers') is not null),
+    ('table: notifications',
+     to_regclass('public.notifications') is not null),
+    ('function: submit_case_answer',
+     to_regprocedure('public.submit_case_answer(uuid,uuid)') is not null),
+    ('function: case_answer_distribution',
+     to_regprocedure('public.case_answer_distribution(uuid)') is not null),
+    ('function: fan_out_case_update',
+     to_regprocedure('public.fan_out_case_update(uuid,text,text)') is not null),
+    -- The answer must not be readable by the browser's database roles.
+    ('is_correct hidden from clients',
+     not exists (
+       select 1 from information_schema.column_privileges
+       where table_schema = 'public' and table_name = 'case_options'
+         and column_name = 'is_correct'
+         and grantee in ('anon', 'authenticated')
+         and privilege_type = 'SELECT'
+     ))
+) as checks(item, present);
