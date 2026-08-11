@@ -108,6 +108,18 @@ export function SearchIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function BellIcon(
+  props: SVGProps<SVGSVGElement> & { filled?: boolean },
+) {
+  const { filled, ...rest } = props;
+  return (
+    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
+      <path d="M18 8a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" />
+    </svg>
+  );
+}
+
 export function PlusSquareIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>

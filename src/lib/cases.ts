@@ -78,6 +78,65 @@ export async function getFeedCases(
   return rows.map((row) => toFeedCase(row, viewerId));
 }
 
+/**
+ * The feed narrowed to one post type.
+ *
+ * Filtered in JS rather than with `.eq("case_type", …)` on purpose. The query
+ * is the same single round trip either way, and `select("*")` keeps working
+ * whether or not 0008 has been applied to the hosted project — where a column
+ * predicate would make PostgREST reject the request outright and take the whole
+ * feed down. Pre-migration every row simply reads as the default type, so a
+ * near-miss filter is empty rather than broken.
+ *
+ * Move to a column predicate (and a `limit`) once the feed outgrows fetching
+ * every case, which is the same point `getFeedCases` stops being viable.
+ */
+export async function getFeedCasesByType(
+  supabase: Client,
+  viewerId: string | null,
+  caseTypes: readonly string[],
+): Promise<FeedCase[]> {
+  const wanted = new Set(caseTypes);
+  const all = await getFeedCases(supabase, viewerId);
+  return all.filter((c) => wanted.has(c.case_type ?? "clinical_case"));
+}
+
+/**
+ * Cases the viewer has followed, most recently followed first.
+ *
+ * Driven from case_followers so the ordering is "when you followed it", not
+ * "when it was posted" — a case you picked up today belongs at the top even if
+ * it was published last month. RLS restricts case_followers to the viewer's own
+ * rows, so this needs no user predicate for correctness; it carries one anyway
+ * to keep the index in play.
+ *
+ * Returns null — not [] — when the read fails, which pre-migration it will,
+ * since case_followers doesn't exist on the hosted project yet. An empty array
+ * would render as "you follow nothing", and a feature that looks merely empty
+ * when it is actually unavailable is the exact bug this codebase has already
+ * been bitten by once. Callers say which of the two happened.
+ */
+export async function getFollowedCases(
+  supabase: Client,
+  viewerId: string,
+): Promise<FeedCase[] | null> {
+  // Aliased to `followed_case` rather than `case`: the alias is only a JSON key,
+  // but naming it after a SQL keyword is a needless thing to debug remotely.
+  const { data, error } = await supabase
+    .from("case_followers")
+    .select(`followed_case:cases!case_followers_case_id_fkey(${FEED_SELECT})`)
+    .eq("user_id", viewerId)
+    .order("created_at", { ascending: false });
+
+  if (error) return null;
+
+  const rows = (data ?? []) as unknown as { followed_case: FeedRow | null }[];
+  return rows
+    .map((row) => row.followed_case)
+    .filter((c): c is FeedRow => c !== null)
+    .map((row) => toFeedCase(row, viewerId));
+}
+
 export async function getCaseById(
   supabase: Client,
   caseId: string,
