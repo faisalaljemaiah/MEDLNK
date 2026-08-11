@@ -7,6 +7,7 @@ import { getProfileByHandle } from "@/lib/profile";
 import { Avatar } from "@/components/avatar";
 import { FollowButton } from "@/components/follow-button";
 import { CaseCard } from "@/components/case-card";
+import { ProfileStats } from "@/components/profile-stats";
 import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
 
@@ -38,6 +39,7 @@ export default async function ProfilePage({
     cases,
     markedCases,
     savedCases,
+    stats,
     followerCount,
     followingCount,
     viewerFollows,
@@ -127,6 +129,8 @@ export default async function ProfilePage({
           </div>
         ) : null}
       </div>
+
+      <ProfileStats stats={stats} />
 
       {isOwnProfile && (
         <div className="flex border-t border-line">
