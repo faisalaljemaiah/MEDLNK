@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getCaseDetailByCaseNumber } from "@/lib/cases";
+import { getCaseComments } from "@/lib/comments";
 import { getInteractiveState } from "@/lib/interactive";
 import { getDiveDeepDataAction } from "@/app/actions/recap";
 import { getRevealIfAnswered } from "@/app/actions/interactive";
@@ -15,6 +16,7 @@ import { CaseFollowButton } from "@/components/case-follow-button";
 import { CaseTimeline } from "@/components/case-timeline";
 import { RevealSection } from "@/components/reveal-section";
 import { ReportButton } from "@/components/report-button";
+import { CaseComments } from "@/components/case-comments";
 
 export default async function CasePage({
   params,
@@ -37,13 +39,15 @@ export default async function CasePage({
   const typeMeta = caseTypeMeta(feedCase.case_type);
   const isAuthor = user?.id === feedCase.author_id;
 
-  const [{ recapSummary, similar }, interactive, reveal] = await Promise.all([
-    getDiveDeepDataAction(feedCase.id),
-    getInteractiveState(supabase, feedCase.id, question?.id ?? null, user?.id ?? null),
-    // Null unless this reader has already answered, so a page render can never
-    // be what leaks the author's write-up.
-    question ? getRevealIfAnswered(question.id, user?.id ?? null) : Promise.resolve(null),
-  ]);
+  const [{ recapSummary, similar }, interactive, reveal, comments] =
+    await Promise.all([
+      getDiveDeepDataAction(feedCase.id),
+      getInteractiveState(supabase, feedCase.id, question?.id ?? null, user?.id ?? null),
+      // Null unless this reader has already answered, so a page render can never
+      // be what leaks the author's write-up.
+      question ? getRevealIfAnswered(question.id, user?.id ?? null) : Promise.resolve(null),
+      getCaseComments(supabase, feedCase.id),
+    ]);
 
   const staged = feedCase.reveal_mode === "staged";
 
@@ -201,12 +205,21 @@ export default async function CasePage({
           viewerReactions={feedCase.viewerReactions}
           path={path}
           variant="full"
+          commentsHref="#comments"
         />
       </div>
 
+      <CaseComments
+        caseId={feedCase.id}
+        path={path}
+        comments={comments}
+        viewerId={user?.id ?? null}
+        canReply={Boolean(user)}
+      />
+
       {user && !isAuthor && (
         <div className="mt-6 border-t border-line pt-4">
-          <ReportButton caseId={feedCase.id} />
+          <ReportButton target={{ kind: "case", id: feedCase.id }} />
         </div>
       )}
 

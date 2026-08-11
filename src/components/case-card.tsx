@@ -91,6 +91,7 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
           counts={feedCase.counts}
           viewerReactions={feedCase.viewerReactions}
           path={path}
+          commentsHref={caseHref === "#" ? undefined : `${caseHref}#comments`}
         />
       </div>
     </article>

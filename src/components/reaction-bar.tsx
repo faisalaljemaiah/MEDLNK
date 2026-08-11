@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useState, useTransition } from "react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { toggleReactionAction } from "@/app/actions/reactions";
 import {
@@ -27,6 +28,12 @@ type ReactionBarProps = {
   viewerReactions: ReactionType[];
   path: string;
   onOpenComments?: () => void;
+  /**
+   * Where the comment control goes when there is no onOpenComments handler.
+   * The count used to be a dead button everywhere outside the reel — there was
+   * no thread to open. Now there is one, and it lives on the case page.
+   */
+  commentsHref?: string;
   /** "light" for surfaces on top of bg-surface, "dark" for full-bleed reel backgrounds */
   tone?: "light" | "dark";
   /**
@@ -48,6 +55,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
       viewerReactions,
       path,
       onOpenComments,
+      commentsHref,
       tone = "light",
       variant = "compact",
       onToggle,
@@ -163,18 +171,32 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
       </div>
 
       <div className={clsx("flex items-center gap-5", dark && "justify-center")}>
-        <button
-          type="button"
-          onClick={onOpenComments}
-          className={clsx(
-            "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
-            `${mutedClass} hover:text-accent`,
-          )}
-          aria-label="Comments"
-        >
-          <CommentIcon />
-          <span className="text-sm">{optimistic.counts.comments}</span>
-        </button>
+        {onOpenComments || !commentsHref ? (
+          <button
+            type="button"
+            onClick={onOpenComments}
+            className={clsx(
+              "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
+              `${mutedClass} hover:text-accent`,
+            )}
+            aria-label="Comments"
+          >
+            <CommentIcon />
+            <span className="text-sm">{optimistic.counts.comments}</span>
+          </button>
+        ) : (
+          <Link
+            href={commentsHref}
+            className={clsx(
+              "flex items-center gap-1.5 transition-[color,transform] duration-150 ease-out active:scale-90",
+              `${mutedClass} hover:text-accent`,
+            )}
+            aria-label="Comments"
+          >
+            <CommentIcon />
+            <span className="text-sm">{optimistic.counts.comments}</span>
+          </Link>
+        )}
 
         <button
           type="button"

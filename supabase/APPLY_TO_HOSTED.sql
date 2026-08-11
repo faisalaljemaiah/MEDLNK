@@ -1,13 +1,14 @@
 -- MEDLNK — everything the hosted project is still missing, in one paste.
 --
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
--- 0009 (reports/moderation) and 0010 (clinical reactions) have never been
--- applied to the hosted Supabase project. Until they are, image upload fails
--- with "Bucket not found", /messages shows an empty inbox, every interactive
--- feature (What Would You Do?, Case Evolution, Follow Case, Blind Cases, Near
--- Miss, notifications) stays inert, there is no way to report content or
--- suspend a user, and reacting to a case fails outright — the app now writes
--- 💡/🧠/⚠️, which the live check constraint still rejects.
+-- 0009 (reports/moderation), 0010 (clinical reactions) and 0011 (comment
+-- labels) have never been applied to the hosted Supabase project. Until they
+-- are, image upload fails with "Bucket not found", /messages shows an empty
+-- inbox, every interactive feature (What Would You Do?, Case Evolution, Follow
+-- Case, Blind Cases, Near Miss, notifications) stays inert, there is no way to
+-- report content or suspend a user, and reacting to or replying to a case
+-- fails outright — the app now writes 💡/🧠/⚠️ and a reply label, neither of
+-- which the live schema accepts.
 --
 -- HOW TO RUN
 --   Supabase Dashboard -> SQL Editor -> New query -> paste this whole file ->
@@ -707,6 +708,27 @@ create index if not exists reactions_user_type_idx
   on public.reactions (user_id, type);
 
 -- ============================================================================
+-- 0011_comment_labels.sql — what kind of reply is this
+-- ============================================================================
+-- Nullable, and null is explicitly allowed by the check: every comment written
+-- before this stays valid, and an unlabelled reply stays a perfectly good
+-- reply. comments_update_own (0004) already covers relabelling.
+
+alter table public.comments
+  add column if not exists label text;
+
+alter table public.comments drop constraint if exists comments_label_check;
+
+alter table public.comments add constraint comments_label_check
+  check (label is null or label in (
+    'agree',
+    'differ',
+    'question',
+    'teaching',
+    'evidence'
+  ));
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -788,5 +810,9 @@ from (
     -- Not just "the constraint changed": any surviving like would now be a row
     -- the app cannot count, so this checks the data moved too.
     ('no bare likes left behind',
-     not exists (select 1 from public.reactions where type = 'like'))
+     not exists (select 1 from public.reactions where type = 'like')),
+    ('column: comments.label',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'comments'
+               and column_name = 'label'))
 ) as checks(item, present);

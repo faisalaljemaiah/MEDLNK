@@ -175,11 +175,21 @@ export type Reaction = {
   created_at: string;
 };
 
+/** Mirrors the label check constraint in 0011_comment_labels.sql. */
+export type CommentLabel =
+  | "agree"
+  | "differ"
+  | "question"
+  | "teaching"
+  | "evidence";
+
 export type Comment = {
   id: string;
   case_id: string;
   user_id: string;
   body: string;
+  /** Null is allowed and normal — an unlabelled reply is still a reply. */
+  label: CommentLabel | null;
   moderation_status: ModerationStatus;
   created_at: string;
 };

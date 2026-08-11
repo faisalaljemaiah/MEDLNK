@@ -2,25 +2,43 @@
 
 import { useRef, useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { reportCaseAction } from "@/app/actions/reports";
+import { reportCaseAction, reportCommentAction } from "@/app/actions/reports";
 import { REPORT_REASONS } from "@/lib/report-reasons";
+
+export type ReportTarget = { kind: "case" | "comment"; id: string };
+
+const NOUN: Record<ReportTarget["kind"], string> = {
+  case: "case",
+  comment: "reply",
+};
 
 /**
  * Reporting lives behind a quiet text link rather than a prominent button: it
- * should be findable on every case without inviting use, and without competing
+ * should be findable on everything without inviting use, and without competing
  * with the reactions that are the normal thing to do here.
  */
-export function ReportButton({ caseId }: { caseId: string }) {
+export function ReportButton({
+  target,
+  className,
+}: {
+  target: ReportTarget;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
+  const noun = NOUN[target.kind];
+
   function handleSubmit(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const result = await reportCaseAction(caseId, formData);
+      const result =
+        target.kind === "case"
+          ? await reportCaseAction(target.id, formData)
+          : await reportCommentAction(target.id, formData);
       if ("error" in result) {
         setError(result.error);
         return;
@@ -44,9 +62,12 @@ export function ReportButton({ caseId }: { caseId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-muted underline-offset-2 hover:text-danger hover:underline"
+        className={
+          className ??
+          "text-xs text-muted underline-offset-2 hover:text-danger hover:underline"
+        }
       >
-        Report this case
+        Report this {noun}
       </button>
     );
   }
@@ -58,7 +79,7 @@ export function ReportButton({ caseId }: { caseId: string }) {
       className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4"
     >
       <div>
-        <p className="text-sm font-medium text-text">Report this case</p>
+        <p className="text-sm font-medium text-text">Report this {noun}</p>
         <p className="mt-0.5 text-xs text-muted">
           Goes to MEDLNK moderators. The author isn&apos;t told who reported it.
         </p>

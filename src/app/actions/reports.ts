@@ -17,6 +17,27 @@ export async function reportCaseAction(
   caseId: string,
   formData: FormData,
 ): Promise<ReportResult> {
+  return fileReport({ case_id: caseId }, formData);
+}
+
+/**
+ * Files a report against a reply.
+ *
+ * A reply is user-authored clinical text like a case is, so it can carry a
+ * patient identifier just as easily. Same table, same single-target check, same
+ * "one open report per person per target" index — only the column differs.
+ */
+export async function reportCommentAction(
+  commentId: string,
+  formData: FormData,
+): Promise<ReportResult> {
+  return fileReport({ comment_id: commentId }, formData);
+}
+
+async function fileReport(
+  target: { case_id: string } | { comment_id: string },
+  formData: FormData,
+): Promise<ReportResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,7 +52,7 @@ export async function reportCaseAction(
 
   const { error } = await supabase.from("reports").insert({
     reporter_id: user.id,
-    case_id: caseId,
+    ...target,
     reason,
     details: details || null,
   });
