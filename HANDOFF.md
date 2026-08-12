@@ -57,50 +57,60 @@ All on branch `claude/medlnk-e2e-testing-i0vawy`, PR #4.
   - Profile contribution stats (§12) and advanced search filters (§20)
   - Ask a Specialist (§10), with `/consults` as the specialty queue
   - Student Mode + Learn (§11, §26)
-- **Priority 3, in progress**:
+- **Priority 3, complete**:
   - Safety Alerts (§17) — platform-wide broadcast, banner, acknowledgement
   - Things I Wish I Knew (§16) — feed chip
   - Case → Quiz and My Learning (§14) — `/learn/quiz`, per-specialty record
   - Case vs Case (§15) — two real cases side by side, plus what separates them
   - Uploaded images now render on feed cards and the case page, not only in
     the reel
+  - Clinical Reasoning Trees (§8) — author-only branching findings /
+    differentials / actions / conclusion, added post-publish on the case page
+    (`case_reasoning_nodes`, 0017)
+  - Global Case Exchange (§19) — optional country on a case (two-letter code,
+    never a hospital or unit), `/exchange` to browse by country
+  - Reputation (§18) — `computeReputationTier()` derives a tier label from the
+    same `ContributionStats` ProfileStats already shows; no new schema, no
+    raw score ever exposed, follower count is not an input. See
+    `src/lib/reputation.ts` for why.
+  - Analytics (§30) — `/analytics` (personal contribution trend, own reaction
+    breakdown, top case) and an Analytics tab on `/admin` (platform totals,
+    cases by format)
+
+Explicitly descoped by the owner: AI "Explain This Case" (§13) — the owner
+chose not to deploy the Anthropic-backed Edge Functions at all (see below), so
+this was never built rather than built-and-inert.
 
 ## ⚠️ Blocking manual steps
 
-Nothing below has been applied to the hosted Supabase project. Most recent
-features are inert until it is — and since 0010, two of them **fail outright**
-rather than degrading: the app writes clinical reaction values and a reply
-label that the live schema still rejects. See "Telling inert from empty".
+**Update, this session:** the owner ran `supabase/APPLY_TO_HOSTED.sql`
+against the real hosted project and confirmed all 34 checklist rows read
+`ok` — 0005 through 0016 are live. 0017 (Clinical Reasoning Trees + Global
+Case Exchange) landed *after* that run and adds two new checklist rows
+(`column: cases.country_code`, `table: case_reasoning_nodes`); **the file
+needs re-pasting once more** to pick those up. Re-running it is a no-op for
+everything already applied — verified twice by `apply-file.sh` before this
+was pushed.
 
-**1. Run `supabase/APPLY_TO_HOSTED.sql` in the Supabase SQL Editor.**
+The owner also explicitly declined to deploy the Edge Functions ("I don't
+want to buy it" — they require Anthropic billing). That is an accepted,
+intentional gap, not a blocker: every call site treats the AI functions as
+best-effort and degrades to "No AI recap yet" / no writing-check suggestions
+/ no identifier-scan nudge. AI "Explain This Case" (§13) was never built for
+the same reason. Don't chase this unless the owner changes their mind.
 
-One paste, one Run. It is a re-runnable union of every migration the hosted
-project is missing — 0005 (the `case-images` bucket; without it image upload
-fails with "Bucket not found"), 0007 (DM tables), 0008 (everything
-interactive), 0009 (reports/moderation), 0010 (clinical reactions), 0011
-(comment labels), 0012 (Ask a Specialist), 0013 (moderation guard), 0014
-(student mode), 0015 (safety alerts) and 0016 (Case vs Case) — and it ends by
-printing a 34-row checklist that should read `ok` throughout.
+**Run `supabase/APPLY_TO_HOSTED.sql` in the Supabase SQL Editor** to pick up
+0017. One paste, one Run — it is a re-runnable union of every migration the
+hosted project might be missing, ending in a checklist that should read `ok`
+throughout (36 rows as of 0017).
 
 `supabase/migrations/` stays the canonical ordered history; that file exists
 only because the hosted project is applied by hand. Every statement in it is
 guarded, so running it twice is a no-op rather than an error.
 
-**2. Deploy the Edge Functions** (none are deployed; all return 404, which is
-why case pages show "No AI recap yet"):
-
-```bash
-supabase secrets set ANTHROPIC_API_KEY=...
-supabase functions deploy generate-recap
-supabase functions deploy scan-identifiers
-supabase functions deploy polish-text
-```
-
-After step 1, remove the pre-migration fallbacks — they exist only to survive
-this window:
-- `getCaseDetailByCaseNumber` in `src/lib/cases.ts` (falls back when the
-  `case_questions` embed 400s)
-- the `42703` retry in `createCaseAction` (`src/app/actions/case.ts`)
+Once 0017 is confirmed applied, the `42703` fallback tiers in
+`createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single
+insert — they exist only to survive a partially-migrated project.
 
 ### Telling inert from empty
 
@@ -137,13 +147,16 @@ errors in the transcript are expected. Use `test.expect_error` for anything
 the database should refuse — a dropped policy turns such a write into a silent
 `INSERT 0 1`, which is the regression that hides best.
 
-Five real bugs have come out of this suite, so it earns its keep: the
+Six real bugs have come out of this suite, so it earns its keep: the
 notification fan-out missing its case filter (would have notified every
 follower on the platform), the interactive question embed arriving as an
-object rather than an array, the takedown bypass above, and — within minutes
-of the assertions landing — two in 0013's own guard: it blocked trusted
-server-side writes, and `current_user` inside a `SECURITY DEFINER` function
-reads as the owner, so the role check never fired at all.
+object rather than an array, the takedown bypass above, two in 0013's own
+guard (it blocked trusted server-side writes, and `current_user` inside a
+`SECURITY DEFINER` function reads as the owner, so the role check never fired
+at all), and 0017's reasoning-tree insert policy: an unqualified `parent_id`/
+`case_id` inside a self-join (`case_reasoning_nodes p`) resolved to `p`'s own
+columns rather than the row being inserted, which silently rejected every
+non-root node. Caught by `0017.4` before that migration was ever pushed.
 
 To exercise DB-dependent features locally, the previous session ran the app
 against local Postgres via PostgREST with a small proxy standing in for the
@@ -151,25 +164,31 @@ Supabase edge. Worth rebuilding if you're doing more schema work.
 
 ## What needs doing
 
-Priorities 1 and 2 are complete, as is the reporting/moderation work. None of
-it is visible on the hosted project until the SQL above is run.
+Priorities 1, 2 and 3 are all complete, as is the reporting/moderation work.
+The spec's build-order list has nothing left unbuilt except the explicitly
+descoped item below. None of the 0017-and-earlier work is visible on the
+hosted project until the SQL above is (re-)run.
 
-### Priority 3 — what's left
-Still unbuilt:
+Explicitly descoped by the owner: AI "Explain This Case" (§13) — the owner
+chose not to deploy the Anthropic Edge Functions at all, so this was never
+built. See "⚠️ Blocking manual steps".
 
-- **Clinical reasoning trees (§8)** — the largest remaining piece, and the
-  least specified. Worth designing before building.
-- **Global Case Exchange (§19)**
-- **Reputation (§18)** — note that profile stats (§12) deliberately avoid a
-  single score, for the reasons in `ProfileStats`. Reputation should be
-  designed with that in mind rather than against it.
-- **Analytics (§30)**
+Everything else from the spec's Priority 1/2/3 list is done:
+- Priority 1: What Would You Do?, Blind Cases, Case Evolution, Near Miss,
+  Follow Case
+- Priority 2: Ask a Specialist, clinical-value reactions, Student Mode,
+  Advanced Search, improved profiles
+- Priority 3: Safety Alerts, Things I Wish I Knew, Case → Quiz/My Learning,
+  Case vs Case, Clinical Reasoning Trees, Global Case Exchange, Reputation,
+  Analytics
+- Reporting/moderation (0009 + 0013)
 
-Explicitly descoped by the owner: AI "Explain This Case" (§13).
-
-Done: Safety Alerts (§17), Things I Wish I Knew (§16), Case → Quiz and My
-Learning (§14), Case vs Case (§15), and the admin/moderation half
-(0009 + 0013).
+### If there's a next thing to build
+It's outside the original 33-section spec now. Worth going back to the owner
+for direction rather than picking the next thing unprompted — options include
+polishing what exists (search/feed still fetch-then-filter in JS, noted
+below), mobile QA against the live hosted project once 0017 is applied, or a
+genuinely new feature the owner hasn't asked for yet.
 
 ### First thing to eyeball after running the SQL
 Every PostgREST read added this session — `getCaseComments`,
@@ -197,6 +216,12 @@ are known good.
   and "cardiology" are handled; "Cardiology (interventional)" is a different
   specialty as far as it is concerned. A controlled vocabulary is a data
   migration on one column when it matters.
+- Reasoning tree nodes have no edit/delete/reorder UI once added — only
+  cascade-delete with the case. Fine for v1 (author-authored, append-only,
+  same posture as Case Evolution's timeline); revisit if authors want to
+  correct a branch after the fact.
+- `src/lib/countries.ts` is a curated ~50-country list, not the full ISO 3166
+  set. Extend the array directly; nothing else needs to change.
 
 ## Non-negotiables
 

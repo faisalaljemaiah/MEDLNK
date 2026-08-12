@@ -105,6 +105,12 @@ export type Case = {
   near_miss: NearMiss | null;
   reveal_mode: RevealMode;
   moderation_status: ModerationStatus;
+  /**
+   * Global Case Exchange (0017, spec §19). Two-letter code, author-supplied
+   * and optional — never a hospital or unit, so the exchange can show *where
+   * in the world* without narrowing on *where exactly*.
+   */
+  country_code: string | null;
   created_at: string;
 };
 
@@ -273,6 +279,29 @@ export type ModerationEvent = {
   created_at: string;
 };
 
+/** Mirrors the node_type check constraint in 0017_reasoning_trees_and_exchange.sql. */
+export type ReasoningNodeType =
+  | "finding"
+  | "differential"
+  | "action"
+  | "conclusion";
+
+/**
+ * Clinical Reasoning Trees (0017, spec §8). One row per branch; parent_id
+ * chains a node to the branch it grew out of, null for a root. Author-only,
+ * added after the case is published — same shape as CaseUpdate.
+ */
+export type CaseReasoningNode = {
+  id: string;
+  case_id: string;
+  parent_id: string | null;
+  node_type: ReasoningNodeType;
+  label: string;
+  body: string | null;
+  position: number;
+  created_at: string;
+};
+
 export type Follow = {
   follower_id: string;
   followee_id: string;
@@ -407,6 +436,12 @@ export type Database = {
           body: string;
         };
         Update: Partial<CaseUpdate>;
+        Relationships: [];
+      };
+      case_reasoning_nodes: {
+        Row: CaseReasoningNode;
+        Insert: Partial<CaseReasoningNode> & { case_id: string; label: string };
+        Update: Partial<CaseReasoningNode>;
         Relationships: [];
       };
       case_followers: {

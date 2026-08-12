@@ -2,17 +2,20 @@
 --
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
 -- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels),
--- 0012 (Ask a Specialist), 0013 (moderation guard), 0014 (student mode) and
--- 0015 (safety alerts) and 0016 (Case vs Case) have never been applied to the
--- hosted Supabase project.
+-- 0012 (Ask a Specialist), 0013 (moderation guard), 0014 (student mode),
+-- 0015 (safety alerts), 0016 (Case vs Case) and 0017 (reasoning trees +
+-- Global Case Exchange) may not all be applied to the hosted Supabase
+-- project — every statement below is guarded, so it is safe to paste and run
+-- this whole file even if some of it already went through.
 --
 -- Until they are, image upload fails with "Bucket not found",
 -- /messages shows an empty inbox, every interactive feature (What Would You
 -- Do?, Case Evolution, Follow Case, Blind Cases, Near Miss, notifications)
 -- stays inert, there is no way to report content or suspend a user, the
--- discussion thread and Ask a Specialist report themselves as unavailable, and
--- reacting to or replying to a case fails outright — the app now writes
--- 💡/🧠/⚠️ and a reply label, neither of which the live schema accepts.
+-- discussion thread and Ask a Specialist report themselves as unavailable,
+-- reacting to or replying to a case fails outright (the app now writes
+-- 💡/🧠/⚠️ and a reply label, neither of which the live schema accepts), and
+-- Clinical Reasoning Trees / Global Case Exchange have nowhere to write.
 --
 -- HOW TO RUN
 --   Supabase Dashboard -> SQL Editor -> New query -> paste this whole file ->
@@ -1197,6 +1200,94 @@ create policy "case_comparisons_delete_own_case"
   );
 
 -- ============================================================================
+-- 0017_reasoning_trees_and_exchange.sql — Clinical Reasoning Trees + Global
+-- Case Exchange
+-- ============================================================================
+-- country_code is nullable and validated for shape only (two letters), not
+-- against a table of real countries — that list lives in the app
+-- (src/lib/countries.ts) so it can grow without another migration. Never a
+-- hospital or unit: Global Case Exchange shows only roughly where in the
+-- world a case happened.
+
+alter table public.cases add column if not exists country_code text
+  check (country_code is null or country_code ~ '^[A-Z]{2}$');
+
+create index if not exists cases_country_idx on public.cases (country_code)
+  where country_code is not null;
+
+create table if not exists public.case_reasoning_nodes (
+  id uuid primary key default gen_random_uuid(),
+  case_id uuid not null references public.cases (id) on delete cascade,
+  parent_id uuid references public.case_reasoning_nodes (id) on delete cascade,
+  node_type text not null default 'differential'
+    check (node_type in ('finding', 'differential', 'action', 'conclusion')),
+  label text not null,
+  body text,
+  position int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists case_reasoning_nodes_case_idx
+  on public.case_reasoning_nodes (case_id, parent_id, position);
+
+alter table public.case_reasoning_nodes enable row level security;
+
+drop policy if exists "case_reasoning_nodes_select_all" on public.case_reasoning_nodes;
+create policy "case_reasoning_nodes_select_all"
+  on public.case_reasoning_nodes for select
+  using (true);
+
+-- Both sides of the inner exists are qualified with the outer table name:
+-- `p` is itself an aliased case_reasoning_nodes, so unqualified parent_id/
+-- case_id would resolve to p's own columns (the innermost scope) rather than
+-- the row being inserted, silently rejecting every non-root insert. Caught by
+-- 0017.4 in the local test suite before this ever reached the paste file.
+drop policy if exists "case_reasoning_nodes_insert_own_case" on public.case_reasoning_nodes;
+create policy "case_reasoning_nodes_insert_own_case"
+  on public.case_reasoning_nodes for insert
+  with check (
+    public.is_verified()
+    and exists (
+      select 1 from public.cases c
+      where c.id = case_reasoning_nodes.case_id and c.author_id = auth.uid()
+    )
+    and (
+      case_reasoning_nodes.parent_id is null
+      or exists (
+        select 1 from public.case_reasoning_nodes p
+        where p.id = case_reasoning_nodes.parent_id
+          and p.case_id = case_reasoning_nodes.case_id
+      )
+    )
+  );
+
+drop policy if exists "case_reasoning_nodes_update_own_case" on public.case_reasoning_nodes;
+create policy "case_reasoning_nodes_update_own_case"
+  on public.case_reasoning_nodes for update
+  using (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+drop policy if exists "case_reasoning_nodes_delete_own_case" on public.case_reasoning_nodes;
+create policy "case_reasoning_nodes_delete_own_case"
+  on public.case_reasoning_nodes for delete
+  using (
+    exists (
+      select 1 from public.cases c
+      where c.id = case_id and c.author_id = auth.uid()
+    )
+  );
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1311,5 +1402,11 @@ from (
     ('function: fan_out_safety_alert',
      to_regprocedure('public.fan_out_safety_alert(uuid)') is not null),
     ('table: case_comparisons',
-     to_regclass('public.case_comparisons') is not null)
+     to_regclass('public.case_comparisons') is not null),
+    ('column: cases.country_code',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'cases'
+               and column_name = 'country_code')),
+    ('table: case_reasoning_nodes',
+     to_regclass('public.case_reasoning_nodes') is not null)
 ) as checks(item, present);

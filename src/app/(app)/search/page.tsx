@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
@@ -130,6 +131,15 @@ export default async function SearchPage({
           </button>
         </div>
       </form>
+
+      <div className="px-4 pb-3">
+        <Link
+          href="/exchange"
+          className="text-xs font-medium text-accent hover:underline"
+        >
+          🌍 Browse the Global Case Exchange →
+        </Link>
+      </div>
 
       {hasFilter && (
         <p className="px-4 pb-3 text-xs text-muted">

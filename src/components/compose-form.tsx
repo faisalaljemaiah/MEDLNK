@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import { createCaseAction } from "@/app/actions/case";
 import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
+import { COUNTRIES } from "@/lib/countries";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -305,6 +306,32 @@ export function ComposeForm() {
 
       <TextField label="Specialty" name="specialty" placeholder="Internal Medicine" />
       <TextField label="Tags (comma separated)" name="tags" placeholder="LASA, medication-error" />
+
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="country_code"
+          className="font-label text-xs uppercase tracking-wide text-muted"
+        >
+          Country (optional — Global Case Exchange)
+        </label>
+        <select
+          id="country_code"
+          name="country_code"
+          defaultValue=""
+          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        >
+          <option value="">Prefer not to say</option>
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted">
+          Country only, never a hospital or unit — this is what lets clinicians
+          elsewhere find and learn from this case.
+        </p>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <label

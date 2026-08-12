@@ -114,6 +114,35 @@ export async function getFeedCasesByType(
 }
 
 /**
+ * How many visible cases carry each country code — the whole of Global Case
+ * Exchange's landing view. Same JS-side aggregation as everything else here;
+ * `country_code` is null pre-0017 and for any author who skipped it, and
+ * those rows are simply excluded rather than counted as an "unknown" country.
+ */
+export async function getCountryBreakdown(
+  supabase: Client,
+): Promise<{ code: string; count: number }[]> {
+  const all = await getFeedCases(supabase, null);
+  const counts = new Map<string, number>();
+  for (const c of all) {
+    if (!c.country_code) continue;
+    counts.set(c.country_code, (counts.get(c.country_code) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function getFeedCasesByCountry(
+  supabase: Client,
+  viewerId: string | null,
+  countryCode: string,
+): Promise<FeedCase[]> {
+  const all = await getFeedCases(supabase, viewerId);
+  return all.filter((c) => c.country_code === countryCode);
+}
+
+/**
  * Cases the viewer has followed, most recently followed first.
  *
  * Driven from case_followers so the ordering is "when you followed it", not

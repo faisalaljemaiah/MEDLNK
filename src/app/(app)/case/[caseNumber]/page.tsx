@@ -9,6 +9,8 @@ import { getCaseComments } from "@/lib/comments";
 import { getCaseComparison } from "@/lib/comparisons";
 import { getCaseSpecialistThreads } from "@/lib/specialists";
 import { getInteractiveState } from "@/lib/interactive";
+import { getReasoningTree } from "@/lib/reasoning-trees";
+import { countryName } from "@/lib/countries";
 import { getDiveDeepDataAction } from "@/app/actions/recap";
 import { getRevealIfAnswered } from "@/app/actions/interactive";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
@@ -20,6 +22,7 @@ import { CaseTimeline } from "@/components/case-timeline";
 import { RevealSection } from "@/components/reveal-section";
 import { ReportButton } from "@/components/report-button";
 import { CaseComments } from "@/components/case-comments";
+import { ReasoningTree } from "@/components/reasoning-tree";
 import { CaseComparison } from "@/components/case-comparison";
 import { SpecialistThreads } from "@/components/specialist-threads";
 
@@ -52,6 +55,7 @@ export default async function CasePage({
     specialistThreads,
     viewerProfile,
     comparison,
+    reasoningTree,
   ] = await Promise.all([
     getDiveDeepDataAction(feedCase.id),
     getInteractiveState(supabase, feedCase.id, question?.id ?? null, user?.id ?? null),
@@ -62,6 +66,7 @@ export default async function CasePage({
     getCaseSpecialistThreads(supabase, feedCase.id),
     getViewerProfile(),
     getCaseComparison(supabase, feedCase.id),
+    getReasoningTree(supabase, feedCase.id),
   ]);
 
   const staged = feedCase.reveal_mode === "staged";
@@ -71,6 +76,7 @@ export default async function CasePage({
       <p className="font-label text-xs uppercase tracking-wide text-muted">
         {feedCase.case_number ?? "CASE"}
         {feedCase.specialty ? ` · ${feedCase.specialty}` : ""}
+        {countryName(feedCase.country_code) ? ` · ${countryName(feedCase.country_code)}` : ""}
       </p>
 
       {typeMeta.badge && (
@@ -217,6 +223,15 @@ export default async function CasePage({
         isAuthor={isAuthor}
         path={path}
       />
+
+      {reasoningTree && (
+        <ReasoningTree
+          caseId={feedCase.id}
+          tree={reasoningTree}
+          isAuthor={isAuthor}
+          path={path}
+        />
+      )}
 
       {feedCase.tags.length > 0 && (
         <div className="mt-5 flex flex-wrap gap-2">

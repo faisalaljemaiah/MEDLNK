@@ -50,6 +50,8 @@ export async function createCaseAction(
   const lesson = String(formData.get("lesson") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
   const tags = parseTags(String(formData.get("tags") ?? ""));
+  const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
+  const country_code = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
   const image = formData.get("image");
   const acknowledgeWarning = formData.get("acknowledge_warning") === "true";
 
@@ -199,20 +201,34 @@ export async function createCaseAction(
     media_url,
   };
 
+  const interactiveRow = {
+    ...baseRow,
+    case_type,
+    near_miss,
+    reveal_mode: (typeMeta.usesStagedReveal ? "staged" : "none") as
+      | "staged"
+      | "none",
+  };
+
   let { data: inserted, error } = await supabase
     .from("cases")
-    .insert({
-      ...baseRow,
-      case_type,
-      near_miss,
-      reveal_mode: typeMeta.usesStagedReveal ? "staged" : "none",
-    })
+    .insert({ ...interactiveRow, country_code })
     .select("id")
     .single();
 
-  // 42703 = undefined_column: 0008 hasn't been applied to this project yet.
-  // Posting a plain case worked before that migration existed and must keep
-  // working, so retry without the new columns rather than failing the author.
+  // 42703 = undefined_column. Two migrations added columns here (0008, then
+  // 0017's country_code) and either, both, or neither may be applied to this
+  // project, so retry in stages rather than dropping straight to the
+  // lowest-common-denominator row — a project with 0008 but not yet 0017
+  // should still get case_type recorded.
+  if (error?.code === "42703") {
+    ({ data: inserted, error } = await supabase
+      .from("cases")
+      .insert(interactiveRow)
+      .select("id")
+      .single());
+  }
+
   if (error?.code === "42703") {
     ({ data: inserted, error } = await supabase
       .from("cases")

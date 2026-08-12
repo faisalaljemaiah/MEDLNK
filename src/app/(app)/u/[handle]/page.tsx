@@ -8,6 +8,8 @@ import { Avatar } from "@/components/avatar";
 import { FollowButton } from "@/components/follow-button";
 import { CaseCard } from "@/components/case-card";
 import { ProfileStats } from "@/components/profile-stats";
+import { ReputationBadge } from "@/components/reputation-badge";
+import { computeReputationTier } from "@/lib/reputation";
 import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
 
@@ -75,6 +77,7 @@ export default async function ProfilePage({
               {[profile.specialty, profile.city].filter(Boolean).join(" · ")}
             </p>
           )}
+          <ReputationBadge tier={computeReputationTier(stats)} />
           <div className="mt-2 flex gap-4 text-sm text-muted">
             <span>
               <span className="font-medium text-text">{followerCount}</span>{" "}
@@ -101,6 +104,9 @@ export default async function ProfilePage({
               </Link>
               <Link href="/consults" className="hover:text-text">
                 Consults
+              </Link>
+              <Link href="/analytics" className="hover:text-text">
+                Analytics
               </Link>
               <Link href="/learn" className="hover:text-text">
                 Learn

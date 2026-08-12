@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { approveUserAction, rejectUserAction } from "@/app/actions/admin";
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
+import { getPlatformAnalytics } from "@/lib/analytics";
 import { REPORT_REASON_LABELS, REPORT_STATUS_META } from "@/lib/report-reasons";
+import { caseTypeMeta } from "@/lib/case-types";
 import { ReportReview } from "@/components/report-review";
 import { UnavailableNotice } from "@/components/unavailable-notice";
 
@@ -13,6 +15,7 @@ const TABS = [
   { key: "verification", label: "Verification" },
   { key: "reports", label: "Reports" },
   { key: "log", label: "Audit log" },
+  { key: "analytics", label: "Analytics" },
 ] as const;
 
 export default async function AdminPage({
@@ -57,6 +60,7 @@ export default async function AdminPage({
         <ReportsQueue supabase={supabase} showResolved={showResolved} />
       )}
       {tab === "log" && <AuditLog supabase={supabase} />}
+      {tab === "analytics" && <PlatformAnalyticsPanel supabase={supabase} />}
     </div>
   );
 }
@@ -268,5 +272,48 @@ async function AuditLog({ supabase }: { supabase: Client }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
+  const data = await getPlatformAnalytics(supabase);
+
+  if (data === null) return <UnavailableNotice feature="Analytics" />;
+
+  return (
+    <div className="mt-5 flex flex-col gap-5">
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard label="Members" value={data.totalUsers} />
+        <StatCard label="Verified" value={data.verifiedUsers} />
+        <StatCard label="Cases posted" value={data.totalCases} />
+        <StatCard label="Open reports" value={data.openReports} />
+      </div>
+
+      <div>
+        <p className="font-label text-xs uppercase tracking-wide text-muted">
+          Cases by format
+        </p>
+        <ul className="mt-2 flex flex-col gap-1.5">
+          {data.casesByType.map(({ type, count }) => (
+            <li
+              key={type}
+              className="flex items-center justify-between text-sm text-text"
+            >
+              <span>{caseTypeMeta(type).label}</span>
+              <span className="tabular-nums text-muted">{count}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-3.5">
+      <p className="text-xl font-semibold tabular-nums text-text">{value}</p>
+      <p className="font-label text-xs text-muted">{label}</p>
+    </div>
   );
 }
