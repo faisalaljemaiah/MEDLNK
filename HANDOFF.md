@@ -70,16 +70,73 @@ All on branch `claude/medlnk-e2e-testing-i0vawy`, PR #4.
   - Global Case Exchange (§19) — optional country on a case (two-letter code,
     never a hospital or unit), `/exchange` to browse by country
   - Reputation (§18) — `computeReputationTier()` derives a tier label from the
-    same `ContributionStats` ProfileStats already shows; no new schema, no
-    raw score ever exposed, follower count is not an input. See
-    `src/lib/reputation.ts` for why.
+    same `ContributionStats` ProfileStats already shows; no new schema,
+    follower count is not an input. The raw `computeReputationScore()` number
+    is shown in exactly one place (the Home dashboard, to the viewer about
+    themselves) — every other view of a person's standing stays tier-only.
+    See `src/lib/reputation.ts` for why the split.
   - Analytics (§30) — `/analytics` (personal contribution trend, own reaction
     breakdown, top case) and an Analytics tab on `/admin` (platform totals,
     cases by format)
+- **Home page redesign** — visual/UX pass on `/` only, no schema change, no
+  new routes besides what quick-create already needed. See below.
 
 Explicitly descoped by the owner: AI "Explain This Case" (§13) — the owner
 chose not to deploy the Anthropic-backed Edge Functions at all (see below), so
 this was never built rather than built-and-inert.
+
+### Home page redesign
+
+Scope was explicit: redesign `/` only, keep every other route/nav/table
+untouched, real data only. What that produced:
+
+- **Color**: `--accent` in `theme.css` moved from LinkedIn-ish blue (`#2563eb`)
+  to a Caribbean-green/turquoise (`#0f766e`) — the one global change, since
+  that file is the app's single re-skin point and "no LinkedIn blue" was
+  explicit. Chosen specifically because the lighter, more "turquoise" end of
+  that hue (e.g. `#0d9488`) fails 4.5:1 with white button text; `#0f766e`
+  passes in both directions and stays visually distinct from `--positive`'s
+  greener green. Recheck both if this gets tuned again.
+- **New, real widgets on `/`**: greeting, four stat cards (reputation score,
+  connections, cases shared, communities), a quick-create panel wired to
+  existing `/compose?type=…` and `/consults` (compose now reads `?type=` to
+  preselect — the only change outside the Home page itself), a For You /
+  Following(people) / Trending tab row above the existing chip row, weekly
+  activity ring, trending communities (specialty activity, not a fabricated
+  communities table), active discussions, and a recommended-people row.
+  All of it is real: `src/lib/home.ts` and the new functions in
+  `src/lib/cases.ts` (`getCasesByFollowedPeople`, `getTrendingCases`,
+  `getActiveDiscussions`) compute everything from existing tables. Nothing new
+  in the database.
+- **Deliberately not built**, because building them would have meant either
+  fabricating data or a fake destination: a "MEDLNK Pro" upsell (no paid tier
+  exists — this would have been a card promoting a product that isn't real),
+  fake "Shortcuts" (Job Board, Research Hub, etc. — none exist; the composer's
+  quick-create panel is the honest version of this idea), and an "Upcoming
+  Events" widget (no events feature/table — Active Discussions fills the same
+  "what's happening now" slot with real data instead).
+  A persistent desktop left-sidebar/right-rail app shell was also skipped:
+  that structurally belongs in `(app)/layout.tsx`, which wraps every route,
+  and the brief was explicit about not touching shared navigation. Everything
+  landed inside `/` itself instead — the page is wider and richer on desktop,
+  but doesn't introduce a second app shell.
+- **Naming collision fixed in passing**: the new people-based "Following" tab
+  and the pre-existing case-follow "Following" chip meant the same word for
+  two different things right next to each other. The chip is now labelled
+  "Cases I follow" (`src/lib/feed-filters.ts`) — text-only, no behavior
+  change.
+- **Bug found and fixed from earlier this session**: the profile page's
+  Messages/Consults/Analytics/Learn/Sign out row (the Analytics link was
+  added earlier this session) overflowed horizontally on a 390px viewport —
+  confirmed via `document.documentElement.scrollWidth` in a real headless
+  browser, not just eyeballed. Fixed by letting that row wrap
+  (`src/app/(app)/u/[handle]/page.tsx`).
+- Verified against the real hosted project, signed in as a seeded user, via
+  a temporary `MEDLNK_LOCAL_VIEWER` env-var stub in `getViewer()` — added,
+  used to screenshot every new section with real data, then fully reverted
+  before committing (`git diff src/lib/auth.ts` is empty). Same pattern a
+  prior session used and documented; do the same if you need to visually
+  verify a signed-in view without real login credentials.
 
 ## ⚠️ Blocking manual steps
 

@@ -16,13 +16,25 @@
    * clear 4.5:1 in both directions at once. Lightening them breaks the
    * buttons; re-check both if you tune them.
    */
-  --bg: #f6f8fc; /* app background */
+  --bg: #f6f8fc; /* app background — very light cool gray/off-white */
   --surface: #ffffff; /* cards, sheets, composer */
   --surface-2: #eaf0fa; /* raised elements on top of surface */
   --line: #d9e3f2; /* borders/dividers */
   --text: #10203a; /* primary text — deep navy ink, softer than pure black */
   --muted: #56657f; /* secondary text, labels, timestamps */
-  --accent: #2563eb; /* primary brand accent (links, active states, logo) */
+  /*
+   * Caribbean green / turquoise-green, not LinkedIn blue — deliberately
+   * darker than the brand-swatch version of this color: at the lighter,
+   * more "turquoise" end (e.g. #0d9488) white button text clears only
+   * ~3.7:1, under the 4.5:1 AA floor. #0f766e keeps the same hue family
+   * while passing 4.5:1 in both directions (white-on-accent for buttons,
+   * accent-on-bg for links/active states) — re-check both if this is tuned.
+   * Distinct from --positive on purpose: --positive is a leaf green
+   * (~148° hue) for verified/success signals, this is a bluer teal
+   * (~176° hue) for interactive elements, so the two don't read as the same
+   * color doing two different jobs.
+   */
+  --accent: #0f766e; /* primary brand accent (links, active states, logo) */
   --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
   --positive: #0b7c44; /* verified badges, success states */
   --warning: #b45309; /* privacy/identifier warnings */

@@ -47,7 +47,11 @@ export const FEED_FILTERS: FeedFilter[] = [
   },
   {
     key: "following",
-    label: "Following",
+    // "Cases I follow", not "Following": the Home page now has a
+    // people-based Following tab above this chip row, and the two would
+    // otherwise show the same label for two different things (Follow Case
+    // vs. following a clinician).
+    label: "Cases I follow",
     requiresViewer: true,
     empty:
       "You're not following any cases yet. Follow one and its updates land here.",

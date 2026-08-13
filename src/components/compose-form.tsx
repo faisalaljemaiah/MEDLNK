@@ -49,7 +49,15 @@ function Textarea({
   );
 }
 
-export function ComposeForm() {
+export function ComposeForm({
+  initialType = "clinical_case",
+}: {
+  /** Preselects the post-type picker — e.g. a Home page quick-create action
+   *  linking in as `/compose?type=what_would_you_do`. Falls back to the
+   *  standard format for an unknown value, same as caseTypeMeta everywhere
+   *  else. */
+  initialType?: string;
+}) {
   const [state, action] = useActionState(createCaseAction, undefined);
   const formRef = useRef<HTMLFormElement>(null);
   const acknowledgeRef = useRef<HTMLInputElement>(null);
@@ -57,7 +65,9 @@ export function ComposeForm() {
   const [suggestions, setSuggestions] = useState<PolishedField[]>([]);
   const [polishNote, setPolishNote] = useState<string | null>(null);
   const [isPolishing, startPolish] = useTransition();
-  const [caseType, setCaseType] = useState<string>("clinical_case");
+  const [caseType, setCaseType] = useState<string>(
+    () => caseTypeMeta(initialType).value,
+  );
 
   const typeMeta = caseTypeMeta(caseType);
   const showFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;

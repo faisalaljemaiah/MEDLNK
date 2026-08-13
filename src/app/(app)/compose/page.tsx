@@ -2,8 +2,12 @@ import { redirect } from "next/navigation";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { ComposeForm } from "@/components/compose-form";
 
-export default async function ComposePage() {
-  const user = await getViewer();
+export default async function ComposePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const [user, { type }] = await Promise.all([getViewer(), searchParams]);
 
   if (!user) redirect("/login");
 
@@ -30,7 +34,7 @@ export default async function ComposePage() {
       <p className="mb-6 text-sm text-muted">
         Cases are public to every verified clinician on MEDLNK.
       </p>
-      <ComposeForm />
+      <ComposeForm initialType={type} />
     </div>
   );
 }

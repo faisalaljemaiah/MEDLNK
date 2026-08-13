@@ -61,7 +61,7 @@ export default async function ProfilePage({
 
   return (
     <div>
-      <div className="flex items-start gap-4 px-4 py-6">
+      <div className="flex flex-wrap items-start gap-4 px-4 py-6">
         <Avatar avatarUrl={profile.avatar_url} name={profile.full_name} size="lg" />
 
         <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export default async function ProfilePage({
             >
               Edit profile
             </Link>
-            <div className="flex items-center gap-3 text-xs text-muted">
+            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">
               <Link href="/messages" className="hover:text-text">
                 Messages
               </Link>

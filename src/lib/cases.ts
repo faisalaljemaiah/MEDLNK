@@ -142,6 +142,81 @@ export async function getFeedCasesByCountry(
   return all.filter((c) => c.country_code === countryCode);
 }
 
+function caseEngagementScore(c: FeedCase): number {
+  return (
+    c.counts.interesting +
+    c.counts.changed_thinking * 2 +
+    c.counts.patient_safety * 2 +
+    c.counts.comments +
+    c.counts.repost
+  );
+}
+
+/**
+ * Posts by people the viewer follows (the `follows` table — person-to-person,
+ * same one FollowButton/profile pages use), most recent first.
+ *
+ * Deliberately distinct from getFollowedCases, which is about *cases* someone
+ * explicitly clicked Follow on (case_followers, the Case Evolution feature).
+ * A social "Following" feed and "cases I'm tracking for updates" are two
+ * different things a reader can want, and conflating them would silently
+ * change what the existing Follow Case button means.
+ */
+export async function getCasesByFollowedPeople(
+  supabase: Client,
+  viewerId: string,
+): Promise<FeedCase[] | null> {
+  const { data: rows, error } = await supabase
+    .from("follows")
+    .select("followee_id")
+    .eq("follower_id", viewerId);
+
+  if (error) return null;
+  if (!rows || rows.length === 0) return [];
+
+  const followeeIds = new Set(rows.map((r) => r.followee_id));
+  const all = await getFeedCases(supabase, viewerId);
+  return all.filter((c) => followeeIds.has(c.author_id));
+}
+
+/**
+ * What's getting the most clinical-value engagement recently — not a
+ * platform-wide all-time leaderboard, which would just be whoever posted
+ * first. Falls back to all-time if nothing from the last 7 days has any
+ * engagement yet, so a quiet week doesn't render an empty tab.
+ */
+export async function getTrendingCases(
+  supabase: Client,
+  viewerId: string | null,
+): Promise<FeedCase[]> {
+  const all = await getFeedCases(supabase, viewerId);
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  const recent = all.filter((c) => new Date(c.created_at).getTime() >= weekAgo);
+  const scored = recent.filter((c) => caseEngagementScore(c) > 0);
+  const pool = scored.length > 0 ? scored : all;
+
+  return [...pool].sort(
+    (a, b) => caseEngagementScore(b) - caseEngagementScore(a),
+  );
+}
+
+/**
+ * The most-discussed cases right now — real comment activity, not a
+ * fabricated "events" calendar. Feeds the Home page's right rail.
+ */
+export async function getActiveDiscussions(
+  supabase: Client,
+  viewerId: string | null,
+  limit = 4,
+): Promise<FeedCase[]> {
+  const all = await getFeedCases(supabase, viewerId);
+  return [...all]
+    .filter((c) => c.counts.comments > 0)
+    .sort((a, b) => b.counts.comments - a.counts.comments)
+    .slice(0, limit);
+}
+
 /**
  * Cases the viewer has followed, most recently followed first.
  *
