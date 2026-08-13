@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ROLES } from "@/lib/roles";
+import { validateImageUpload } from "@/lib/uploads";
 
 export type ProfileFormState = { error: string } | undefined;
 
@@ -44,8 +45,11 @@ export async function updateProfileAction(
   let avatar_url: string | undefined;
   const avatar = formData.get("avatar");
   if (avatar instanceof File && avatar.size > 0) {
-    const ext = avatar.name.split(".").pop() ?? "jpg";
-    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const validated = validateImageUpload(avatar);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(path, avatar, { contentType: avatar.type });

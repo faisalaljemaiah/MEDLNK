@@ -1,12 +1,21 @@
 -- MEDLNK — everything the hosted project is still missing, in one paste.
 --
+-- Contains three SECURITY FIXES (0018-0020) — most importantly a privilege-
+-- escalation hole that lets any signed-in member grant themselves admin,
+-- self-approve verification, or clear their own suspension. If you only run
+-- one thing before anything else, run supabase/URGENT_SECURITY_FIX.sql
+-- instead of this whole file — it's the same three fixes, standalone, so
+-- they land in seconds. This file's checklist has two rows marked SECURITY
+-- to confirm they're in either way.
+--
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
 -- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels),
 -- 0012 (Ask a Specialist), 0013 (moderation guard), 0014 (student mode),
--- 0015 (safety alerts), 0016 (Case vs Case) and 0017 (reasoning trees +
--- Global Case Exchange) may not all be applied to the hosted Supabase
--- project — every statement below is guarded, so it is safe to paste and run
--- this whole file even if some of it already went through.
+-- 0015 (safety alerts), 0016 (Case vs Case), 0017 (reasoning trees + Global
+-- Case Exchange) and 0018-0020 (security fixes) may not all be applied to
+-- the hosted Supabase project — every statement below is guarded, so it is
+-- safe to paste and run this whole file even if some of it already went
+-- through.
 --
 -- Until they are, image upload fails with "Bucket not found",
 -- /messages shows an empty inbox, every interactive feature (What Would You
@@ -1288,6 +1297,82 @@ create policy "case_reasoning_nodes_delete_own_case"
   );
 
 -- ============================================================================
+-- 0018_profiles_privilege_guard.sql — SECURITY FIX
+-- ============================================================================
+-- profiles_update_own (0004) grants UPDATE on the *row*, with no column
+-- restriction — RLS is row-level, so any signed-in member could PATCH their
+-- own profile with is_admin/verified/verification_status/suspended_at set to
+-- whatever they liked. See supabase/URGENT_SECURITY_FIX.sql and HANDOFF.md
+-- for the full writeup; this section is identical to that file's fix,
+-- included here so a full paste of this file alone is still complete.
+
+create or replace function public.guard_profile_privilege_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if current_user in ('anon', 'authenticated') and not public.is_admin() then
+    if new.is_admin is distinct from old.is_admin then
+      raise exception 'Only an admin can change is_admin';
+    end if;
+    if new.verified is distinct from old.verified
+       or new.verification_status is distinct from old.verification_status then
+      raise exception 'Only an admin can change verification status';
+    end if;
+    if new.suspended_at is distinct from old.suspended_at
+       or new.suspended_reason is distinct from old.suspended_reason then
+      raise exception 'Only an admin can change suspension status';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_privilege_columns on public.profiles;
+create trigger profiles_guard_privilege_columns
+  before update on public.profiles
+  for each row execute function public.guard_profile_privilege_columns();
+
+-- ============================================================================
+-- 0019_specialist_answer_reassignment_guard.sql — SECURITY FIX
+-- ============================================================================
+-- A responder could move their own existing answer onto a request outside
+-- their specialty by updating request_id directly, bypassing the specialty
+-- match the insert policy enforces. No-ops if 0012 isn't applied yet.
+
+do $$
+begin
+  if to_regclass('public.specialist_answers') is not null then
+    drop policy if exists "specialist_answers_update_own" on public.specialist_answers;
+    create policy "specialist_answers_update_own"
+      on public.specialist_answers for update
+      using (auth.uid() = responder_id)
+      with check (
+        auth.uid() = responder_id
+        and exists (
+          select 1 from public.specialist_requests r
+          where r.id = request_id
+            and public.is_specialist_in(r.specialty)
+        )
+      );
+  end if;
+end $$;
+
+-- ============================================================================
+-- 0020_upload_hardening.sql — SECURITY FIX
+-- ============================================================================
+-- Neither storage bucket had a size limit or MIME-type allowlist, and the app
+-- trusted the client-supplied Content-Type — an open door to upload and
+-- publicly host arbitrary files under the project's own Supabase domain.
+-- No-ops if a bucket doesn't exist yet (0005/0006 not applied).
+
+update storage.buckets
+set file_size_limit = 8388608, -- 8 MiB
+    allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+where id in ('case-images', 'avatars');
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1408,5 +1493,11 @@ from (
              where table_schema = 'public' and table_name = 'cases'
                and column_name = 'country_code')),
     ('table: case_reasoning_nodes',
-     to_regclass('public.case_reasoning_nodes') is not null)
+     to_regclass('public.case_reasoning_nodes') is not null),
+    ('SECURITY: profiles_guard_privilege_columns trigger',
+     (select count(*) from pg_trigger
+      where tgname = 'profiles_guard_privilege_columns' and not tgisinternal) = 1),
+    ('SECURITY: storage upload limits set',
+     coalesce((select file_size_limit from storage.buckets where id = 'case-images') = 8388608, true)
+     and coalesce((select file_size_limit from storage.buckets where id = 'avatars') = 8388608, true))
 ) as checks(item, present);

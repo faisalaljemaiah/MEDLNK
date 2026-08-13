@@ -3,6 +3,21 @@
 State of the project as of the last session. Read this plus `PLAN.md` before
 picking work up.
 
+## 🔴 URGENT — apply supabase/URGENT_SECURITY_FIX.sql before anything else
+
+A security review this session found a real, live privilege-escalation hole
+on the hosted project: `profiles_update_own` (0004) grants UPDATE on the
+*row*, with no column restriction, so any signed-in member could PATCH their
+own profile with `is_admin: true`, `verified: true`, or `suspended_at: null`
+and grant themselves admin / self-approve verification / clear their own
+suspension — via a plain authenticated REST call, no special access needed.
+This is fixed in code (migrations 0018-0020, all covered by
+`supabase/tests/`) but **the hosted project needs the SQL run** —
+`supabase/URGENT_SECURITY_FIX.sql` is the fast path (seconds, standalone);
+`supabase/APPLY_TO_HOSTED.sql` has the same fix bundled in with everything
+else if you're running that anyway. Full writeup: "Security review" section
+below.
+
 ## What MEDLNK is
 
 A clinical knowledge network for verified healthcare professionals and
@@ -138,16 +153,87 @@ untouched, real data only. What that produced:
   prior session used and documented; do the same if you need to visually
   verify a signed-in view without real login credentials.
 
+## Security review
+
+Full pass over RLS policies, Server Actions, storage/upload paths, and
+common web-app vectors (XSS, SQL injection, open redirect, secrets exposure,
+CSRF, dependency vulnerabilities). `npm audit`: 0 vulnerabilities. No
+`dangerouslySetInnerHTML` anywhere. No raw SQL string interpolation — every
+`.rpc()` call uses named parameters. No API route handlers (everything is
+Server Actions/Server Components, a small surface). Service-role key is only
+ever used in `scripts/seed.ts`, never in `src/app` or `src/components`.
+
+**Fixed (0018-0020, all covered by `supabase/tests/`):**
+
+1. **Critical — profiles privilege escalation.** `profiles_update_own` (0004)
+   is row-level only. Any signed-in member could self-set `is_admin`,
+   `verified`/`verification_status`, or clear `suspended_at` via a direct
+   PostgREST PATCH — full admin access or bypassing license verification
+   entirely, MEDLNK's core trust mechanism. Same bug class 0013 already fixed
+   for `moderation_status`, just never applied to `profiles`. Fixed with the
+   same pattern: a `before update` trigger (`guard_profile_privilege_columns`)
+   that blocks a change to any of the five privileged columns unless the
+   caller is an admin. 11 test assertions
+   (`0018_profiles_privilege_guard.test.sql`), including that admin actions,
+   ordinary self-edits, and trusted server roles all still work.
+2. **Medium — specialist answer reassignment.** `specialist_answers_update_own`
+   let a responder move their own existing answer onto a *different* request
+   via `request_id`, without re-checking the specialty match the insert
+   policy enforces — a non-cardiologist's old cardiology answer could be
+   walked onto a nephrology request, misrepresenting the "Specialist Answer"
+   badge. Fixed by re-running the same `is_specialist_in()` check in the
+   update policy's `WITH CHECK`.
+3. **Medium — unrestricted file upload.** Neither `case-images` nor `avatars`
+   set `file_size_limit`/`allowed_mime_types`, and the app passed the
+   client-supplied `File.type` straight through as the stored Content-Type —
+   both buckets are public, so this was an open door to host arbitrary files
+   (including HTML/script; SVG especially) under the project's own Supabase
+   domain, plus no cap on storage abuse. Fixed at both layers: bucket-level
+   limit + allowlist (8 MiB, JPEG/PNG/WebP/GIF only — SVG deliberately
+   excluded) in 0020, and an application-level check
+   (`src/lib/uploads.ts`) that also derives the stored extension from the
+   validated MIME type instead of the client-supplied filename.
+
+**`supabase/URGENT_SECURITY_FIX.sql`** is a standalone paste containing just
+these three fixes, for landing #1 in seconds without waiting on the full
+`APPLY_TO_HOSTED.sql`. Verified against a from-scratch local Postgres
+reproducing the actual current hosted state (migrations 0001-0017 applied,
+matching the owner's confirmed 34/36-row checklist runs) — applied twice
+(idempotent), the exploit attempt confirmed blocked via raw SQL output (not
+just trusting the test suite), then the full 20-file schema test suite run
+against the result. `APPLY_TO_HOSTED.sql` has the identical fix folded in too
+(two new `SECURITY:` checklist rows), so running that instead also covers it.
+
+**Noted, not fixed (low severity, judgement calls rather than clear bugs):**
+
+- `cases.case_number` is `unique` but has no update-time guard — an author
+  could rename their own case's number to any other unused string via a raw
+  PATCH. Self-contained (the unique constraint stops collisions with another
+  case) and cosmetic at worst; not a cross-user boundary violation.
+- `case_reasoning_nodes`/`case_comparisons` update policies let an author
+  move a node/comparison onto a *different case they also own*, without
+  re-validating the parent-in-same-case invariant reasoning trees enforce at
+  insert. Contained to the author's own content either way.
+- No app-level max-length validation on profile text fields (`full_name`,
+  `city`, `license_number`, etc.) — a minor storage-bloat/abuse vector, not
+  implemented given the size of the fix relative to severity.
+- `scanForIdentifiersAction`/`polishDraftAction`/`triggerRecapAction`
+  (`src/app/actions/ai.ts`) have no auth check of their own — currently moot
+  since the Edge Functions they call aren't deployed (see below), but worth
+  adding an auth gate before they are, so an anonymous caller can't run up
+  Anthropic API cost by invoking the Server Action directly.
+
 ## ⚠️ Blocking manual steps
 
 **Update, this session:** the owner ran `supabase/APPLY_TO_HOSTED.sql`
 against the real hosted project and confirmed all 34 checklist rows read
-`ok` — 0005 through 0016 are live. 0017 (Clinical Reasoning Trees + Global
-Case Exchange) landed *after* that run and adds two new checklist rows
-(`column: cases.country_code`, `table: case_reasoning_nodes`); **the file
-needs re-pasting once more** to pick those up. Re-running it is a no-op for
-everything already applied — verified twice by `apply-file.sh` before this
-was pushed.
+`ok` — 0005 through 0016 are live. Since then, 0017 (Clinical Reasoning Trees
++ Global Case Exchange) and 0018-0020 (**security fixes — see above,
+apply these first**) landed and add five new checklist rows; **the file
+needs re-pasting once more** to pick those up, or run
+`supabase/URGENT_SECURITY_FIX.sql` right now for just the security fixes and
+the rest whenever convenient. Re-running either is a no-op for everything
+already applied — verified twice by `apply-file.sh` before this was pushed.
 
 The owner also explicitly declined to deploy the Edge Functions ("I don't
 want to buy it" — they require Anthropic billing). That is an accepted,
@@ -157,9 +243,9 @@ best-effort and degrades to "No AI recap yet" / no writing-check suggestions
 the same reason. Don't chase this unless the owner changes their mind.
 
 **Run `supabase/APPLY_TO_HOSTED.sql` in the Supabase SQL Editor** to pick up
-0017. One paste, one Run — it is a re-runnable union of every migration the
-hosted project might be missing, ending in a checklist that should read `ok`
-throughout (36 rows as of 0017).
+0017-0020. One paste, one Run — it is a re-runnable union of every migration
+the hosted project might be missing, ending in a checklist that should read
+`ok` throughout (38 rows as of 0020, two of them marked `SECURITY:`).
 
 `supabase/migrations/` stays the canonical ordered history; that file exists
 only because the hosted project is applied by hand. Every statement in it is

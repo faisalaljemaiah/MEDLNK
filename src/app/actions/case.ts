@@ -6,6 +6,7 @@ import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
 import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
+import { validateImageUpload } from "@/lib/uploads";
 import type { CaseType, NearMiss } from "@/lib/database.types";
 
 export type ComposeFormState =
@@ -176,8 +177,11 @@ export async function createCaseAction(
 
   let media_url: string | null = null;
   if (image instanceof File && image.size > 0) {
-    const ext = image.name.split(".").pop() ?? "jpg";
-    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const validated = validateImageUpload(image);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
     const { error: uploadError } = await supabase.storage
       .from("case-images")
       .upload(path, image, { contentType: image.type });
