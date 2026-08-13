@@ -14,16 +14,8 @@ function base(props: SVGProps<SVGSVGElement>) {
   };
 }
 
-export function HeartIcon(
-  props: SVGProps<SVGSVGElement> & { filled?: boolean },
-) {
-  const { filled, ...rest } = props;
-  return (
-    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
-      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
-    </svg>
-  );
-}
+// The heart went with the like (0010). Nothing renders it any more, so it is
+// gone rather than left around for someone to reintroduce a bare like with.
 
 export function CommentIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -63,6 +55,79 @@ export function ShareIcon(props: SVGProps<SVGSVGElement>) {
       <circle cx="18" cy="19" r="3" />
       <path d="m8.6 13.5 6.8 3.9" />
       <path d="m15.4 6.6-6.8 3.9" />
+    </svg>
+  );
+}
+
+export function HomeIcon(
+  props: SVGProps<SVGSVGElement> & { filled?: boolean },
+) {
+  const { filled, ...rest } = props;
+  return (
+    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+    </svg>
+  );
+}
+
+export function ReelIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M10 9.5v5l4.5-2.5Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function SendIcon(
+  props: SVGProps<SVGSVGElement> & { filled?: boolean },
+) {
+  const { filled, ...rest } = props;
+  return (
+    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
+      <path d="m3 11 18-8-8 18-2.5-7.5L3 11Z" />
+    </svg>
+  );
+}
+
+export function SearchIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+/** An open book — the Learn tab in Student Mode. */
+export function LearnIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 6.5S10 4.5 3 4.5v13c7 0 9 2 9 2s2-2 9-2v-13c-7 0-9 2-9 2Z" />
+      <path d="M12 6.5v13" />
+    </svg>
+  );
+}
+
+export function BellIcon(
+  props: SVGProps<SVGSVGElement> & { filled?: boolean },
+) {
+  const { filled, ...rest } = props;
+  return (
+    <svg {...base(rest)} fill={filled ? "currentColor" : "none"}>
+      <path d="M18 8a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" />
+    </svg>
+  );
+}
+
+export function PlusSquareIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M12 8v8" />
+      <path d="M8 12h8" />
     </svg>
   );
 }

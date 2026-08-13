@@ -6,18 +6,27 @@
  */
 
 :root {
-  /* --- Color tokens (neutral dark placeholder palette) --- */
-  --bg: #0b0e11; /* app background */
-  --surface: #14181d; /* cards, sheets, composer */
-  --surface-2: #1b2027; /* raised elements on top of surface */
-  --line: #262b33; /* borders/dividers */
-  --text: #eef1f4; /* primary text */
-  --muted: #8b93a1; /* secondary text, labels, timestamps */
-  --accent: #4f8dfd; /* primary brand accent (links, active states, logo) */
-  --accent-2: #7c5cfc; /* secondary accent (gradients, AI features) */
-  --positive: #34c77b; /* verified badges, success states */
-  --warning: #f0a63a; /* privacy/identifier warnings */
-  --danger: #f2545b; /* destructive actions, errors */
+  /*
+   * --- Color tokens (bright daylight palette) ---
+   *
+   * Every value below is contrast-checked to WCAG AA (4.5:1) for how it is
+   * actually used, which is why the green and red are deeper than they look
+   * like they need to be: --accent and --positive are backgrounds for white
+   * button text *and* foregrounds for coloured text on --bg, so each has to
+   * clear 4.5:1 in both directions at once. Lightening them breaks the
+   * buttons; re-check both if you tune them.
+   */
+  --bg: #f6f8fc; /* app background */
+  --surface: #ffffff; /* cards, sheets, composer */
+  --surface-2: #eaf0fa; /* raised elements on top of surface */
+  --line: #d9e3f2; /* borders/dividers */
+  --text: #10203a; /* primary text — deep navy ink, softer than pure black */
+  --muted: #56657f; /* secondary text, labels, timestamps */
+  --accent: #2563eb; /* primary brand accent (links, active states, logo) */
+  --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
+  --positive: #0b7c44; /* verified badges, success states */
+  --warning: #b45309; /* privacy/identifier warnings */
+  --danger: #cf2231; /* destructive actions, errors */
 
   /* --- Font tokens (single clean sans-serif, Instagram-style) --- */
   --font-headline: var(--font-inter, system-ui, sans-serif);

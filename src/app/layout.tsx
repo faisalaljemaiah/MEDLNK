@@ -16,7 +16,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0e11",
+  // Tints the mobile browser chrome — keep in sync with --bg in theme.css.
+  themeColor: "#f6f8fc",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

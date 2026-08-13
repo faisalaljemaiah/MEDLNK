@@ -1,14 +1,14 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { clsx } from "clsx";
 import { ReactionBar } from "@/components/reaction-bar";
-import { DiveDeepSheet } from "@/components/dive-deep-sheet";
 import { Avatar } from "@/components/avatar";
+import { caseTypeMeta } from "@/lib/case-types";
 import type { FeedCase } from "@/lib/cases";
 
 export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string }) {
-  const [open, setOpen] = useState(false);
+  const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
+  const typeMeta = caseTypeMeta(feedCase.case_type);
 
   return (
     <article
@@ -41,12 +41,49 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </p>
       </div>
 
-      <h3 className="mt-3 font-headline text-lg text-text">
-        {feedCase.title}
-      </h3>
+      {typeMeta.badge && (
+        <span
+          className={clsx(
+            "mt-3 inline-block rounded-full border px-2.5 py-0.5 font-label text-xs",
+            typeMeta.badgeClass,
+          )}
+        >
+          {typeMeta.badge}
+        </span>
+      )}
+
+      <Link href={caseHref}>
+        <h3
+          className={clsx(
+            "font-headline text-lg text-text hover:underline",
+            typeMeta.badge ? "mt-2 block" : "mt-3 block",
+          )}
+        >
+          {feedCase.title}
+        </h3>
+      </Link>
       <p className="mt-1 text-sm leading-relaxed text-muted">
         {feedCase.short_caption}
       </p>
+
+      {feedCase.media_url && (
+        // Fixed aspect box rather than intrinsic sizing: case photos are
+        // arbitrary, and letting one set its own height makes the feed jump as
+        // images load. Empty alt — the caption above already carries the
+        // meaning, so announcing the file again is noise to a screen reader.
+        <Link
+          href={caseHref}
+          className="relative mt-3 block aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2"
+        >
+          <Image
+            src={feedCase.media_url}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="object-cover"
+          />
+        </Link>
+      )}
 
       {feedCase.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
@@ -61,13 +98,12 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mt-3 text-sm font-medium text-accent hover:underline"
+      <Link
+        href={caseHref}
+        className="mt-3 inline-block text-sm font-medium text-accent hover:underline"
       >
         Let&apos;s dive deep →
-      </button>
+      </Link>
 
       <div className="mt-4">
         <ReactionBar
@@ -75,11 +111,9 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
           counts={feedCase.counts}
           viewerReactions={feedCase.viewerReactions}
           path={path}
-          onOpenComments={() => setOpen(true)}
+          commentsHref={caseHref === "#" ? undefined : `${caseHref}#comments`}
         />
       </div>
-
-      {open && <DiveDeepSheet feedCase={feedCase} onClose={() => setOpen(false)} />}
     </article>
   );
 }

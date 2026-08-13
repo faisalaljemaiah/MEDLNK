@@ -46,6 +46,18 @@ export async function toggleReactionAction(
           error: "Only verified members can react — finish verification first.",
         };
       }
+      // 23514 is a check-constraint violation, which for this table means one
+      // thing: the app is writing the clinical reaction values from 0010 and
+      // the database is still on the old like/repost/save constraint. Worth
+      // naming, because the raw Postgres text sends you looking at the wrong
+      // layer entirely.
+      if (error.code === "23514") {
+        return {
+          error:
+            "Reactions need a database update that hasn't been applied yet " +
+            "(migration 0010). Nothing was recorded.",
+        };
+      }
       return { error: error.message };
     }
   }

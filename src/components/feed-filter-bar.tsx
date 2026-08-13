@@ -1,0 +1,40 @@
+import Link from "next/link";
+import { clsx } from "clsx";
+import { FEED_FILTERS, feedFilterHref } from "@/lib/feed-filters";
+
+/**
+ * Plain links, not client-side state: switching filter is a navigation, so the
+ * URL stays shareable and the feed keeps being rendered on the server.
+ */
+export function FeedFilterBar({
+  active,
+  hasViewer,
+}: {
+  active: string;
+  hasViewer: boolean;
+}) {
+  const filters = FEED_FILTERS.filter((f) => !f.requiresViewer || hasViewer);
+
+  return (
+    <div className="border-b border-line">
+      {/* Scrolls sideways on narrow phones rather than wrapping to two rows. */}
+      <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-2.5">
+        {filters.map((f) => (
+          <Link
+            key={f.key}
+            href={feedFilterHref(f.key)}
+            aria-current={active === f.key ? "page" : undefined}
+            className={clsx(
+              "shrink-0 rounded-full border px-3.5 py-1.5 font-label text-xs transition-[color,background-color,transform] duration-150 ease-out active:scale-95",
+              active === f.key
+                ? "border-text bg-text text-bg"
+                : "border-line text-muted hover:text-text",
+            )}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
