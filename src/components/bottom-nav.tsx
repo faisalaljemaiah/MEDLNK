@@ -60,7 +60,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
           href={profileHref}
           className={clsx(
             "flex items-center justify-center rounded-full p-0.5 transition-transform duration-150 ease-out active:scale-90",
-            isProfileActive && "ring-2 ring-text",
+            isProfileActive && "ring-2 ring-accent",
           )}
         >
           <Avatar
@@ -87,8 +87,8 @@ function NavLink({
     <Link
       href={href}
       className={clsx(
-        "flex items-center justify-center rounded-full p-2.5 transition-[color,transform] duration-150 ease-out active:scale-90",
-        active ? "text-text" : "text-muted hover:text-text",
+        "flex items-center justify-center rounded-full p-2.5 transition-[color,background-color,transform] duration-150 ease-out active:scale-90",
+        active ? "bg-accent-soft text-accent" : "text-muted hover:text-text",
       )}
     >
       {children}

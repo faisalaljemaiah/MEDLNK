@@ -15,9 +15,17 @@ export function TrendingCommunities({
 
   return (
     <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]">
-      <p className="font-label text-xs uppercase tracking-wide text-muted">
-        Trending communities
-      </p>
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+        >
+          🌐
+        </span>
+        <p className="font-label text-xs uppercase tracking-wide text-muted">
+          Trending communities
+        </p>
+      </div>
       <ul className="mt-2.5 flex flex-col divide-y divide-line">
         {communities.map((c) => (
           <li key={c.specialty}>

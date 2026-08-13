@@ -7,6 +7,8 @@ import {
   getCasesByFollowedPeople,
   getTrendingCases,
   getActiveDiscussions,
+  getFollowedAuthorIds,
+  rankForYou,
   type FeedCase,
 } from "@/lib/cases";
 import { feedFilter } from "@/lib/feed-filters";
@@ -54,7 +56,7 @@ export default async function FeedPage({
 
   // Everything the surrounding sections need, none of it dependent on which
   // feed tab is active, so it all goes out together.
-  const [alerts, profile, stats, communities, discussions, people] =
+  const [alerts, profile, stats, communities, discussions, people, followedAuthorIds] =
     await Promise.all([
       getLiveSafetyAlerts(supabase, viewerId),
       user ? getViewerProfile() : Promise.resolve(null),
@@ -62,6 +64,7 @@ export default async function FeedPage({
       getTrendingCommunities(supabase, viewerId),
       getActiveDiscussions(supabase, viewerId),
       user ? getRecommendedPeople(supabase, user.id) : Promise.resolve(null),
+      user ? getFollowedAuthorIds(supabase, user.id) : Promise.resolve(new Set<string>()),
     ]);
 
   let cases: FeedCase[] | null;
@@ -75,6 +78,15 @@ export default async function FeedPage({
     cases = await getFollowedCases(supabase, viewerId);
   } else {
     cases = await getFeedCases(supabase, viewerId);
+  }
+
+  // Personalize "For You" regardless of which chip is active — even inside
+  // "Near miss" or "Cases I follow", a specialty match should still surface
+  // first. Trending and the people-based Following tab already rank
+  // themselves (by engagement, and by definition) and stay untouched.
+  const personalized = view === "foryou" && user;
+  if (personalized && cases) {
+    cases = rankForYou(cases, profile?.specialty ?? null, followedAuthorIds);
   }
 
   // The chip row and the tabs both live in the URL, so a reaction from any
@@ -99,14 +111,24 @@ export default async function FeedPage({
           be hidden behind whichever tab or chip they last picked. */}
       <SafetyAlertBanner alerts={alerts} />
 
-      {user && <HomeGreeting firstName={firstName(profile?.full_name)} />}
-      {user && stats && <HomeStatCards stats={stats} />}
+      {user && (
+        <div className="bg-gradient-to-b from-accent-soft/70 via-accent-soft/25 to-transparent pb-3">
+          <HomeGreeting firstName={firstName(profile?.full_name)} />
+          {stats && <HomeStatCards stats={stats} />}
+        </div>
+      )}
       {user && profile?.verified && <QuickCreatePanel />}
 
       <HomeFeedTabs active={view} hasViewer={Boolean(user)} />
 
       {view === "foryou" && (
         <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />
+      )}
+
+      {personalized && profile?.specialty && (
+        <p className="px-4 pb-1 pt-2 font-label text-xs text-accent">
+          🎯 Personalized for {profile.specialty}
+        </p>
       )}
 
       {cases === null ? (

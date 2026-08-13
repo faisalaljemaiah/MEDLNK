@@ -217,6 +217,60 @@ export async function getActiveDiscussions(
     .slice(0, limit);
 }
 
+/** IDs of the people the viewer follows — cheap enough for a ranking input. */
+export async function getFollowedAuthorIds(
+  supabase: Client,
+  viewerId: string,
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("follows")
+    .select("followee_id")
+    .eq("follower_id", viewerId);
+
+  if (error || !data) return new Set();
+  return new Set(data.map((r) => r.followee_id));
+}
+
+/**
+ * "For You" personalization: a pharmacist should see more pharmacy cases
+ * without the feed becoming *only* pharmacy cases. Specialty match and
+ * following are the two real signals a profile carries; recency and
+ * engagement stay in the mix (heavily damped) so the ranking degrades to
+ * roughly chronological for a viewer with neither signal, rather than a
+ * cliff-edge "personalized or not" toggle.
+ *
+ * A no-op (returns `cases` unchanged) when the viewer has no specialty and
+ * follows nobody — nothing here to rank by, and re-sorting by recency/
+ * engagement alone would just be a worse version of the plain chronological
+ * feed it replaced.
+ */
+export function rankForYou(
+  cases: FeedCase[],
+  viewerSpecialty: string | null,
+  followedAuthorIds: Set<string>,
+): FeedCase[] {
+  if (!viewerSpecialty && followedAuthorIds.size === 0) return cases;
+
+  const specialty = viewerSpecialty?.trim().toLowerCase() || null;
+
+  function score(c: FeedCase): number {
+    let s = 0;
+    if (specialty && c.specialty?.trim().toLowerCase() === specialty) s += 6;
+    if (followedAuthorIds.has(c.author_id)) s += 4;
+
+    // Recency: full weight for a brand-new post, decayed to ~0 after a week,
+    // so a strong specialty match from today still outranks one from a month
+    // ago, but doesn't bury today's off-specialty news under old matches.
+    const ageHours = (Date.now() - new Date(c.created_at).getTime()) / 3_600_000;
+    s += Math.max(0, 3 - ageHours / 48);
+
+    s += caseEngagementScore(c) * 0.2;
+    return s;
+  }
+
+  return [...cases].sort((a, b) => score(b) - score(a));
+}
+
 /**
  * Cases the viewer has followed, most recently followed first.
  *

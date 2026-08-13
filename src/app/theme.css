@@ -35,6 +35,10 @@
    * color doing two different jobs.
    */
   --accent: #0f766e; /* primary brand accent (links, active states, logo) */
+  /* A light mint tint of --accent, for backgrounds/chips/icon wells that want
+     "green, but as a wash rather than a foreground color" — distinct from
+     --surface-2, which is a blue-gray, not a green, tint. */
+  --accent-soft: #e1f3ef;
   --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
   --positive: #0b7c44; /* verified badges, success states */
   --warning: #b45309; /* privacy/identifier warnings */
@@ -54,6 +58,7 @@
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-accent-2: var(--accent-2);
   --color-positive: var(--positive);
   --color-warning: var(--warning);

@@ -14,9 +14,17 @@ export function RecommendedPeople({
 
   return (
     <section className="mt-5 border-t border-line pt-4">
-      <p className="px-4 font-label text-xs uppercase tracking-wide text-muted">
-        People you may know
-      </p>
+      <div className="flex items-center gap-2 px-4">
+        <span
+          aria-hidden
+          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+        >
+          👋
+        </span>
+        <p className="font-label text-xs uppercase tracking-wide text-muted">
+          People you may know
+        </p>
+      </div>
       <div className="no-scrollbar mt-2.5 flex gap-3 overflow-x-auto px-4 pb-1">
         {people.map((p) => (
           <div

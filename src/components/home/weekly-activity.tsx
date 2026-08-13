@@ -12,15 +12,23 @@ export function WeeklyActivityCard({
 }) {
   return (
     <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]">
-      <p className="font-label text-xs uppercase tracking-wide text-muted">
-        Your weekly activity
-      </p>
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+        >
+          📈
+        </span>
+        <p className="font-label text-xs uppercase tracking-wide text-muted">
+          Your weekly activity
+        </p>
+      </div>
 
       <div className="mt-3 flex items-center gap-4">
         <div
           className="relative flex size-16 shrink-0 items-center justify-center rounded-full"
           style={{
-            background: `conic-gradient(var(--accent) ${activity.percent * 3.6}deg, var(--surface-2) 0deg)`,
+            background: `conic-gradient(var(--accent) ${activity.percent * 3.6}deg, var(--accent-soft) 0deg)`,
           }}
         >
           <div className="flex size-12 items-center justify-center rounded-full bg-surface">

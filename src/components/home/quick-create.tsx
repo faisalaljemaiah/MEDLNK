@@ -50,9 +50,12 @@ export function QuickCreatePanel() {
           <Link
             key={a.label}
             href={a.href}
-            className="flex flex-col items-start gap-1.5 rounded-xl border border-line px-3 py-2.5 transition-[transform,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:border-accent active:scale-[0.98] sm:items-center sm:text-center"
+            className="flex flex-col items-start gap-2 rounded-xl border border-line px-3 py-2.5 transition-[transform,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:border-accent active:scale-[0.98] sm:items-center sm:text-center"
           >
-            <span aria-hidden className="text-lg">
+            <span
+              aria-hidden
+              className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-lg"
+            >
               {a.emoji}
             </span>
             <span className="font-label text-xs font-medium text-text">

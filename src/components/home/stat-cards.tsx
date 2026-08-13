@@ -12,6 +12,17 @@ function Delta({ value, suffix }: { value: number; suffix: string }) {
   );
 }
 
+function CardIcon({ emoji }: { emoji: string }) {
+  return (
+    <span
+      aria-hidden
+      className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+    >
+      {emoji}
+    </span>
+  );
+}
+
 /**
  * Every number here is real — see getHomeStats. Reputation shows its raw
  * score only on this, the viewer's own dashboard; everywhere someone else
@@ -21,7 +32,8 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
   return (
     <div className="grid grid-cols-2 gap-3 px-4 pt-4 sm:grid-cols-4">
       <div className={CARD}>
-        <p className="font-label text-[11px] uppercase tracking-wide text-muted">
+        <CardIcon emoji="⭐" />
+        <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           Your reputation
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
@@ -33,7 +45,8 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       </div>
 
       <div className={CARD}>
-        <p className="font-label text-[11px] uppercase tracking-wide text-muted">
+        <CardIcon emoji="🤝" />
+        <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           Connections
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
@@ -45,7 +58,8 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       </div>
 
       <div className={CARD}>
-        <p className="font-label text-[11px] uppercase tracking-wide text-muted">
+        <CardIcon emoji="📋" />
+        <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           Cases shared
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
@@ -57,7 +71,8 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       </div>
 
       <div className={CARD}>
-        <p className="font-label text-[11px] uppercase tracking-wide text-muted">
+        <CardIcon emoji="🌍" />
+        <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           Communities
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
