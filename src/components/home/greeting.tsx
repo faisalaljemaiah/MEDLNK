@@ -1,20 +1,27 @@
-function timeOfDayGreeting(): string {
+import { t, type TranslationKey } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
+
+function timeOfDayKey(): TranslationKey {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "greeting.morning";
+  if (hour < 18) return "greeting.afternoon";
+  return "greeting.evening";
 }
 
-export function HomeGreeting({ firstName }: { firstName: string | null }) {
+export function HomeGreeting({
+  firstName,
+  locale,
+}: {
+  firstName: string | null;
+  locale: Locale;
+}) {
   return (
     <div className="px-4 pt-5">
       <h1 className="font-headline text-xl text-text">
-        {timeOfDayGreeting()}
+        {t(locale, timeOfDayKey())}
         {firstName ? `, ${firstName}` : ""} <span aria-hidden>👋</span>
       </h1>
-      <p className="mt-0.5 text-sm text-muted">
-        Here&apos;s what&apos;s happening in your healthcare network today.
-      </p>
+      <p className="mt-0.5 text-sm text-muted">{t(locale, "greeting.subtitle")}</p>
     </div>
   );
 }

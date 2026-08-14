@@ -30,6 +30,7 @@ import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
 import { RecommendedPeople } from "@/components/home/recommended-people";
+import { t } from "@/lib/i18n";
 
 function parseView(raw: string | undefined, hasViewer: boolean): HomeFeedView {
   if (raw === "following" && hasViewer) return "following";
@@ -89,6 +90,8 @@ export default async function FeedPage({
     cases = rankForYou(cases, profile?.specialty ?? null, followedAuthorIds);
   }
 
+  const locale = profile?.locale ?? "en";
+
   // The chip row and the tabs both live in the URL, so a reaction from any
   // combination of the two revalidates the exact feed it happened on.
   const path =
@@ -113,13 +116,13 @@ export default async function FeedPage({
 
       {user && (
         <div className="bg-gradient-to-b from-accent-soft/70 via-accent-soft/25 to-transparent pb-3">
-          <HomeGreeting firstName={firstName(profile?.full_name)} />
-          {stats && <HomeStatCards stats={stats} />}
+          <HomeGreeting firstName={firstName(profile?.full_name)} locale={locale} />
+          {stats && <HomeStatCards stats={stats} locale={locale} />}
         </div>
       )}
-      {user && profile?.verified && <QuickCreatePanel />}
+      {user && profile?.verified && <QuickCreatePanel locale={locale} />}
 
-      <HomeFeedTabs active={view} hasViewer={Boolean(user)} />
+      <HomeFeedTabs active={view} hasViewer={Boolean(user)} locale={locale} />
 
       {view === "foryou" && (
         <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />
@@ -127,7 +130,7 @@ export default async function FeedPage({
 
       {personalized && profile?.specialty && (
         <p className="px-4 pb-1 pt-2 font-label text-xs text-accent">
-          🎯 Personalized for {profile.specialty}
+          🎯 {t(locale, "greeting.personalized", { specialty: profile.specialty })}
         </p>
       )}
 
@@ -143,10 +146,14 @@ export default async function FeedPage({
         cases.map((c) => <CaseCard key={c.id} feedCase={c} path={path} />)
       )}
 
-      {user && stats && <WeeklyActivityCard activity={stats.activity} />}
-      <TrendingCommunities communities={communities} />
-      <ActiveDiscussions cases={discussions} />
-      {user && people && <RecommendedPeople people={people} path="/" />}
+      {user && stats && (
+        <WeeklyActivityCard activity={stats.activity} locale={locale} />
+      )}
+      <TrendingCommunities communities={communities} locale={locale} />
+      <ActiveDiscussions cases={discussions} locale={locale} />
+      {user && people && (
+        <RecommendedPeople people={people} path="/" locale={locale} />
+      )}
     </div>
   );
 }

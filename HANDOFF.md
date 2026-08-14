@@ -153,6 +153,56 @@ untouched, real data only. What that produced:
   prior session used and documented; do the same if you need to visually
   verify a signed-in view without real login credentials.
 
+### Localization: a real language preference, Arabic as the first one
+
+Owner's ask: remove the header notification bell, add a Settings page, and
+"put Arabic for now for testing." What landed (0021):
+
+- `profiles.locale` (`en` | `ar`), same footing as `student_mode` — a
+  preference, not privileged, no guard needed (unlike the five columns 0018
+  guards). `/settings` has a language switcher
+  (`src/components/language-switcher.tsx`) that writes it via
+  `setLocaleAction`.
+- Root layout (`src/app/layout.tsx`) sets `<html lang dir>` from the
+  viewer's locale, so `ar` gets real RTL layout, not just translated text.
+  This makes the root layout do a per-request profile read, which costs
+  `/login`, `/signup` and `/_not-found` their static prerendering (everything
+  else in the app was already dynamic) — a real, small tradeoff for
+  app-wide RTL, judged worth it.
+- **Bounded translation, not full app coverage**: `src/lib/i18n.ts` has a
+  flat `t(locale, key)` dictionary covering Home's chrome (greeting, stat
+  cards, quick-create, tabs, weekly activity, trending communities, active
+  discussions, recommended people) and the Settings page itself. Case
+  write-ups, comments, admin tooling, and most other pages stay English
+  regardless of locale — translating user-generated clinical content is a
+  different, much larger project than proving the mechanism works, which is
+  what this was scoped to do. Extend the dictionary and add `locale` props
+  to translate more surface as it's asked for; the plumbing (RLS-safe
+  preference, RTL layout, fallback-to-English-on-missing-key) is all there.
+- Numbers/counts with real plural forms (follower counts, reply counts,
+  member counts) were deliberately left in English — Arabic plurals have
+  dual/few/many forms a naive singular/plural swap gets wrong in a way that
+  reads as more broken than just not translating the number.
+- One real bug the RTL pass caught: untranslated English chip labels
+  (`FeedFilterBar`) picked up the Unicode bidi algorithm's reordering inside
+  an RTL page — "What would you do?" rendered as "؟What would you do".
+  Fixed with `dir="ltr"` on each chip link, which fixes the text without
+  touching the row's own (correct, wanted) RTL ordering.
+- Bell removal: `TopHeader` dropped the bell/unread-dot entirely (no
+  replacement badge anywhere yet) and gained a settings gear in its place;
+  `(app)/layout.tsx` no longer fetches an unread count. Notifications is
+  still a fully working route, reachable from `/settings` and from the
+  profile page's quick-links row — just not surfaced with a badge. If that's
+  wanted back, the natural place is probably a dot on the gear or on the
+  profile avatar, not reintroducing the bell.
+- Verified the same way as the Home redesign: a temporary
+  `MEDLNK_LOCAL_LOCALE_OVERRIDE` env var (alongside `MEDLNK_LOCAL_VIEWER`) in
+  `layout.tsx`/`page.tsx`/`settings/page.tsx`, screenshotted in Arabic
+  against real hosted-project data, then fully reverted — same
+  `git diff`-is-empty discipline as always. The hosted project doesn't have
+  `profiles.locale` yet at the time of writing, so this was the only way to
+  see the real RTL render before the SQL is applied.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
@@ -228,12 +278,16 @@ against the result. `APPLY_TO_HOSTED.sql` has the identical fix folded in too
 **Update, this session:** the owner ran `supabase/APPLY_TO_HOSTED.sql`
 against the real hosted project and confirmed all 34 checklist rows read
 `ok` — 0005 through 0016 are live. Since then, 0017 (Clinical Reasoning Trees
-+ Global Case Exchange) and 0018-0020 (**security fixes — see above,
-apply these first**) landed and add five new checklist rows; **the file
-needs re-pasting once more** to pick those up, or run
-`supabase/URGENT_SECURITY_FIX.sql` right now for just the security fixes and
-the rest whenever convenient. Re-running either is a no-op for everything
++ Global Case Exchange), 0018-0020 (**security fixes — see above, apply
+these first**), and 0021 (locale/language preference) landed and add six new
+checklist rows; **the file needs re-pasting once more** to pick those up, or
+run `supabase/URGENT_SECURITY_FIX.sql` right now for just the security fixes
+and the rest whenever convenient. Re-running either is a no-op for everything
 already applied — verified twice by `apply-file.sh` before this was pushed.
+Until 0021 is applied, `/settings`'s language switcher silently no-ops on
+save (no `locale` column to write to, and `setLocaleAction` doesn't surface
+write errors — same pattern as `setStudentModeAction`) — confusing UX but
+not a crash, and it's the last thing in the paste file.
 
 The owner also explicitly declined to deploy the Edge Functions ("I don't
 want to buy it" — they require Anthropic billing). That is an accepted,
@@ -243,9 +297,9 @@ best-effort and degrades to "No AI recap yet" / no writing-check suggestions
 the same reason. Don't chase this unless the owner changes their mind.
 
 **Run `supabase/APPLY_TO_HOSTED.sql` in the Supabase SQL Editor** to pick up
-0017-0020. One paste, one Run — it is a re-runnable union of every migration
+0017-0021. One paste, one Run — it is a re-runnable union of every migration
 the hosted project might be missing, ending in a checklist that should read
-`ok` throughout (38 rows as of 0020, two of them marked `SECURITY:`).
+`ok` throughout (39 rows as of 0021, two of them marked `SECURITY:`).
 
 `supabase/migrations/` stays the canonical ordered history; that file exists
 only because the hosted project is applied by hand. Every statement in it is

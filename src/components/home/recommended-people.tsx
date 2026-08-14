@@ -2,13 +2,17 @@ import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { FollowButton } from "@/components/follow-button";
 import type { RecommendedPerson } from "@/lib/home";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 export function RecommendedPeople({
   people,
   path,
+  locale,
 }: {
   people: RecommendedPerson[];
   path: string;
+  locale: Locale;
 }) {
   if (people.length === 0) return null;
 
@@ -22,7 +26,7 @@ export function RecommendedPeople({
           👋
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
-          People you may know
+          {t(locale, "people.title")}
         </p>
       </div>
       <div className="no-scrollbar mt-2.5 flex gap-3 overflow-x-auto px-4 pb-1">

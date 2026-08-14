@@ -1373,6 +1373,15 @@ set file_size_limit = 8388608, -- 8 MiB
 where id in ('case-images', 'avatars');
 
 -- ============================================================================
+-- 0021_locale_preference.sql — Settings: language
+-- ============================================================================
+-- A member's own display-language choice. Same footing as student_mode
+-- (0014): a preference, not privileged, no guard needed.
+
+alter table public.profiles add column if not exists locale text not null default 'en'
+  check (locale in ('en', 'ar'));
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1499,5 +1508,9 @@ from (
       where tgname = 'profiles_guard_privilege_columns' and not tgisinternal) = 1),
     ('SECURITY: storage upload limits set',
      coalesce((select file_size_limit from storage.buckets where id = 'case-images') = 8388608, true)
-     and coalesce((select file_size_limit from storage.buckets where id = 'avatars') = 8388608, true))
+     and coalesce((select file_size_limit from storage.buckets where id = 'avatars') = 8388608, true)),
+    ('column: profiles.locale',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'locale'))
 ) as checks(item, present);

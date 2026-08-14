@@ -111,6 +111,12 @@ export default async function ProfilePage({
               <Link href="/learn" className="hover:text-text">
                 Learn
               </Link>
+              <Link href="/notifications" className="hover:text-text">
+                Notifications
+              </Link>
+              <Link href="/settings" className="hover:text-text">
+                Settings
+              </Link>
               {profile.is_admin && (
                 <Link href="/admin" className="hover:text-text">
                   Admin

@@ -1,4 +1,6 @@
 import type { HomeStats } from "@/lib/home";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 /**
  * A ring built from a conic-gradient rather than an SVG stroke-dasharray —
@@ -7,8 +9,10 @@ import type { HomeStats } from "@/lib/home";
  */
 export function WeeklyActivityCard({
   activity,
+  locale,
 }: {
   activity: HomeStats["activity"];
+  locale: Locale;
 }) {
   return (
     <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]">
@@ -20,7 +24,7 @@ export function WeeklyActivityCard({
           📈
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
-          Your weekly activity
+          {t(locale, "activity.title")}
         </p>
       </div>
 
@@ -40,17 +44,17 @@ export function WeeklyActivityCard({
 
         <dl className="flex-1 text-sm text-muted">
           <div className="flex items-center justify-between">
-            <dt>Posts created</dt>
+            <dt>{t(locale, "activity.posts")}</dt>
             <dd className="tabular-nums text-text">{activity.postsThisWeek}</dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt>Comments</dt>
+            <dt>{t(locale, "activity.comments")}</dt>
             <dd className="tabular-nums text-text">
               {activity.commentsThisWeek}
             </dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt>Reactions given</dt>
+            <dt>{t(locale, "activity.reactions")}</dt>
             <dd className="tabular-nums text-text">
               {activity.reactionsThisWeek}
             </dd>

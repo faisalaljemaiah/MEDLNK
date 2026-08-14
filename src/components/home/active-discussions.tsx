@@ -1,12 +1,22 @@
 import Link from "next/link";
 import type { FeedCase } from "@/lib/cases";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 /**
  * Real, currently-discussed cases — not a fabricated events calendar.
  * MEDLNK has no events feature; this fills the same "what's happening right
- * now" role in the right rail with data that actually exists.
+ * now" role in the right rail with data that actually exists. Reply counts
+ * stay English for the same plural-form reason noted in
+ * trending-communities.tsx.
  */
-export function ActiveDiscussions({ cases }: { cases: FeedCase[] }) {
+export function ActiveDiscussions({
+  cases,
+  locale,
+}: {
+  cases: FeedCase[];
+  locale: Locale;
+}) {
   if (cases.length === 0) return null;
 
   return (
@@ -19,7 +29,7 @@ export function ActiveDiscussions({ cases }: { cases: FeedCase[] }) {
           💬
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
-          Active discussions
+          {t(locale, "discussions.title")}
         </p>
       </div>
       <ul className="mt-2.5 flex flex-col divide-y divide-line">

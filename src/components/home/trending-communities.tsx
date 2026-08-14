@@ -1,15 +1,24 @@
 import Link from "next/link";
 import type { TrendingCommunity } from "@/lib/home";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 /**
  * MEDLNK has no dedicated communities table — each "community" here is a
  * specialty with real recent case activity (see getTrendingCommunities),
  * linked into the existing /search?specialty= filter rather than a new page.
+ *
+ * Only the section header is translated; the member/case counts below stay
+ * English — Arabic plural forms (dual, few, many) need real per-count
+ * grammar, not a naive singular/plural swap, and getting that wrong reads as
+ * more broken than leaving numbers in English.
  */
 export function TrendingCommunities({
   communities,
+  locale,
 }: {
   communities: TrendingCommunity[];
+  locale: Locale;
 }) {
   if (communities.length === 0) return null;
 
@@ -23,7 +32,7 @@ export function TrendingCommunities({
           🌐
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
-          Trending communities
+          {t(locale, "communities.title")}
         </p>
       </div>
       <ul className="mt-2.5 flex flex-col divide-y divide-line">

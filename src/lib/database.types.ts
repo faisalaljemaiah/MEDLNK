@@ -7,6 +7,9 @@
 // An `interface` here silently breaks insert()/update() typing (Row: never).
 
 export type VerificationStatus = "pending" | "approved" | "rejected";
+
+/** Mirrors the locale check constraint in 0021_locale_preference.sql. */
+export type Locale = "en" | "ar";
 /**
  * The clinical-value reactions from 0010. These replaced the bare "like": on a
  * clinical network the useful question is *why* a case mattered, and these are
@@ -85,6 +88,8 @@ export type Profile = {
   is_admin: boolean;
   /** Student Mode (0014) — a preference, not a role. Leads with Learn. */
   student_mode: boolean;
+  /** Display language (0021) — a preference, same footing as student_mode. */
+  locale: Locale;
   /** Set by an admin. Makes is_verified() false, which blocks every write. */
   suspended_at: string | null;
   suspended_reason: string | null;
