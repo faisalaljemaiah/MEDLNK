@@ -36,6 +36,10 @@ type ReactionBarProps = {
   commentsHref?: string;
   /** "light" for surfaces on top of bg-surface, "dark" for full-bleed reel backgrounds */
   tone?: "light" | "dark";
+  /** Centers the rows instead of left-aligning them. Defaults to matching
+   *  `tone === "dark"` (the reel's own default), but is independent of tone —
+   *  a light-toned reel card still wants its bar centered. */
+  center?: boolean;
   /**
    * "full" spells the clinical reactions out on their own row — the case page,
    * where the reader has just finished the case and the question "what did this
@@ -57,6 +61,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
       onOpenComments,
       commentsHref,
       tone = "light",
+      center,
       variant = "compact",
       onToggle,
     },
@@ -128,6 +133,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
   }
 
   const dark = tone === "dark";
+  const centered = center ?? dark;
   const mutedClass = dark ? "text-white/70" : "text-muted";
   const idleChip = dark
     ? "border-white/25 text-white/80 hover:border-white/50"
@@ -140,7 +146,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
           "flex flex-wrap gap-2",
           // The reel centres its bar; everywhere else the row starts at the
           // text margin like the rest of the card.
-          dark && "justify-center",
+          centered && "justify-center",
         )}
       >
         {CLINICAL_REACTIONS.map((r) => {
@@ -170,7 +176,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
         })}
       </div>
 
-      <div className={clsx("flex items-center gap-5", dark && "justify-center")}>
+      <div className={clsx("flex items-center gap-5", centered && "justify-center")}>
         {onOpenComments || !commentsHref ? (
           <button
             type="button"
