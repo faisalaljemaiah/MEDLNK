@@ -26,10 +26,10 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
     ? profile.handle
       ? `/u/${profile.handle}`
       : "/onboarding"
-    : "/login";
+    : "/welcome";
   const isProfileActive = profile?.handle
     ? pathname === `/u/${profile.handle}`
-    : pathname === "/onboarding" || pathname === "/login";
+    : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-4">

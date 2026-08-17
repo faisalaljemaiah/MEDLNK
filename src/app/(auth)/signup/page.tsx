@@ -12,15 +12,22 @@ export default function SignUpPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
-      <div className="flex flex-col items-center gap-3 text-center">
+      <Link
+        href="/welcome"
+        className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
+      >
         <Logo size={44} />
         <h1 className="font-headline text-2xl text-text">Join MEDLNK</h1>
         <p className="text-sm text-muted">
           A clinical knowledge network for verified medical professionals.
         </p>
-      </div>
+      </Link>
 
-      <form action={action} className="flex flex-col gap-4">
+      <form
+        action={action}
+        className="animate-welcome-rise flex flex-col gap-4"
+        style={{ animationDelay: "120ms" }}
+      >
         <TextField
           label="Email"
           name="email"
@@ -49,7 +56,10 @@ export default function SignUpPage() {
         <SubmitButton>Create account</SubmitButton>
       </form>
 
-      <p className="text-center text-sm text-muted">
+      <p
+        className="animate-welcome-rise text-center text-sm text-muted"
+        style={{ animationDelay: "220ms" }}
+      >
         Already have an account?{" "}
         <Link href="/login" className="text-accent hover:underline">
           Sign in

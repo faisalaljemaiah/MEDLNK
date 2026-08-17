@@ -16,14 +16,14 @@ export function TopHeader({ loggedIn }: { loggedIn: boolean }) {
       </Link>
       <div className="flex w-18 shrink-0 items-center justify-end">
         <Link
-          href={loggedIn ? "/settings" : "/login"}
+          href={loggedIn ? "/settings" : "/welcome"}
           className="flex w-9 shrink-0 items-center justify-center text-text transition-transform duration-150 ease-out active:scale-90"
           aria-label="Settings"
         >
           <SettingsIcon />
         </Link>
         <Link
-          href={loggedIn ? "/messages" : "/login"}
+          href={loggedIn ? "/messages" : "/welcome"}
           className="flex w-9 shrink-0 items-center justify-center text-text transition-transform duration-150 ease-out active:scale-90"
           aria-label="Messages"
         >

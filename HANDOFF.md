@@ -203,6 +203,35 @@ Owner's ask: remove the header notification bell, add a Settings page, and
   `profiles.locale` yet at the time of writing, so this was the only way to
   see the real RTL render before the SQL is applied.
 
+### Welcome screen + auth pages redesign
+
+Owner's ask: a welcome animation, "before" the sign-up/login pages. No
+schema, no new tables — purely `(auth)` route group and two new CSS
+keyframes (`animate-welcome-logo`, `animate-welcome-rise` — deliberately
+longer/more of a flourish than the existing `animate-enter`, since that one
+is on the routine-navigation path and this isn't; both respect the app's
+existing global `prefers-reduced-motion` override).
+
+- New `/welcome` (`src/app/(auth)/welcome/page.tsx`): logo scale-in, then
+  tagline and the two CTAs ("Create account", "Sign in") rise in staggered.
+  Deliberately not a gate: a "Browse without an account →" link keeps the
+  existing signed-out feed-browsing (RLS already lets `anon` read cases)
+  exactly as reachable as either form — the point was to add a nicer front
+  door, not to require an account to see anything.
+- New `src/app/(auth)/layout.tsx`: a shared soft green gradient wash behind
+  welcome/login/signup/onboarding, same treatment as the Home hero.
+- `/login` and `/signup` got the same entrance animation and a logo that
+  links back to `/welcome`, otherwise unchanged — same Server Actions, same
+  fields, same validation.
+- The two *primary* signed-out entry points — `TopHeader`'s settings/
+  messages icons and `BottomNav`'s profile avatar — now go to `/welcome`
+  instead of straight to `/login`. Left everything else (the dozen or so
+  page-level `if (!user) redirect("/login")` guards, and the contextual
+  "Sign in to join the discussion" prompt on a case) pointed straight at
+  `/login` — those are already intent-clear moments, and routing every one
+  of them through `/welcome` would be a much bigger sweep for no real
+  benefit.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
