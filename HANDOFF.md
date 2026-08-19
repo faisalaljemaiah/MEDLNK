@@ -232,6 +232,48 @@ existing global `prefers-reduced-motion` override).
   of them through `/welcome` would be a much bigger sweep for no real
   benefit.
 
+### Bug fix: HEIC photos rejected on upload
+
+Reported as "I tried to post something and it couldn't." Root-caused by
+reproducing it end-to-end with Playwright (real login, real compose form,
+a real HEIC file attached) before touching any code: the 0020 upload
+hardening earlier this session added `validateImageUpload()`
+(`src/lib/uploads.ts`), which allowlists JPEG/PNG/WebP/GIF only. HEIC —
+the default photo format on iPhone since iOS 11 — isn't in that list, so
+any photo picked straight from an iPhone's library was silently rejected
+with "Images only — JPEG, PNG, WebP or GIF." The allowlist itself is
+correct (HEIC isn't broadly displayable in non-Safari browsers, so
+accepting it as-is would trade a clear rejection for a broken image most
+readers would see); the fix converts it before it ever reaches that check.
+
+- New `src/lib/heic.ts`: `toUploadableImage(file)` — detects HEIC/HEIF by
+  sniffing the file's actual container bytes (via `heic-to`'s `isHeic`,
+  not the browser-reported MIME type, which iOS gets right but shouldn't
+  be trusted for anything since it's just client-supplied metadata) and,
+  if so, decodes and re-encodes it to JPEG client-side (wasm decode, canvas
+  re-encode — no server-side dependency, so no serverless/build-size cost).
+  Non-HEIC files pass through untouched.
+- Wired into both file inputs that exist in the app —
+  `compose-form.tsx` (case photo) and `onboarding-form.tsx` (avatar) — via
+  an `onChange` handler that replaces the `<input>`'s `FileList` with the
+  converted file through `DataTransfer`, so the existing native-form-action
+  submit path picks it up with no other change. A "Converting photo…" note
+  shows during the (sub-second to a few seconds, depending on photo size)
+  conversion, and `SubmitButton` gained a `disabled` prop so submit can't
+  fire on the original un-converted file mid-conversion.
+- If conversion throws (corrupt file, unsupported HEIC variant), it falls
+  back to the original file untouched — same clear rejection message as
+  before, never a silent failure.
+- Verified against the real hosted DB, not just locally: logged in as a
+  throwaway test account, attached a real HEIC fixture (a known-good
+  `ftyp mif1` file, not just a mislabeled JPEG) through the actual compose
+  form, confirmed the post succeeded, then downloaded the stored file
+  straight from Supabase Storage and confirmed with `file`/`identify` that
+  it's a genuine, valid 1440×960 JPEG — not just an accepted-but-broken
+  upload. All diagnostic artifacts (the test post, its storage object, the
+  throwaway auth user and profile row) were deleted from the hosted
+  project afterward.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

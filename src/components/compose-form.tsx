@@ -6,6 +6,7 @@ import { createCaseAction } from "@/app/actions/case";
 import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
 import { COUNTRIES } from "@/lib/countries";
+import { toUploadableImage } from "@/lib/heic";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -61,6 +62,8 @@ export function ComposeForm({
   const [state, action] = useActionState(createCaseAction, undefined);
   const formRef = useRef<HTMLFormElement>(null);
   const acknowledgeRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [convertingImage, setConvertingImage] = useState(false);
 
   const [suggestions, setSuggestions] = useState<PolishedField[]>([]);
   const [polishNote, setPolishNote] = useState<string | null>(null);
@@ -106,6 +109,28 @@ export function ComposeForm({
       setSuggestions(result.suggestions);
       setPolishNote(result.message ?? null);
     });
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const input = imageInputRef.current;
+    if (!file || !input) return;
+
+    setConvertingImage(true);
+    try {
+      const uploadable = await toUploadableImage(file);
+      if (uploadable !== file) {
+        const transfer = new DataTransfer();
+        transfer.items.add(uploadable);
+        input.files = transfer.files;
+      }
+    } catch {
+      // Conversion failed — leave the original file. The server-side check
+      // in validateImageUpload will give a clear rejection if it can't be
+      // used, same as it would have before conversion existed.
+    } finally {
+      setConvertingImage(false);
+    }
   }
 
   function acceptOne(field: string) {
@@ -351,12 +376,17 @@ export function ComposeForm({
           Image (optional)
         </label>
         <input
+          ref={imageInputRef}
           id="image"
           name="image"
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
+          onChange={handleImageChange}
           className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
         />
+        {convertingImage && (
+          <p className="text-xs text-muted">Converting photo…</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -473,7 +503,7 @@ export function ComposeForm({
         </div>
       )}
 
-      <SubmitButton>Post case</SubmitButton>
+      <SubmitButton disabled={convertingImage}>Post case</SubmitButton>
     </form>
   );
 }

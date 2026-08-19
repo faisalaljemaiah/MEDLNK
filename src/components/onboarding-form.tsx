@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { updateProfileAction } from "@/app/actions/profile";
 import { ROLES } from "@/lib/roles";
+import { toUploadableImage } from "@/lib/heic";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Avatar } from "@/components/avatar";
@@ -11,6 +12,29 @@ import type { Profile } from "@/lib/database.types";
 export function OnboardingForm({ profile }: { profile: Profile }) {
   const [state, action] = useActionState(updateProfileAction, undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [convertingAvatar, setConvertingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const input = avatarInputRef.current;
+    if (!file || !input) return;
+
+    setConvertingAvatar(true);
+    try {
+      const uploadable = await toUploadableImage(file);
+      if (uploadable !== file) {
+        const transfer = new DataTransfer();
+        transfer.items.add(uploadable);
+        input.files = transfer.files;
+      }
+      setAvatarPreview(URL.createObjectURL(uploadable));
+    } catch {
+      setAvatarPreview(URL.createObjectURL(file));
+    } finally {
+      setConvertingAvatar(false);
+    }
+  }
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -27,16 +51,17 @@ export function OnboardingForm({ profile }: { profile: Profile }) {
           {profile.avatar_url ? "Change photo" : "Add a photo"}
         </label>
         <input
+          ref={avatarInputRef}
           id="avatar"
           name="avatar"
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) setAvatarPreview(URL.createObjectURL(file));
-          }}
+          onChange={handleAvatarChange}
         />
+        {convertingAvatar && (
+          <p className="text-xs text-muted">Converting photo…</p>
+        )}
       </div>
       <TextField
         label="Full name"
@@ -102,7 +127,7 @@ export function OnboardingForm({ profile }: { profile: Profile }) {
           {state.error}
         </p>
       )}
-      <SubmitButton>Save profile</SubmitButton>
+      <SubmitButton disabled={convertingAvatar}>Save profile</SubmitButton>
     </form>
   );
 }
