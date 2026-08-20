@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
 import { DOUBLE_TAP_REACTION } from "@/lib/reaction-types";
+import { isVideoUrl } from "@/lib/media";
 import type { FeedCase } from "@/lib/cases";
 
 const DOUBLE_TAP_MS = 300;
@@ -14,6 +15,7 @@ const DOUBLE_TAP_MS = 300;
 export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string }) {
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const hasMedia = Boolean(feedCase.media_url);
+  const isVideo = hasMedia && isVideoUrl(feedCase.media_url!);
   const [revealed, setRevealed] = useState(
     feedCase.viewerReactions.includes(DOUBLE_TAP_REACTION),
   );
@@ -49,17 +51,33 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
       >
         {hasMedia && (
           <>
-            <Image
-              src={feedCase.media_url!}
-              alt=""
-              fill
-              sizes="(max-width: 640px) 100vw, 384px"
-              className="object-cover"
-            />
-            {/* Case photos are arbitrary and a near-white one would leave
-                white text unreadable, so this holds a dark floor through the
-                middle of the card where the text sits — a legibility aid over
-                an arbitrary photo, not a colour choice. */}
+            {isVideo ? (
+              // No native controls here: the whole card is already one big
+              // double-tap-to-react zone (the tap-catcher div below), which
+              // would fight a control bar for taps. Autoplaying muted and
+              // looped keeps it watchable without needing controls, same as
+              // a silent GIF.
+              <video
+                src={feedCase.media_url!}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <Image
+                src={feedCase.media_url!}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 384px"
+                className="object-cover"
+              />
+            )}
+            {/* Case photos/videos are arbitrary and a near-white one would
+                leave white text unreadable, so this holds a dark floor
+                through the middle of the card where the text sits — a
+                legibility aid over arbitrary media, not a colour choice. */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/45 to-black/20" />
           </>
         )}

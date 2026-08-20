@@ -14,6 +14,7 @@ import { countryName } from "@/lib/countries";
 import { getDiveDeepDataAction } from "@/app/actions/recap";
 import { getRevealIfAnswered } from "@/app/actions/interactive";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
+import { isVideoUrl } from "@/lib/media";
 import { Avatar } from "@/components/avatar";
 import { ReactionBar } from "@/components/reaction-bar";
 import { CaseQuestion } from "@/components/case-question";
@@ -126,24 +127,41 @@ export default async function CasePage({
         )}
       </div>
 
-      <p className="mt-4 text-sm leading-relaxed text-text">
-        {feedCase.short_caption}
-      </p>
+      {typeMeta.isQuote ? (
+        <p className="mt-4 border-l-2 border-accent-2/40 pl-4 font-headline text-xl italic leading-snug text-text">
+          {feedCase.short_caption}
+        </p>
+      ) : (
+        <p className="mt-4 text-sm leading-relaxed text-text">
+          {feedCase.short_caption}
+        </p>
+      )}
 
       {feedCase.media_url && (
-        // Empty alt: the caption above carries the meaning, and a clinical
-        // image has no useful text equivalent a poster could be relied on to
-        // write. It sits above the body so the reader has seen the image before
-        // the presentation refers to it.
-        <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2">
-          <Image
-            src={feedCase.media_url}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 100vw, 640px"
-            className="object-contain"
-          />
-        </div>
+        isVideoUrl(feedCase.media_url) ? (
+          <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
+            <video
+              src={feedCase.media_url}
+              controls
+              playsInline
+              className="h-full w-full object-contain"
+            />
+          </div>
+        ) : (
+          // Empty alt: the caption above carries the meaning, and a clinical
+          // image has no useful text equivalent a poster could be relied on to
+          // write. It sits above the body so the reader has seen the image
+          // before the presentation refers to it.
+          <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2">
+            <Image
+              src={feedCase.media_url}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 100vw, 640px"
+              className="object-contain"
+            />
+          </div>
+        )
       )}
 
       <CaseComparison comparison={comparison} />

@@ -6,7 +6,7 @@ import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
 import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
-import { validateImageUpload } from "@/lib/uploads";
+import { validateImageUpload, validateVideoUpload } from "@/lib/uploads";
 import type { CaseType, NearMiss } from "@/lib/database.types";
 
 export type ComposeFormState =
@@ -54,6 +54,7 @@ export async function createCaseAction(
   const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
   const country_code = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
   const image = formData.get("image");
+  const video = formData.get("video");
   const acknowledgeWarning = formData.get("acknowledge_warning") === "true";
 
   // Post type decides which fields are required and which payloads are built.
@@ -176,7 +177,29 @@ export async function createCaseAction(
   }
 
   let media_url: string | null = null;
-  if (image instanceof File && image.size > 0) {
+  if (typeMeta.requiresVideo) {
+    if (!(video instanceof File) || video.size === 0) {
+      return { error: "A video is required for this format." };
+    }
+    const validated = validateVideoUpload(video);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("case-videos")
+      .upload(path, video, { contentType: video.type });
+
+    if (uploadError) {
+      return { error: `Video upload failed: ${uploadError.message}` };
+    }
+    const { data: publicUrl } = supabase.storage
+      .from("case-videos")
+      .getPublicUrl(path);
+    media_url = publicUrl.publicUrl;
+  } else if (typeMeta.requiresImage && !(image instanceof File && image.size > 0)) {
+    return { error: "A photo is required for this format." };
+  } else if (image instanceof File && image.size > 0) {
     const validated = validateImageUpload(image);
     if (!validated.ok) {
       return { error: validated.error };

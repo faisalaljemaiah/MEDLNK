@@ -23,7 +23,10 @@ export type ClinicalReactionType =
 /** repost and save are distribution/bookmarking, not a judgement on the case. */
 export type ReactionType = ClinicalReactionType | "repost" | "save";
 
-/** Mirrors the case_type check constraint in 0008_interactive_cases.sql. */
+/**
+ * Mirrors the case_type check constraint in 0008_interactive_cases.sql,
+ * widened in 0022_photo_quote_video_posts.sql.
+ */
 export type CaseType =
   | "clinical_case"
   | "what_would_you_do"
@@ -35,7 +38,10 @@ export type CaseType =
   | "clinical_pearl"
   | "things_i_wish_i_knew"
   | "case_vs_case"
-  | "research_finding";
+  | "research_finding"
+  | "photo_post"
+  | "quote_post"
+  | "video_post";
 
 export type RevealMode = "none" | "staged";
 

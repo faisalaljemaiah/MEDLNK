@@ -41,3 +41,30 @@ export function validateImageUpload(file: File): ImageValidation {
   }
   return { ok: true, ext };
 }
+
+/**
+ * Same shape as the image allowlist above, for video posts (0022) — checked
+ * against the case-videos bucket's own file_size_limit/allowed_mime_types,
+ * which is what actually holds if this client-side check is bypassed.
+ */
+const ALLOWED_VIDEO_TYPES: Record<string, string> = {
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+};
+
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MiB, matches the bucket limit
+
+export function validateVideoUpload(file: File): ImageValidation {
+  const ext = ALLOWED_VIDEO_TYPES[file.type];
+  if (!ext) {
+    return {
+      ok: false,
+      error: "Videos only — MP4, WebM or MOV.",
+    };
+  }
+  if (file.size > MAX_VIDEO_BYTES) {
+    return { ok: false, error: "Videos must be 50MB or smaller." };
+  }
+  return { ok: true, ext };
+}

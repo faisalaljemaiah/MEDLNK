@@ -1382,6 +1382,81 @@ alter table public.profiles add column if not exists locale text not null defaul
   check (locale in ('en', 'ar'));
 
 -- ============================================================================
+-- 0022_photo_quote_video_posts.sql — Photo / Quote / Video post formats
+-- ============================================================================
+-- Three lightweight formats alongside the structured clinical case. video_post
+-- is the first format whose media is a video, so it gets its own bucket —
+-- case-images stays image-only (its allowed_mime_types from 0020 doesn't
+-- change) with its own size ceiling. photo_post and quote_post reuse
+-- case-images/media_url, nothing new needed for those.
+
+alter table public.cases drop constraint if exists cases_case_type_check;
+alter table public.cases add constraint cases_case_type_check check (case_type in (
+  'clinical_case',
+  'what_would_you_do',
+  'blind_case',
+  'case_evolution',
+  'near_miss',
+  'safety_alert',
+  'saw_this_today',
+  'clinical_pearl',
+  'things_i_wish_i_knew',
+  'case_vs_case',
+  'research_finding',
+  'photo_post',
+  'quote_post',
+  'video_post'
+));
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'case-videos', 'case-videos', true,
+  52428800, -- 50 MiB
+  array['video/mp4', 'video/webm', 'video/quicktime']
+)
+on conflict (id) do nothing;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'case_videos_read_all'
+  ) then
+    create policy "case_videos_read_all"
+      on storage.objects for select
+      using (bucket_id = 'case-videos');
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'case_videos_insert_verified_own_folder'
+  ) then
+    create policy "case_videos_insert_verified_own_folder"
+      on storage.objects for insert
+      with check (
+        bucket_id = 'case-videos'
+        and public.is_verified()
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'case_videos_delete_own_folder'
+  ) then
+    create policy "case_videos_delete_own_folder"
+      on storage.objects for delete
+      using (
+        bucket_id = 'case-videos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+end $$;
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1512,5 +1587,13 @@ from (
     ('column: profiles.locale',
      exists (select 1 from information_schema.columns
              where table_schema = 'public' and table_name = 'profiles'
-               and column_name = 'locale'))
+               and column_name = 'locale')),
+    ('cases.case_type allows photo_post/quote_post/video_post',
+     exists (
+       select 1 from pg_constraint
+       where conrelid = 'public.cases'::regclass and conname = 'cases_case_type_check'
+         and pg_get_constraintdef(oid) like '%video_post%'
+     )),
+    ('bucket: case-videos',
+     exists (select 1 from storage.buckets where id = 'case-videos'))
 ) as checks(item, present);

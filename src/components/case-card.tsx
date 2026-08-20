@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import { ReactionBar } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
 import { caseTypeMeta } from "@/lib/case-types";
+import { isVideoUrl } from "@/lib/media";
 import type { FeedCase } from "@/lib/cases";
 
 export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string }) {
@@ -62,27 +63,47 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
           {feedCase.title}
         </h3>
       </Link>
-      <p className="mt-1 text-sm leading-relaxed text-muted">
-        {feedCase.short_caption}
-      </p>
+      {typeMeta.isQuote ? (
+        <p className="mt-2 border-l-2 border-accent-2/40 pl-3 font-headline text-lg italic leading-snug text-text">
+          {feedCase.short_caption}
+        </p>
+      ) : (
+        <p className="mt-1 text-sm leading-relaxed text-muted">
+          {feedCase.short_caption}
+        </p>
+      )}
 
       {feedCase.media_url && (
-        // Fixed aspect box rather than intrinsic sizing: case photos are
-        // arbitrary, and letting one set its own height makes the feed jump as
-        // images load. Empty alt — the caption above already carries the
-        // meaning, so announcing the file again is noise to a screen reader.
-        <Link
-          href={caseHref}
-          className="relative mt-3 block aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2"
-        >
-          <Image
-            src={feedCase.media_url}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 100vw, 640px"
-            className="object-cover"
-          />
-        </Link>
+        isVideoUrl(feedCase.media_url) ? (
+          // Not a Link like the image case below: a video needs its native
+          // controls to be directly clickable, which a wrapping Link would
+          // fight over every tap.
+          <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
+            <video
+              src={feedCase.media_url}
+              controls
+              playsInline
+              className="h-full w-full object-contain"
+            />
+          </div>
+        ) : (
+          // Fixed aspect box rather than intrinsic sizing: case photos are
+          // arbitrary, and letting one set its own height makes the feed jump
+          // as images load. Empty alt — the caption above already carries the
+          // meaning, so announcing the file again is noise to a screen reader.
+          <Link
+            href={caseHref}
+            className="relative mt-3 block aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2"
+          >
+            <Image
+              src={feedCase.media_url}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 100vw, 640px"
+              className="object-cover"
+            />
+          </Link>
+        )
       )}
 
       {feedCase.tags.length > 0 && (

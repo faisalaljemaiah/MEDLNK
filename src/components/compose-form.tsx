@@ -188,14 +188,23 @@ export function ComposeForm({
         educational discussion — not advice about a specific patient.
       </p>
 
-      <TextField label="Title" name="title" placeholder="Hydralazine, meet hydroxyzine" required />
+      <TextField
+        label="Title"
+        name="title"
+        placeholder={
+          typeMeta.isQuote ? "On staying humble" : "Hydralazine, meet hydroxyzine"
+        }
+        required
+      />
       <Textarea
-        label={typeMeta.shortForm ? "What happened?" : "Short caption"}
+        label={typeMeta.isQuote ? "The quote" : typeMeta.shortForm ? "What happened?" : "Short caption"}
         name="short_caption"
         placeholder={
-          typeMeta.shortForm
-            ? "A sentence or two — what you saw and why it stuck with you."
-            : "One or two sentences that hook a reader in the feed."
+          typeMeta.isQuote
+            ? "“The best clinicians I know are the ones still asking questions.” — an attending, my first week"
+            : typeMeta.shortForm
+              ? "A sentence or two — what you saw and why it stuck with you."
+              : "One or two sentences that hook a reader in the feed."
         }
         required
       />
@@ -369,26 +378,47 @@ export function ComposeForm({
         </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="image"
-          className="font-label text-xs uppercase tracking-wide text-muted"
-        >
-          Image (optional)
-        </label>
-        <input
-          ref={imageInputRef}
-          id="image"
-          name="image"
-          type="file"
-          accept="image/*,.heic,.heif"
-          onChange={handleImageChange}
-          className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
-        />
-        {convertingImage && (
-          <p className="text-xs text-muted">Converting photo…</p>
-        )}
-      </div>
+      {typeMeta.requiresVideo ? (
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="video"
+            className="font-label text-xs uppercase tracking-wide text-muted"
+          >
+            Video
+          </label>
+          <input
+            id="video"
+            name="video"
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,.mov"
+            required
+            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+          />
+          <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="image"
+            className="font-label text-xs uppercase tracking-wide text-muted"
+          >
+            {typeMeta.requiresImage ? "Photo" : "Image (optional)"}
+          </label>
+          <input
+            ref={imageInputRef}
+            id="image"
+            name="image"
+            type="file"
+            accept="image/*,.heic,.heif"
+            required={typeMeta.requiresImage}
+            onChange={handleImageChange}
+            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+          />
+          {convertingImage && (
+            <p className="text-xs text-muted">Converting photo…</p>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
@@ -505,7 +535,11 @@ export function ComposeForm({
         </div>
       )}
 
-      <SubmitButton disabled={convertingImage}>Post case</SubmitButton>
+      <SubmitButton disabled={convertingImage}>
+        {typeMeta.requiresImage || typeMeta.requiresVideo || typeMeta.isQuote
+          ? "Post"
+          : "Post case"}
+      </SubmitButton>
     </form>
   );
 }

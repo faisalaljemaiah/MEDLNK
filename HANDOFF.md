@@ -18,6 +18,14 @@ This is fixed in code (migrations 0018-0020, all covered by
 else if you're running that anyway. Full writeup: "Security review" section
 below.
 
+Separately, **not urgent but blocking a feature**: `supabase/APPLY_TO_HOSTED.sql`
+now also has migration 0022 (Photo/Quote/Video post formats) bundled in.
+Until it's run, picking "Photo", "Quote" or "Video" in the composer and
+posting fails with a normal, non-crashing form error (confirmed — see
+"Photo / Quote / Video post formats" below) rather than doing anything
+silently wrong, but the three new formats won't actually work until this is
+applied.
+
 ## What MEDLNK is
 
 A clinical knowledge network for verified healthcare professionals and
@@ -331,6 +339,99 @@ like one continuous view instead of a hard cut.
   form's spelling-check button, the search page's Exchange link, and the
   Reel page all screenshotted and checked icon-by-icon; `tsc`/lint/build
   all clean.
+
+### Photo / Quote / Video post formats
+
+Three lightweight formats alongside the structured clinical case — requested
+directly: keep the case format, add a plain photo post, a quote/saying, and
+a short video. All three are `cases` rows with a new `case_type`, same as
+every other format (What Would You Do?, Near Miss, etc.) — no new table.
+
+- `supabase/migrations/0022_photo_quote_video_posts.sql`: widens the
+  `cases_case_type_check` constraint (drop + recreate, same pattern as every
+  other constraint change this session) to add `photo_post`, `quote_post`,
+  `video_post`; adds a **new** `case-videos` storage bucket (50 MiB,
+  `video/mp4`/`webm`/`quicktime` only) with the same read-all /
+  insert-verified-own-folder / delete-own-folder RLS shape as `case-images`
+  (0005). `case-images` itself is untouched — photo and quote posts reuse it
+  and the existing `media_url` column exactly as clinical-case photos
+  already did; video is the only format that needed new storage
+  infrastructure, since it's the first non-image media type. Bundled into
+  `supabase/APPLY_TO_HOSTED.sql` (checklist now 41 rows,
+  `supabase/tests/apply-file.sh` confirms it applies cleanly twice from the
+  hosted project's actual current state and leaves the same schema the
+  migration would); **not yet applied to the hosted project** — see the
+  banner at the top of this file.
+- `src/lib/case-types.ts`: three new `CASE_TYPES` entries — `photo_post`
+  (`requiresImage: true`), `quote_post` (`isQuote: true`, renders
+  `short_caption` as a pulled quote instead of a plain caption), `video_post`
+  (`requiresVideo: true`). All three `shortForm: true`, same as `saw_this_today`
+  — no full clinical write-up demanded. Nothing else needed to make them
+  show up in the composer's post-type picker or the feed's badges/filters:
+  both are already data-driven off `CASE_TYPES`, the one-line comment on
+  that file said as much before this session touched it.
+- `src/lib/uploads.ts`: `validateVideoUpload` — same shape as
+  `validateImageUpload` (0020), checked-MIME-type allowlist, 50MB cap. Same
+  "app check is the friendly half, the bucket config is what actually holds"
+  split.
+- `src/lib/media.ts` (new): `isVideoUrl(url)` — sniffs the extension (`.mp4`/
+  `.webm`/`.mov`), which is safe to trust here specifically because it's
+  always assigned server-side from the checked MIME type
+  (`validateVideoUpload`/`validateImageUpload`'s `ext`), never from anything
+  client-supplied. Used at all three places `media_url` renders
+  (`case-card.tsx`, the case detail page, `reel-slide.tsx`) to pick
+  `<video>` vs `next/image`.
+- `src/app/actions/case.ts`: branches the upload path on
+  `typeMeta.requiresVideo` (→ `case-videos` bucket) vs the existing image
+  path (→ `case-images`), and returns a plain `{ error }` — not a crash —
+  if a format that requires media doesn't have it, or if the upload itself
+  fails (e.g. the bucket not existing yet on a hosted project that hasn't
+  had 0022 applied — confirmed this produces "Video upload failed: Bucket
+  not found" on the compose form, not a server error).
+- `src/components/compose-form.tsx`: the media field swaps between the
+  image input and a video input based on `typeMeta.requiresVideo`
+  (mutually exclusive — a post is never both), gets `required` when its
+  format demands it, and the title/caption placeholders and labels adapt
+  for quote posts ("The quote", with a real placeholder quote rather than
+  generic caption copy).
+- Render sites (`case-card.tsx`, the case detail page): a video renders as
+  a plain `<video controls>` rather than being wrapped in the same `<Link>`
+  an image is — a Link around a video would fight its own controls for
+  every tap. A quote post's `short_caption` renders as a pulled quote
+  (larger, italic, left border) instead of the plain muted caption text
+  everywhere else uses. `reel-slide.tsx`'s video plays `autoPlay muted loop`
+  with no controls, matching how a photo already behaves there (ambient
+  background media under the reaction UI, not something with its own
+  transport controls) — the tap-catcher overlay that handles double-tap
+  reactions stays exactly as it was.
+- **Found and fixed a real, pre-existing latent bug while building this**:
+  Next.js Server Actions cap the request body at 1MB by default
+  (`experimental.serverActions.bodySizeLimit`, undocumented default, never
+  configured in this project). That silently broke every image upload over
+  ~1MB — well within `validateImageUpload`'s advertised 8MB — with a raw
+  "Body exceeded 1 MB limit" crash screen instead of a form error, and would
+  have made the 50MB video cap essentially fictional. Caught by testing the
+  video upload with a real ~1.1MB sample clip and watching it crash instead
+  of hit `validateVideoUpload`. Fixed in `next.config.ts`
+  (`bodySizeLimit: "52mb"`, sized to clear the video cap with multipart
+  overhead room). This was already broken for ordinary case/avatar photo
+  uploads before this session touched anything — worth mentioning to
+  whoever posted a photo that silently failed in the past and assumed it
+  was something else.
+- Verified against the real hosted DB (throwaway verified test account,
+  cleaned up after): all three post-type pills render with the right
+  field changes (Photo requires an image and blocks client-side without
+  one — confirmed via the browser's native validation message, not just
+  visually; Quote shows the quote-styled caption field; Video shows the
+  file input and 50MB hint); a real ~1.1MB MP4 was attached and submitted
+  end-to-end through the actual compose form, past the body-size fix,
+  through `validateVideoUpload`, and cleanly rejected with the expected
+  "Bucket not found" message (proving both the fix and the pre-migration
+  failure mode are exactly what's described above, not a guess); the home
+  feed was reloaded afterward to confirm the `case-card.tsx` changes don't
+  regress rendering existing image posts. Local Postgres suite
+  (`supabase/tests/0022_photo_quote_video_posts.test.sql`, 6 assertions)
+  and `apply-file.sh` both pass; `tsc`/lint/build clean.
 
 ## Security review
 
