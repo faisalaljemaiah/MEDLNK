@@ -19,7 +19,7 @@ export function HomeGreeting({
     <div className="px-4 pt-5">
       <h1 className="font-headline text-xl text-text">
         {t(locale, timeOfDayKey())}
-        {firstName ? `, ${firstName}` : ""} <span aria-hidden>👋</span>
+        {firstName ? `, ${firstName}` : ""}
       </h1>
       <p className="mt-0.5 text-sm text-muted">{t(locale, "greeting.subtitle")}</p>
     </div>

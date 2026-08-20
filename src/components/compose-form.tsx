@@ -7,6 +7,7 @@ import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
 import { COUNTRIES } from "@/lib/countries";
 import { toUploadableImage } from "@/lib/heic";
+import { SparkleIcon } from "@/components/icons";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -395,9 +396,10 @@ export function ComposeForm({
             type="button"
             onClick={handlePolish}
             disabled={isPolishing}
-            className="rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
           >
-            {isPolishing ? "Checking…" : "✨ Check spelling & clarity"}
+            <SparkleIcon width={15} height={15} strokeWidth={2} />
+            {isPolishing ? "Checking…" : "Check spelling & clarity"}
           </button>
           <p className="text-xs text-muted">
             Suggests wording only — you approve every change.

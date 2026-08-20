@@ -274,6 +274,64 @@ readers would see); the fix converts it before it ever reaches that check.
   throwaway auth user and profile row) were deleted from the hosted
   project afterward.
 
+### Chrome pass: real icons instead of emoji, feed glide transitions
+
+Prompted by direct feedback that the app read as generically AI-generated
+rather than something a product team designed. The clearest tell was
+decorative emoji standing in for icons — a 👋 next to "People You May
+Know", 📈 on the activity card, 🎯 on the personalized note, colorful emoji
+on every quick-create tile — plus a leftover teal-to-purple gradient on
+the Reel loading skeleton (the same generic-gradient look already fixed
+on the real Reel card earlier this session, just missed on its loading
+state). Fixed both, and added the transitions that make tab-switching feel
+like one continuous view instead of a hard cut.
+
+- `src/components/icons.tsx` gained matching outline icons — `StarIcon`,
+  `UsersIcon`, `ClipboardIcon`, `GlobeIcon`, `TrendingUpIcon`,
+  `UserPlusIcon`, `SparkleIcon`, `AlertTriangleIcon`, `TargetIcon`,
+  `CompassIcon`, `FilePlusIcon`, `QuestionIcon`, `BoltIcon`, `FileIcon` —
+  same 24×24, 2px-stroke, round-cap style as the existing set, so nothing
+  new stands out as a different icon language.
+- Every decorative emoji chip is now one of those icons: stat cards,
+  quick-create tiles, trending communities, weekly activity, active
+  discussions, recommended people, the "Personalized for X" note, the
+  Global Case Exchange link, the safety alert banner, and the AI
+  spelling-check button. The greeting's wave emoji was dropped rather than
+  replaced — "Good afternoon, Diag" reads cleaner without it. Left alone
+  on purpose: the ✓ verified checkmark (a plain, near-universal glyph, not
+  decorative chrome) and the 💡/🧠/⚠️ clinical-value reactions — those are
+  the app's actual, designed reaction system, not placeholder icons, and
+  documented as such earlier in this file.
+- `src/app/(app)/reel/loading.tsx`: the loading skeleton's
+  `from-accent to-accent-2` gradient (teal-to-purple) is now a flat
+  `border-line`/`bg-surface` card, matching what the real Reel card
+  (`reel-slide.tsx`) already looks like since the earlier "remove the
+  colour in the background" fix — the skeleton had just never been
+  updated to match.
+- Feed "glide": the Home feed content (case list under the For You /
+  Following / Trending tabs, and under each filter chip) is now wrapped in
+  React's `<ViewTransition>` (`src/app/(app)/page.tsx`), keyed on
+  `${view}-${filter.key}` — switching tabs or chips crossfades the list
+  instead of popping between renders, following the "same-route crossfade"
+  pattern from Next.js 16's view-transitions guide
+  (`node_modules/next/dist/docs/01-app/02-guides/view-transitions.md`,
+  read before writing any of this per this repo's AGENTS.md). The active
+  tab's underline (`src/components/home/feed-tabs.tsx`) is named
+  `tab-underline` so the browser morphs it from the old tab to the new one
+  instead of re-painting it in place. Both are React's native browser
+  View Transitions integration — no animation library added, and where a
+  browser doesn't support the View Transitions API, both degrade to the
+  same instant swap that existed before, so nothing regresses there.
+  Deliberately did not touch the underlying navigation architecture
+  (`HomeFeedTabs`/`FeedFilterBar` stay real `<Link>`s to real URLs, per
+  their existing documented reasoning) — the transition layers on top of
+  that, it doesn't replace it.
+- Verified visually against the real hosted DB (throwaway verified test
+  account, cleaned up after): Home top/mid, the Trending tab, the compose
+  form's spelling-check button, the search page's Exchange link, and the
+  Reel page all screenshotted and checked icon-by-icon; `tsc`/lint/build
+  all clean.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

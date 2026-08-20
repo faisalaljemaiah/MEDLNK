@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { t, type TranslationKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
+import {
+  BoltIcon,
+  CommentIcon,
+  FileIcon,
+  FilePlusIcon,
+  QuestionIcon,
+} from "@/components/icons";
+import type { ComponentType, SVGProps } from "react";
 
 /**
  * Every action below opens an existing route — either the composer
@@ -8,31 +16,35 @@ import type { Locale } from "@/lib/database.types";
  * Ask a Specialist, which is where MEDLNK's real "start a discussion" flow
  * already lives. Nothing here is a new page.
  */
-const ACTIONS: { href: string; labelKey: TranslationKey; emoji: string }[] = [
+const ACTIONS: {
+  href: string;
+  labelKey: TranslationKey;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+}[] = [
   {
     href: "/compose",
     labelKey: "quickCreate.shareCase",
-    emoji: "🩺",
+    icon: FilePlusIcon,
   },
   {
     href: "/compose?type=what_would_you_do",
     labelKey: "quickCreate.askQuestion",
-    emoji: "❓",
+    icon: QuestionIcon,
   },
   {
     href: "/consults",
     labelKey: "quickCreate.startDiscussion",
-    emoji: "💬",
+    icon: CommentIcon,
   },
   {
     href: "/compose?type=saw_this_today",
     labelKey: "quickCreate.postUpdate",
-    emoji: "⚡",
+    icon: BoltIcon,
   },
   {
     href: "/compose?type=research_finding",
     labelKey: "quickCreate.uploadResource",
-    emoji: "📄",
+    icon: FileIcon,
   },
 ];
 
@@ -49,9 +61,9 @@ export function QuickCreatePanel({ locale }: { locale: Locale }) {
           >
             <span
               aria-hidden
-              className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-lg"
+              className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent"
             >
-              {a.emoji}
+              <a.icon width={17} height={17} strokeWidth={2} />
             </span>
             <span className="font-label text-xs font-medium text-text">
               {t(locale, a.labelKey)}

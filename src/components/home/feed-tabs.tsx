@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ViewTransition } from "react";
 import { clsx } from "clsx";
 import { t, type TranslationKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
@@ -47,10 +48,15 @@ export function HomeFeedTabs({
         >
           {t(locale, tab.labelKey)}
           {active === tab.key && (
-            <span
-              aria-hidden
-              className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent transition-all duration-200 ease-out"
-            />
+            // Named so it's the same element identity across the navigation
+            // that switching tabs triggers — the browser glides it from the
+            // old tab's position to this one instead of popping in place.
+            <ViewTransition name="tab-underline">
+              <span
+                aria-hidden
+                className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent"
+              />
+            </ViewTransition>
           )}
         </Link>
       ))}

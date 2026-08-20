@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import {
@@ -30,6 +31,7 @@ import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
 import { RecommendedPeople } from "@/components/home/recommended-people";
+import { TargetIcon } from "@/components/icons";
 import { t } from "@/lib/i18n";
 
 function parseView(raw: string | undefined, hasViewer: boolean): HomeFeedView {
@@ -129,22 +131,32 @@ export default async function FeedPage({
       )}
 
       {personalized && profile?.specialty && (
-        <p className="px-4 pb-1 pt-2 font-label text-xs text-accent">
-          🎯 {t(locale, "greeting.personalized", { specialty: profile.specialty })}
+        <p className="flex items-center gap-1.5 px-4 pb-1 pt-2 font-label text-xs text-accent">
+          <TargetIcon width={13} height={13} strokeWidth={2.25} />
+          {t(locale, "greeting.personalized", { specialty: profile.specialty })}
         </p>
       )}
 
-      {cases === null ? (
-        <UnavailableNotice
-          feature={view === "following" ? "Your network feed" : "This feed"}
-        />
-      ) : cases.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-muted">
-          {emptyMessage}
-        </p>
-      ) : (
-        cases.map((c) => <CaseCard key={c.id} feedCase={c} path={path} />)
-      )}
+      {/* Switching tabs/chips is a real navigation (see HomeFeedTabs/
+          FeedFilterBar), but it stays inside this one page — a crossfade
+          says "same place, different content" instead of the harder cut a
+          plain server-rendered swap would otherwise give. Falls back to an
+          instant swap wherever the browser has no View Transitions support. */}
+      <ViewTransition key={`${view}-${filter.key}`} name="feed-content" share="auto" enter="auto" default="none">
+        <div>
+          {cases === null ? (
+            <UnavailableNotice
+              feature={view === "following" ? "Your network feed" : "This feed"}
+            />
+          ) : cases.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-muted">
+              {emptyMessage}
+            </p>
+          ) : (
+            cases.map((c) => <CaseCard key={c.id} feedCase={c} path={path} />)
+          )}
+        </div>
+      </ViewTransition>
 
       {user && stats && (
         <WeeklyActivityCard activity={stats.activity} locale={locale} />

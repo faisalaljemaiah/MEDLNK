@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { FeedCase } from "@/lib/cases";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
+import { CommentIcon } from "@/components/icons";
 
 /**
  * Real, currently-discussed cases — not a fabricated events calendar.
@@ -24,9 +25,9 @@ export function ActiveDiscussions({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-accent"
         >
-          💬
+          <CommentIcon width={12} height={12} strokeWidth={2.25} />
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
           {t(locale, "discussions.title")}

@@ -4,6 +4,7 @@ import { FollowButton } from "@/components/follow-button";
 import type { RecommendedPerson } from "@/lib/home";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
+import { UserPlusIcon } from "@/components/icons";
 
 export function RecommendedPeople({
   people,
@@ -21,9 +22,9 @@ export function RecommendedPeople({
       <div className="flex items-center gap-2 px-4">
         <span
           aria-hidden
-          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-accent"
         >
-          👋
+          <UserPlusIcon width={13} height={13} strokeWidth={2.25} />
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
           {t(locale, "people.title")}

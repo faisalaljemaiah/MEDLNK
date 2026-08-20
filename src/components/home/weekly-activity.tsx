@@ -1,6 +1,7 @@
 import type { HomeStats } from "@/lib/home";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
+import { TrendingUpIcon } from "@/components/icons";
 
 /**
  * A ring built from a conic-gradient rather than an SVG stroke-dasharray —
@@ -19,9 +20,9 @@ export function WeeklyActivityCard({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+          className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-accent"
         >
-          📈
+          <TrendingUpIcon width={13} height={13} strokeWidth={2.25} />
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">
           {t(locale, "activity.title")}

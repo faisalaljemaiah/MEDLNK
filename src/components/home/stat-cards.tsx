@@ -1,6 +1,8 @@
 import type { HomeStats } from "@/lib/home";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
+import { ClipboardIcon, GlobeIcon, StarIcon, UsersIcon } from "@/components/icons";
+import type { ComponentType, SVGProps } from "react";
 
 const CARD =
   "rounded-2xl border border-line bg-surface p-3.5 shadow-sm shadow-slate-900/[0.03] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/[0.06]";
@@ -16,13 +18,13 @@ function Delta({ value, suffix, locale }: { value: number; suffix: string; local
   );
 }
 
-function CardIcon({ emoji }: { emoji: string }) {
+function CardIcon({ icon: Icon }: { icon: ComponentType<SVGProps<SVGSVGElement>> }) {
   return (
     <span
       aria-hidden
-      className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-xs"
+      className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-accent"
     >
-      {emoji}
+      <Icon width={13} height={13} strokeWidth={2.25} />
     </span>
   );
 }
@@ -39,7 +41,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
   return (
     <div className="grid grid-cols-2 gap-3 px-4 pt-4 sm:grid-cols-4">
       <div className={CARD}>
-        <CardIcon emoji="⭐" />
+        <CardIcon icon={StarIcon} />
         <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           {t(locale, "stats.reputation")}
         </p>
@@ -52,7 +54,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
       </div>
 
       <div className={CARD}>
-        <CardIcon emoji="🤝" />
+        <CardIcon icon={UsersIcon} />
         <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           {t(locale, "stats.connections")}
         </p>
@@ -69,7 +71,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
       </div>
 
       <div className={CARD}>
-        <CardIcon emoji="📋" />
+        <CardIcon icon={ClipboardIcon} />
         <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           {t(locale, "stats.casesShared")}
         </p>
@@ -86,7 +88,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
       </div>
 
       <div className={CARD}>
-        <CardIcon emoji="🌍" />
+        <CardIcon icon={GlobeIcon} />
         <p className="mt-2 font-label text-[11px] uppercase tracking-wide text-muted">
           {t(locale, "stats.communities")}
         </p>

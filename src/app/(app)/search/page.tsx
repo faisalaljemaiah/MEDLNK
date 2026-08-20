@@ -4,6 +4,7 @@ import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
 import { CaseCard } from "@/components/case-card";
+import { CompassIcon } from "@/components/icons";
 
 type SearchParams = {
   q?: string;
@@ -135,9 +136,10 @@ export default async function SearchPage({
       <div className="px-4 pb-3">
         <Link
           href="/exchange"
-          className="text-xs font-medium text-accent hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
         >
-          🌍 Browse the Global Case Exchange →
+          <CompassIcon width={13} height={13} strokeWidth={2.25} />
+          Browse the Global Case Exchange →
         </Link>
       </div>
 
