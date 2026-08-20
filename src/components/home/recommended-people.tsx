@@ -38,7 +38,7 @@ export function RecommendedPeople({
             <Link href={`/u/${p.handle}`}>
               <Avatar avatarUrl={p.avatar_url} name={p.full_name} size="lg" />
             </Link>
-            <div className="min-w-0">
+            <div className="w-full min-w-0">
               <Link
                 href={`/u/${p.handle}`}
                 className="block truncate text-sm font-medium text-text hover:underline"
