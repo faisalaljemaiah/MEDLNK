@@ -46,15 +46,31 @@
 
   /*
    * Decorative-only hues for the AI "thinking" glow (see .ai-glow in
-   * globals.css) — never used as text/background color, so exempt from the
-   * 4.5:1 contrast rule above. --ai-hue-1 reuses --accent so the glow reads
-   * as "MEDLNK's own", not a borrowed brand color; --ai-hue-2/3 are a clean
-   * blue and orange chosen to sit well against it without drifting into
-   * LinkedIn-blue territory.
+   * globals.css) and the wider "AI gradient" motif (MedLnkPulse, the compose
+   * form's connecting line) — never used as text/background color, so exempt
+   * from the 4.5:1 contrast rule above. --ai-hue-1 reuses --accent so the
+   * gradient reads as "MEDLNK's own", not a borrowed brand color; the rest
+   * form a five-stop teal → cyan → soft blue → violet → soft pink sweep.
+   * --ai-hue-4 reuses --accent-2, already reserved above for "gradients, AI
+   * features" — this is that reservation actually being spent.
    */
   --ai-hue-1: var(--accent);
-  --ai-hue-2: #0ea5e9;
-  --ai-hue-3: #f97316;
+  --ai-hue-2: #06b6d4;
+  --ai-hue-3: #38bdf8;
+  --ai-hue-4: var(--accent-2);
+  --ai-hue-5: #fb7185;
+
+  /*
+   * Motion system — see HANDOFF.md's "Motion design" section for the full
+   * rationale. Every animation/transition duration in the app should come
+   * from one of these rather than a one-off number, so the whole interface
+   * moves at a consistent, deliberate pace.
+   */
+  --motion-micro: 180ms; /* hover/tap feedback on a single control */
+  --motion-normal: 260ms; /* a card or section responding to interaction */
+  --motion-page: 220ms; /* content swapping in after a navigation */
+  --motion-ambient: 6s; /* slow standing cues — AI glow, pulse lines */
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* --- Font tokens (single clean sans-serif, Instagram-style) --- */
   --font-headline: var(--font-inter, system-ui, sans-serif);

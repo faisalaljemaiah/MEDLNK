@@ -467,6 +467,147 @@ text or a background in them.
   boolean already proven to work for the button's disabled/label state, so
   this is a low-risk, mechanically-verified gap rather than an untested one.
 
+### Motion design system
+
+Requested as a full "premium motion & visual design upgrade" spec (16
+numbered sections — AI gradient language, an ambient "pulse," staggered
+dashboard entrance, per-surface hover choreography, a sliding nav pill, a
+restructured compose page, a network motif, a formal motion-timing system,
+reduced-motion coverage). Implemented the foundation and every surface with
+real, verified user-visible impact; deliberately scoped down a few
+lower-value asks rather than spreading thin across all sixteen — see "Not
+done" below.
+
+**Motion tokens** (`theme.css`): `--motion-micro/normal/page/ambient` and
+`--motion-ease` — durations everything new here draws from rather than
+one-off numbers, plus a five-stop `--ai-hue-1..5` sweep (teal → cyan → soft
+blue → violet → soft pink) replacing the three-stop one from the previous
+AI-glow session. `--ai-hue-4` reuses `--accent-2` (`#7c3aed`), which was
+already reserved in a comment for exactly this and had never actually been
+used anywhere.
+
+**Reusable components** (`src/components/ui/`), matching the spec's naming
+list where a real one was warranted:
+- `AIButton` — replaces the inline `.ai-glow` markup from the previous
+  session's spelling-check button with a proper component: idle rim, faster
+  rim while `pending`, and a brief checkmark held on the pending→false
+  transition before settling back (a real completed-state cue, not just a
+  color change). Currently used once (spelling & clarity) but written
+  generically for the next AI-touched action.
+- `MedLnkPulse` — the ambient ".this is alive" ultra-thin sweeping gradient
+  line. Used once, deliberately: directly under the dashboard greeting. The
+  spec permits it in half a dozen places ("loading states," "empty states,"
+  "community sections"...); scattering a decorative element across every
+  permitted surface reads as busier, not more premium, so this stayed to
+  the one placement that's actually load-bearing for "the interface feels
+  alive."
+- `AnimatedNumber` — a real requestAnimationFrame count-up (cubic ease-out,
+  500ms), wired into all four Home stat cards. Only animates when a
+  *mounted* instance's value prop actually changes (e.g. a future live
+  refresh) — on first paint there's nothing to count from, so it renders
+  the number directly rather than a gimmicky always-count-from-zero. Checks
+  `prefers-reduced-motion` itself since it's JS-driven, not a CSS
+  transition the global reduced-motion rule already covers.
+- `PageTransition` — a one-line named wrapper over React 19's native
+  `<ViewTransition>`, which this app already uses (Home's feed-tab
+  crossfade, the tab underline) — not a second, competing transition
+  system. Exists so future call sites read as "a MEDLNK page transition"
+  rather than a bare, unexplained `<ViewTransition>`; not yet adopted at
+  any new call site since the existing two usages already do the job.
+- `AnimatedCard`/`NetworkPulse`/`AIGradient`/`AnimatedNavigation` from the
+  spec's component list were **not** built as separate files — each one's
+  actual behavior is a few Tailwind classes plus the shared `.ai-glow`/
+  `.case-card-hover` CSS already in `globals.css`, applied directly at each
+  card/nav call site (stat cards, quick-create tiles, case cards, bottom
+  nav). Wrapping that in an extra component layer would be indirection
+  without reuse — nothing calls it from more than one place. `.ai-glow`
+  is the de facto `AIGradient` implementation; the bottom nav directly *is*
+  the "animated navigation."
+
+**`.ai-glow`** (existing, extended): five-hue gradient (was three), `:hover`
+speeds the idle spin from 6s to 3s (spec: "slightly increase gradient
+movement" on hover), and a new `.ai-glow-round` modifier for circular
+controls — used on the bottom nav's compose button as a permanent, low-key
+ring (not tied to any pending state, since there's nothing to be "pending"
+there). Building the round variant surfaced a real bug: the compose
+NavLink had no background of its own when inactive, so the gradient
+showed through the *whole* circle instead of just the rim — the same
+containment failure the glow shipped with once before, just triggered a
+different way (a transparent center this time, not an unclipped blur).
+Fixed with a `matte` prop on `NavLink` that gives just that one instance an
+opaque backing; every other nav item stays intentionally transparent so
+its pill is the only thing that shows.
+
+**Dashboard entrance**: `.stagger-1` through `.stagger-6` (60ms apart) pair
+with the existing `.animate-enter`. Applied to the greeting/stats block,
+the quick-create panel, and the tabs/chip row — not to the case feed itself,
+deliberately: that's wrapped in `<ViewTransition key={...}>` for the tab
+crossfade, and since Next.js keeps a Server Component's non-keyed children
+mounted across a searchParam-only navigation (confirmed: `.animate-enter`
+only fires once per findable component here, not on every tab switch),
+adding a second, unrelated entrance animation on top of an element that
+*does* re-mount on every tab switch would visibly double up. Bottom nav
+gets its own `.animate-enter` in `bottom-nav.tsx` (a persistent layout
+component, separate from page.tsx's stagger sequence by construction).
+
+**Hover choreography**: stat cards lift 3px with a stronger border/shadow
+and a `group-hover:scale-110` icon; quick-create's five tiles each get a
+*distinct* micro-motion tied to what the icon represents (document nudges
+up for Share a Case/Upload a Resource, the question mark tilts, the speech
+bubble scales up, the bolt does a one-shot `medlnk-bolt-pulse` keyframe);
+case cards (`.case-card-hover`) lift 3px, deepen their shadow, and reveal a
+thin `--ai-hue` line along the top edge — all `group`-driven off one
+`<article>` so the "Let's dive deep →" arrow's `group-hover:translate-x-1`
+comes along for free. This also converted the case feed from a flush,
+divided list into actual spaced, rounded cards (`mx-4 my-3 rounded-2xl`,
+matching every other card on Home) — the spec's hover language ("lift,"
+"shadow") only makes sense on a card that isn't already flush against the
+screen edge, and the feed was the one surface on Home still styled as a
+flat list while everything else already used the rounded-card language.
+
+**Bottom nav sliding pill**: the active item's `bg-accent-soft` background
+is now a separate `<span>` wrapped in `<ViewTransition name="nav-pill">`
+(same mechanism as the existing tab underline), rendered only on the
+active item — React gives it a continuous identity across the navigation
+that switching nav items triggers, so the browser glides it rather than
+popping it. The active icon also lifts 2px (`-translate-y-0.5`).
+
+**Compose page restructure**: the previously flat field list is now four
+numbered groups — 01 The Case, 02 Clinical Context, 03 Global Exchange, 04
+Supporting Material — sharing one continuous `--ai-hue` gradient line drawn
+once behind all four circles (not four separate segments needing careful
+alignment). Every existing field, conditional block (Near Miss, the
+comparison picker, the interactive question), and validation rule moved
+into its matching section unchanged — this is a visual regroup, not a
+rewrite; still one page, no wizard/step-gating. `FormSection`, the small
+local component doing this, lives in `compose-form.tsx` itself since
+nothing else uses it yet.
+
+**Not done / deliberately scoped down** (spec sections 12–13 mostly): a
+page-level ambient background beyond the existing Home greeting gradient
+wash, and the "network/connection motif" (thin lines + dots + traveling
+light) beyond the case-card top-edge line — both are explicitly "occasional,
+extremely subtle" in the spec itself, and given everything above already
+adds real motion to every major surface, spending further time chasing two
+more decorative-only asks read as diminishing returns against the spec's
+own "not flashy" instruction. A distinct one-shot "click pulse" on the AI
+button (spec: "brief soft pulse, then return to idle") was also not built
+separately — clicking already flips `pending` true almost immediately,
+and `.ai-glow-active`'s faster spin **is** the pulse response in practice;
+a second, purpose-built flash animation stacked on top would be motion for
+its own sake.
+
+**Verified against the real hosted DB** (throwaway verified test account,
+cleaned up after): dashboard entrance, stat-card/quick-create/case-card
+hover states, the bottom nav's sliding pill (screenshotted on `/` then
+after navigating to `/search` to confirm it actually moved, not just that
+both states render), the compose page's four numbered sections with their
+connecting line, and `prefers-reduced-motion` (`page.emulateMedia`)
+confirmed zeroing every new animation's computed duration, not just the
+pre-existing ones. Caught and fixed the bottom-nav glow containment bug
+described above via screenshot before shipping it. `tsc`/lint/build clean;
+local Postgres suite unaffected (no schema changes this pass).
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

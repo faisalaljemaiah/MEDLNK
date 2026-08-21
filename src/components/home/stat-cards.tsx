@@ -2,10 +2,11 @@ import type { HomeStats } from "@/lib/home";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
 import { ClipboardIcon, GlobeIcon, StarIcon, UsersIcon } from "@/components/icons";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import type { ComponentType, SVGProps } from "react";
 
 const CARD =
-  "rounded-2xl border border-line bg-surface p-3.5 shadow-sm shadow-slate-900/[0.03] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/[0.06]";
+  "group rounded-2xl border border-line bg-surface p-3.5 shadow-sm shadow-slate-900/[0.03] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-[3px] hover:border-accent/30 hover:shadow-md hover:shadow-slate-900/[0.08]";
 
 function Delta({ value, suffix, locale }: { value: number; suffix: string; locale: Locale }) {
   if (value <= 0) {
@@ -22,7 +23,7 @@ function CardIcon({ icon: Icon }: { icon: ComponentType<SVGProps<SVGSVGElement>>
   return (
     <span
       aria-hidden
-      className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-accent"
+      className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-accent transition-transform duration-200 ease-out group-hover:scale-110"
     >
       <Icon width={13} height={13} strokeWidth={2.25} />
     </span>
@@ -46,7 +47,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
           {t(locale, "stats.reputation")}
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
-          {stats.reputationScore.toLocaleString()}
+          <AnimatedNumber value={stats.reputationScore} />
         </p>
         <span className="text-xs font-medium text-accent">
           {stats.reputationTier.label}
@@ -59,7 +60,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
           {t(locale, "stats.connections")}
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
-          {stats.connections.toLocaleString()}
+          <AnimatedNumber value={stats.connections} />
         </p>
         <div className="mt-0.5">
           <Delta
@@ -76,7 +77,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
           {t(locale, "stats.casesShared")}
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
-          {stats.casesShared.toLocaleString()}
+          <AnimatedNumber value={stats.casesShared} />
         </p>
         <div className="mt-0.5">
           <Delta
@@ -93,7 +94,7 @@ export function HomeStatCards({ stats, locale }: { stats: HomeStats; locale: Loc
           {t(locale, "stats.communities")}
         </p>
         <p className="mt-1 text-xl font-semibold tabular-nums text-text">
-          {stats.communities.toLocaleString()}
+          <AnimatedNumber value={stats.communities} />
         </p>
         <span className="text-xs text-muted">{t(locale, "stats.specialtiesActive")}</span>
       </div>

@@ -27,6 +27,7 @@ import { HomeGreeting } from "@/components/home/greeting";
 import { HomeStatCards } from "@/components/home/stat-cards";
 import { QuickCreatePanel } from "@/components/home/quick-create";
 import { HomeFeedTabs, type HomeFeedView } from "@/components/home/feed-tabs";
+import { MedLnkPulse } from "@/components/ui/medlnk-pulse";
 import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
@@ -117,18 +118,24 @@ export default async function FeedPage({
       <SafetyAlertBanner alerts={alerts} />
 
       {user && (
-        <div className="bg-gradient-to-b from-accent-soft/70 via-accent-soft/25 to-transparent pb-3">
+        <div className="animate-enter stagger-1 bg-gradient-to-b from-accent-soft/70 via-accent-soft/25 to-transparent pb-3">
           <HomeGreeting firstName={firstName(profile?.full_name)} locale={locale} />
+          <MedLnkPulse className="mx-4 mt-2" />
           {stats && <HomeStatCards stats={stats} locale={locale} />}
         </div>
       )}
-      {user && profile?.verified && <QuickCreatePanel locale={locale} />}
-
-      <HomeFeedTabs active={view} hasViewer={Boolean(user)} locale={locale} />
-
-      {view === "foryou" && (
-        <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />
+      {user && profile?.verified && (
+        <div className="animate-enter stagger-2">
+          <QuickCreatePanel locale={locale} />
+        </div>
       )}
+
+      <div className="animate-enter stagger-3">
+        <HomeFeedTabs active={view} hasViewer={Boolean(user)} locale={locale} />
+        {view === "foryou" && (
+          <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />
+        )}
+      </div>
 
       {personalized && profile?.specialty && (
         <p className="flex items-center gap-1.5 px-4 pb-1 pt-2 font-label text-xs text-accent">

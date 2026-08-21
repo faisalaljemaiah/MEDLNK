@@ -14,8 +14,16 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
   return (
     <article
       id={`case-${feedCase.id}`}
-      className="border-b border-line px-4 py-5"
+      className="case-card-hover group relative mx-4 my-3 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]"
     >
+      {/* A thin AI-hue line along the top edge, hidden until hover — the
+          same "this is alive" language as .medlnk-pulse-line, but static
+          rather than continuously sweeping since it's a hover response, not
+          an ambient cue. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-4 top-0 h-0.5 rounded-full bg-gradient-to-r from-[var(--ai-hue-1)] via-[var(--ai-hue-3)] to-[var(--ai-hue-4)] opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-70"
+      />
       <div className="flex items-center gap-2">
         <Link href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}>
           <Avatar
@@ -121,9 +129,15 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
 
       <Link
         href={caseHref}
-        className="mt-3 inline-block text-sm font-medium text-accent hover:underline"
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
       >
-        Let&apos;s dive deep →
+        Let&apos;s dive deep
+        <span
+          aria-hidden
+          className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
+        >
+          →
+        </span>
       </Link>
 
       <div className="mt-4">

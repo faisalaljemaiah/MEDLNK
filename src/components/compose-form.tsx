@@ -7,9 +7,9 @@ import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
 import { COUNTRIES } from "@/lib/countries";
 import { toUploadableImage } from "@/lib/heic";
-import { SparkleIcon } from "@/components/icons";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { AIButton } from "@/components/ui/ai-button";
 
 /** Free-text fields worth copy-editing — specialty and tags are controlled vocabulary. */
 const POLISH_FIELDS = [
@@ -47,6 +47,37 @@ function Textarea({
         className="min-h-24 resize-y rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         {...props}
       />
+    </div>
+  );
+}
+
+/**
+ * One of the four numbered groups the form is organized into — Case,
+ * Clinical Context, Global Exchange, Supporting Material. The connecting
+ * line between them is a single element drawn by the parent (not one per
+ * section), so it reads as one continuous thread rather than four
+ * separately-aligned segments; each circle just needs an opaque background
+ * to visually sit "on" that line, which is why it's --color-surface rather
+ * than the accent-soft wash used elsewhere.
+ */
+function FormSection({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative pl-10">
+      <div className="relative z-[1] mb-3 flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-surface font-label text-xs font-semibold text-accent shadow-sm shadow-slate-900/[0.05]">
+          {number}
+        </span>
+        <p className="font-label text-xs uppercase tracking-wide text-muted">{title}</p>
+      </div>
+      <div className="flex flex-col gap-4">{children}</div>
     </div>
   );
 }
@@ -156,283 +187,299 @@ export function ComposeForm({
 
       <input type="hidden" name="case_type" value={caseType} />
 
-      <div className="flex flex-col gap-1.5">
-        <span className="font-label text-xs uppercase tracking-wide text-muted">
-          Post type
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {CASE_TYPES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setCaseType(t.value)}
-              aria-pressed={caseType === t.value}
-              className={clsx(
-                "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
-                caseType === t.value
-                  ? "border-accent bg-accent/10 font-medium text-accent"
-                  : "border-line text-muted hover:text-text",
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <p className="mt-1 text-xs text-muted">{typeMeta.hint}</p>
-      </div>
+      {/* The four groups below share one continuous connecting line — Case →
+          Clinical Context → Global Exchange → Supporting Material, the same
+          order the AI features and the profile page already imply: the raw
+          case becomes something searchable and shareable in stages. The line
+          is one absolutely-positioned element behind all four circles rather
+          than one per section, so it reads as a single thread. */}
+      <div className="relative flex flex-col gap-8">
+        <span
+          aria-hidden
+          className="absolute left-[13px] top-3.5 bottom-3.5 w-px bg-gradient-to-b from-[var(--ai-hue-1)] via-[var(--ai-hue-3)] to-[var(--ai-hue-4)] opacity-30"
+        />
 
-      <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
-        <span className="font-medium text-text">Keep it de-identified.</span> No
-        patient names, medical record numbers, exact dates of birth, addresses,
-        phone numbers, or photographs that could identify someone. Post cases as
-        educational discussion — not advice about a specific patient.
-      </p>
-
-      <TextField
-        label="Title"
-        name="title"
-        placeholder={
-          typeMeta.isQuote ? "On staying humble" : "Hydralazine, meet hydroxyzine"
-        }
-        required
-      />
-      <Textarea
-        label={typeMeta.isQuote ? "The quote" : typeMeta.shortForm ? "What happened?" : "Short caption"}
-        name="short_caption"
-        placeholder={
-          typeMeta.isQuote
-            ? "“The best clinicians I know are the ones still asking questions.” — an attending, my first week"
-            : typeMeta.shortForm
-              ? "A sentence or two — what you saw and why it stuck with you."
-              : "One or two sentences that hook a reader in the feed."
-        }
-        required
-      />
-
-      {showFullBody && (
-        <div className="rounded-xl border border-line bg-surface-2/40 p-4">
-          <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
-            Full case
-          </p>
-          <div className="flex flex-col gap-4">
-            <Textarea label="Presentation" name="presentation" required />
-            <Textarea label="What was tricky" name="tricky" required />
-            <Textarea
-              label="What we did (one action per line)"
-              name="actions"
-              placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
-              required
-            />
-            <Textarea
-              label={
-                typeMeta.usesStagedReveal ? "The lesson (hidden until reveal)" : "The lesson"
-              }
-              name="lesson"
-              required
-            />
-          </div>
-        </div>
-      )}
-
-      {typeMeta.usesNearMiss && (
-        <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
-          <p className="font-label mb-3 text-xs uppercase tracking-wide text-warning">
-            Patient safety
-          </p>
-          <div className="flex flex-col gap-4">
-            {NEAR_MISS_PROMPTS.map((prompt) => (
-              <Textarea
-                key={prompt.name}
-                label={prompt.label}
-                name={`near_miss_${prompt.name}`}
-                required
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {typeMeta.usesComparison && (
-        <div className="rounded-xl border border-line bg-surface-2/50 p-4">
-          <p className="font-label mb-1 text-xs uppercase tracking-wide text-muted">
-            The two cases
-          </p>
-          <p className="mb-3 text-xs text-muted">
-            Reference cases already on MEDLNK by their number, so readers can
-            open each one in full. Yours or anyone else&apos;s.
-          </p>
-          <div className="flex flex-col gap-4">
-            {/* Stacked on a phone: two short fields side by side at 360px
-                leaves neither wide enough to read what you typed. */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:gap-3">
-              <div className="min-w-0 flex-1">
-                <TextField
-                  label="First case"
-                  name="compare_left"
-                  placeholder="CASE-0006"
-                  required
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <TextField
-                  label="Second case"
-                  name="compare_right"
-                  placeholder="CASE-0012"
-                  required
-                />
-              </div>
-            </div>
-            <Textarea
-              label="What changes the management?"
-              name="compare_what"
-              required
-            />
-          </div>
-        </div>
-      )}
-
-      {typeMeta.usesQuestion && (
-        <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
-          <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
-            The question
-          </p>
-          <div className="flex flex-col gap-4">
-            <Textarea
-              label="What are you asking?"
-              name="question_prompt"
-              placeholder="What would you do?"
-              required
-            />
-
-            <div className="flex flex-col gap-2">
-              <span className="font-label text-xs uppercase tracking-wide text-muted">
-                Answers — select the correct one
-              </span>
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="correct_option"
-                    value={i}
-                    aria-label={`Mark answer ${String.fromCharCode(65 + i)} correct`}
-                    className="h-4 w-4 shrink-0 accent-[var(--accent)]"
-                  />
-                  <span className="font-label w-4 shrink-0 text-xs text-muted">
-                    {String.fromCharCode(65 + i)}
-                  </span>
-                  <input
-                    type="text"
-                    name={`option_${i}`}
-                    placeholder={i < 2 ? "Required" : "Optional"}
-                    className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                  />
-                </div>
+        <FormSection number="01" title="The Case">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-label text-xs uppercase tracking-wide text-muted">
+              Post type
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {CASE_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setCaseType(t.value)}
+                  aria-pressed={caseType === t.value}
+                  className={clsx(
+                    "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
+                    caseType === t.value
+                      ? "border-accent bg-accent/10 font-medium text-accent"
+                      : "border-line text-muted hover:text-text",
+                  )}
+                >
+                  {t.label}
+                </button>
               ))}
             </div>
-
-            <Textarea
-              label="Explanation (shown after they answer)"
-              name="question_explanation"
-            />
-            <Textarea label="Clinical reasoning" name="question_reasoning" />
-            <Textarea label="References / evidence" name="question_evidence" />
-
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input
-                type="checkbox"
-                name="allow_change"
-                className="h-4 w-4 accent-[var(--accent)]"
-              />
-              Let readers change their answer after seeing the results
-            </label>
+            <p className="mt-1 text-xs text-muted">{typeMeta.hint}</p>
           </div>
-        </div>
-      )}
 
-      <TextField label="Specialty" name="specialty" placeholder="Internal Medicine" />
-      <TextField label="Tags (comma separated)" name="tags" placeholder="LASA, medication-error" />
+          <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
+            <span className="font-medium text-text">Keep it de-identified.</span> No
+            patient names, medical record numbers, exact dates of birth, addresses,
+            phone numbers, or photographs that could identify someone. Post cases as
+            educational discussion — not advice about a specific patient.
+          </p>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="country_code"
-          className="font-label text-xs uppercase tracking-wide text-muted"
-        >
-          Country (optional — Global Case Exchange)
-        </label>
-        <select
-          id="country_code"
-          name="country_code"
-          defaultValue=""
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        >
-          <option value="">Prefer not to say</option>
-          {COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted">
-          Country only, never a hospital or unit — this is what lets clinicians
-          elsewhere find and learn from this case.
-        </p>
-      </div>
-
-      {typeMeta.requiresVideo ? (
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="video"
-            className="font-label text-xs uppercase tracking-wide text-muted"
-          >
-            Video
-          </label>
-          <input
-            id="video"
-            name="video"
-            type="file"
-            accept="video/mp4,video/webm,video/quicktime,.mov"
+          <TextField
+            label="Title"
+            name="title"
+            placeholder={
+              typeMeta.isQuote ? "On staying humble" : "Hydralazine, meet hydroxyzine"
+            }
             required
-            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
           />
-          <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="image"
-            className="font-label text-xs uppercase tracking-wide text-muted"
-          >
-            {typeMeta.requiresImage ? "Photo" : "Image (optional)"}
-          </label>
-          <input
-            ref={imageInputRef}
-            id="image"
-            name="image"
-            type="file"
-            accept="image/*,.heic,.heif"
-            required={typeMeta.requiresImage}
-            onChange={handleImageChange}
-            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+          <Textarea
+            label={typeMeta.isQuote ? "The quote" : typeMeta.shortForm ? "What happened?" : "Short caption"}
+            name="short_caption"
+            placeholder={
+              typeMeta.isQuote
+                ? "“The best clinicians I know are the ones still asking questions.” — an attending, my first week"
+                : typeMeta.shortForm
+                  ? "A sentence or two — what you saw and why it stuck with you."
+                  : "One or two sentences that hook a reader in the feed."
+            }
+            required
           />
-          {convertingImage && (
-            <p className="text-xs text-muted">Converting photo…</p>
+
+          {showFullBody && (
+            <div className="rounded-xl border border-line bg-surface-2/40 p-4">
+              <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
+                Full case
+              </p>
+              <div className="flex flex-col gap-4">
+                <Textarea label="Presentation" name="presentation" required />
+                <Textarea label="What was tricky" name="tricky" required />
+                <Textarea
+                  label="What we did (one action per line)"
+                  name="actions"
+                  placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
+                  required
+                />
+                <Textarea
+                  label={
+                    typeMeta.usesStagedReveal ? "The lesson (hidden until reveal)" : "The lesson"
+                  }
+                  name="lesson"
+                  required
+                />
+              </div>
+            </div>
           )}
-        </div>
-      )}
+
+          {typeMeta.usesNearMiss && (
+            <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
+              <p className="font-label mb-3 text-xs uppercase tracking-wide text-warning">
+                Patient safety
+              </p>
+              <div className="flex flex-col gap-4">
+                {NEAR_MISS_PROMPTS.map((prompt) => (
+                  <Textarea
+                    key={prompt.name}
+                    label={prompt.label}
+                    name={`near_miss_${prompt.name}`}
+                    required
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {typeMeta.usesComparison && (
+            <div className="rounded-xl border border-line bg-surface-2/50 p-4">
+              <p className="font-label mb-1 text-xs uppercase tracking-wide text-muted">
+                The two cases
+              </p>
+              <p className="mb-3 text-xs text-muted">
+                Reference cases already on MEDLNK by their number, so readers can
+                open each one in full. Yours or anyone else&apos;s.
+              </p>
+              <div className="flex flex-col gap-4">
+                {/* Stacked on a phone: two short fields side by side at 360px
+                    leaves neither wide enough to read what you typed. */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:gap-3">
+                  <div className="min-w-0 flex-1">
+                    <TextField
+                      label="First case"
+                      name="compare_left"
+                      placeholder="CASE-0006"
+                      required
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <TextField
+                      label="Second case"
+                      name="compare_right"
+                      placeholder="CASE-0012"
+                      required
+                    />
+                  </div>
+                </div>
+                <Textarea
+                  label="What changes the management?"
+                  name="compare_what"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {typeMeta.usesQuestion && (
+            <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
+              <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
+                The question
+              </p>
+              <div className="flex flex-col gap-4">
+                <Textarea
+                  label="What are you asking?"
+                  name="question_prompt"
+                  placeholder="What would you do?"
+                  required
+                />
+
+                <div className="flex flex-col gap-2">
+                  <span className="font-label text-xs uppercase tracking-wide text-muted">
+                    Answers — select the correct one
+                  </span>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="correct_option"
+                        value={i}
+                        aria-label={`Mark answer ${String.fromCharCode(65 + i)} correct`}
+                        className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                      />
+                      <span className="font-label w-4 shrink-0 text-xs text-muted">
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <input
+                        type="text"
+                        name={`option_${i}`}
+                        placeholder={i < 2 ? "Required" : "Optional"}
+                        className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <Textarea
+                  label="Explanation (shown after they answer)"
+                  name="question_explanation"
+                />
+                <Textarea label="Clinical reasoning" name="question_reasoning" />
+                <Textarea label="References / evidence" name="question_evidence" />
+
+                <label className="flex items-center gap-2 text-sm text-muted">
+                  <input
+                    type="checkbox"
+                    name="allow_change"
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                  Let readers change their answer after seeing the results
+                </label>
+              </div>
+            </div>
+          )}
+        </FormSection>
+
+        <FormSection number="02" title="Clinical Context">
+          <TextField label="Specialty" name="specialty" placeholder="Internal Medicine" />
+          <TextField label="Tags (comma separated)" name="tags" placeholder="LASA, medication-error" />
+        </FormSection>
+
+        <FormSection number="03" title="Global Exchange">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="country_code"
+              className="font-label text-xs uppercase tracking-wide text-muted"
+            >
+              Country (optional)
+            </label>
+            <select
+              id="country_code"
+              name="country_code"
+              defaultValue=""
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              <option value="">Prefer not to say</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted">
+              Country only, never a hospital or unit — this is what lets clinicians
+              elsewhere find and learn from this case.
+            </p>
+          </div>
+        </FormSection>
+
+        <FormSection number="04" title="Supporting Material">
+          {typeMeta.requiresVideo ? (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="video"
+                className="font-label text-xs uppercase tracking-wide text-muted"
+              >
+                Video
+              </label>
+              <input
+                id="video"
+                name="video"
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,.mov"
+                required
+                className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+              />
+              <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="image"
+                className="font-label text-xs uppercase tracking-wide text-muted"
+              >
+                {typeMeta.requiresImage ? "Photo" : "Image (optional)"}
+              </label>
+              <input
+                ref={imageInputRef}
+                id="image"
+                name="image"
+                type="file"
+                accept="image/*,.heic,.heif"
+                required={typeMeta.requiresImage}
+                onChange={handleImageChange}
+                className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+              />
+              {convertingImage && (
+                <p className="text-xs text-muted">Converting photo…</p>
+              )}
+            </div>
+          )}
+        </FormSection>
+      </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          <span className={clsx("ai-glow inline-flex rounded-lg", isPolishing && "ai-glow-active")}>
-            <button
-              type="button"
-              onClick={handlePolish}
-              disabled={isPolishing}
-              className="flex items-center gap-1.5 rounded-lg bg-accent-soft px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
-            >
-              <SparkleIcon width={15} height={15} strokeWidth={2} />
-              {isPolishing ? "Checking…" : "Check spelling & clarity"}
-            </button>
-          </span>
+          <AIButton
+            pending={isPolishing}
+            onClick={handlePolish}
+            idleLabel="Check spelling & clarity"
+            pendingLabel="Checking…"
+          />
           <p className="text-xs text-muted">
             Suggests wording only — you approve every change.
           </p>

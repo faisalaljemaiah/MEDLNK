@@ -94,23 +94,30 @@ body {
 
 /*
  * The AI "thinking" glow — a rotating conic-gradient rim around an
- * AI-touched control (the compose form's spelling-check button), same family
- * of effect as Gemini's shifting-hue indicator, built from MEDLNK's own
- * --ai-hue-* tokens rather than borrowed brand colors.
+ * AI-touched control (the compose form's spelling-check button, wrapped by
+ * <AIButton>), same family of effect as Gemini's shifting-hue indicator,
+ * built from MEDLNK's own five-stop --ai-hue-* sweep rather than borrowed
+ * brand colors.
  *
  * Deliberately NOT a blurred halo: filter: blur() has no containment of its
  * own, so any blur wide enough to read as a "glow" spills well past the
- * button into whatever sits next to it. Instead, .ai-glow clips a spinning
- * gradient to its own rounded-rect via overflow: hidden and shows only a
- * thin padding-width rim of it — the button's own content covers the
- * center — so the effect never escapes the button's footprint.
+ * button into whatever sits next to it (this shipped once and had to be
+ * fixed — see git history). Instead, .ai-glow clips a spinning gradient to
+ * its own rounded-rect via overflow: hidden and shows only a thin
+ * padding-width rim of it — the button's own opaque content covers the
+ * center — so the effect never escapes the control's footprint no matter
+ * how "glowy" the gradient itself looks.
  *
- * Idle state spins slowly as a standing "AI-powered" cue; .ai-glow-active
- * (while a request is actually in flight) speeds it up and thickens the rim,
- * same relationship Gemini's glow has to its own loading state. inset: -50%
- * on the spinning layer keeps it big enough to cover the rim at every
- * rotation angle (a square twice the container's size always covers a
- * rotation of the container's diagonal).
+ * Idle state spins slowly (--motion-ambient) as a standing "AI-powered" cue;
+ * .ai-glow-active (while a request is actually in flight) speeds it up and
+ * thickens the rim, same relationship Gemini's glow has to its own loading
+ * state; :hover speeds it up more gently, as an invitation rather than a
+ * loading cue. inset: -50% on the spinning layer keeps it big enough to
+ * cover the rim at every rotation angle (a square twice the container's
+ * size always covers a rotation of the container's diagonal).
+ *
+ * .ai-glow-round swaps the corner radius for controls that are circles
+ * (the bottom nav's compose button) rather than the default rounded-lg.
  */
 @keyframes medlnk-ai-spin {
   to {
@@ -122,8 +129,12 @@ body {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: var(--radius-lg, 0.5rem);
+  border-radius: var(--ai-glow-radius, var(--radius-lg, 0.5rem));
   padding: 1.5px;
+}
+
+.ai-glow-round {
+  --ai-glow-radius: 9999px;
 }
 
 .ai-glow::before {
@@ -136,9 +147,15 @@ body {
     var(--ai-hue-1),
     var(--ai-hue-2),
     var(--ai-hue-3),
+    var(--ai-hue-4),
+    var(--ai-hue-5),
     var(--ai-hue-1)
   );
-  animation: medlnk-ai-spin 6s linear infinite;
+  animation: medlnk-ai-spin var(--motion-ambient) linear infinite;
+}
+
+.ai-glow:hover::before {
+  animation-duration: 3s;
 }
 
 .ai-glow-active {
@@ -147,6 +164,90 @@ body {
 
 .ai-glow-active::before {
   animation-duration: 1.6s;
+}
+
+/*
+ * MEDLNK ambient pulse — a very thin sweeping line in the AI hues, for
+ * standing "this is alive" moments that aren't tied to any one control
+ * (behind the dashboard greeting, currently — see <MedLnkPulse>). Kept to
+ * a hairline height and low opacity deliberately: this should read as
+ * texture, not as a thing anyone consciously notices animating.
+ */
+@keyframes medlnk-pulse-sweep {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
+
+.medlnk-pulse-line {
+  height: 2px;
+  border-radius: 9999px;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--ai-hue-1),
+    var(--ai-hue-3),
+    var(--ai-hue-4),
+    transparent
+  );
+  background-size: 220% 100%;
+  animation: medlnk-pulse-sweep 8s linear infinite;
+  opacity: 0.45;
+}
+
+/*
+ * Staggered dashboard entrance — pair with .animate-enter. Declared after it
+ * so the animation-delay here wins over .animate-enter's implicit 0s on
+ * elements carrying both classes.
+ */
+.stagger-1 {
+  animation-delay: 60ms;
+}
+.stagger-2 {
+  animation-delay: 120ms;
+}
+.stagger-3 {
+  animation-delay: 180ms;
+}
+.stagger-4 {
+  animation-delay: 240ms;
+}
+.stagger-5 {
+  animation-delay: 300ms;
+}
+.stagger-6 {
+  animation-delay: 360ms;
+}
+
+/*
+ * Case card hover — lift, deepen the shadow, and reveal a thin AI-hue
+ * top-edge line, all keyed off .group so the same hover also drives the
+ * "Let's dive deep" arrow (a plain group-hover:translate-x-* in
+ * case-card.tsx, no CSS needed here for that part).
+ */
+.case-card-hover {
+  transition:
+    transform var(--motion-normal) var(--motion-ease),
+    box-shadow var(--motion-normal) var(--motion-ease);
+}
+
+.case-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -16px rgba(16, 32, 58, 0.18);
+}
+
+/* A brief, one-shot pulse for a bolt/lightning icon on hover. */
+@keyframes medlnk-bolt-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
