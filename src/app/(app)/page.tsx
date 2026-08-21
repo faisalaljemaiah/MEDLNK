@@ -118,7 +118,7 @@ export default async function FeedPage({
       <SafetyAlertBanner alerts={alerts} />
 
       {user && (
-        <div className="animate-enter stagger-1 relative isolate overflow-hidden bg-gradient-to-b from-accent-soft/70 via-accent-soft/25 to-transparent pb-3">
+        <div className="animate-enter stagger-1 relative isolate overflow-hidden bg-gradient-to-b from-surface-2/70 via-surface-2/25 to-transparent pb-3">
           <MedLnkPulse className="absolute inset-x-0 top-0 -z-10 h-28" />
           <HomeGreeting firstName={firstName(profile?.full_name)} locale={locale} />
           {stats && <HomeStatCards stats={stats} locale={locale} />}
