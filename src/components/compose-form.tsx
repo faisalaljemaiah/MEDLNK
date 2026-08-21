@@ -422,15 +422,17 @@ export function ComposeForm({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handlePolish}
-            disabled={isPolishing}
-            className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
-          >
-            <SparkleIcon width={15} height={15} strokeWidth={2} />
-            {isPolishing ? "Checking…" : "Check spelling & clarity"}
-          </button>
+          <span className={clsx("ai-glow inline-flex rounded-lg", isPolishing && "ai-glow-active")}>
+            <button
+              type="button"
+              onClick={handlePolish}
+              disabled={isPolishing}
+              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
+            >
+              <SparkleIcon width={15} height={15} strokeWidth={2} />
+              {isPolishing ? "Checking…" : "Check spelling & clarity"}
+            </button>
+          </span>
           <p className="text-xs text-muted">
             Suggests wording only — you approve every change.
           </p>

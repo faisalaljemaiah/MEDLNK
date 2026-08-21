@@ -433,6 +433,40 @@ every other format (What Would You Do?, Near Miss, etc.) — no new table.
   (`supabase/tests/0022_photo_quote_video_posts.test.sql`, 6 assertions)
   and `apply-file.sh` both pass; `tsc`/lint/build clean.
 
+### AI "thinking" glow
+
+Requested by name ("like the one on Gemini") — a rotating, blurred
+multi-hue halo behind an AI-touched control, scoped to the one AI feature
+in the app (the compose form's "Check spelling & clarity" button) rather
+than as general chrome, and built from MEDLNK's own colors rather than
+Gemini's actual blue/red/yellow/green: Caribbean green (`--accent`), a
+clean blue, and orange — three new `--ai-hue-*` tokens in `theme.css`,
+explicitly called out as decorative-only and exempt from the 4.5:1
+contrast rule the rest of the palette is held to, since nothing renders
+text or a background in them.
+
+- `globals.css`: `.ai-glow` wraps a control in a `position: relative`
+  span; its `::before` is a `conic-gradient` through the three hues,
+  blurred and rotated via a `medlnk-ai-spin` keyframe. Idle state cycles
+  slowly (6s) at low opacity as a standing "this is AI-powered" cue;
+  `.ai-glow-active` (applied while `isPolishing` is true — the same
+  `useTransition` pending state that already disables the button and
+  swaps its label to "Checking…") speeds the rotation to 1.6s and turns
+  the opacity up, mirroring how Gemini's own glow intensifies while it's
+  actually working rather than being a static decoration.
+  `prefers-reduced-motion: reduce` already freezes all animation
+  durations app-wide (existing rule, untouched), so this respects it for
+  free.
+- Verified visually (throwaway test account): the idle glow renders
+  correctly as a soft green/blue/orange halo around the button. Confirming
+  the intensified `.ai-glow-active` state on camera turned out to need the
+  "polish-text" edge function to actually be slow — in this environment it
+  fails near-instantly ("Couldn't reach the writing assistant"), so the
+  transition completes faster than a screenshot could catch it; the code
+  path itself is a plain `clsx` conditional on the exact same `isPolishing`
+  boolean already proven to work for the button's disabled/label state, so
+  this is a low-risk, mechanically-verified gap rather than an untested one.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

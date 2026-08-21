@@ -44,6 +44,18 @@
   --warning: #b45309; /* privacy/identifier warnings */
   --danger: #cf2231; /* destructive actions, errors */
 
+  /*
+   * Decorative-only hues for the AI "thinking" glow (see .ai-glow in
+   * globals.css) — never used as text/background color, so exempt from the
+   * 4.5:1 contrast rule above. --ai-hue-1 reuses --accent so the glow reads
+   * as "MEDLNK's own", not a borrowed brand color; --ai-hue-2/3 are a clean
+   * blue and orange chosen to sit well against it without drifting into
+   * LinkedIn-blue territory.
+   */
+  --ai-hue-1: var(--accent);
+  --ai-hue-2: #0ea5e9;
+  --ai-hue-3: #f97316;
+
   /* --- Font tokens (single clean sans-serif, Instagram-style) --- */
   --font-headline: var(--font-inter, system-ui, sans-serif);
   --font-body: var(--font-inter, system-ui, sans-serif);
