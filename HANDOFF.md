@@ -494,13 +494,20 @@ list where a real one was warranted:
   transition before settling back (a real completed-state cue, not just a
   color change). Currently used once (spelling & clarity) but written
   generically for the next AI-touched action.
-- `MedLnkPulse` — the ambient ".this is alive" ultra-thin sweeping gradient
-  line. Used once, deliberately: directly under the dashboard greeting. The
-  spec permits it in half a dozen places ("loading states," "empty states,"
+- `MedLnkPulse` — the ambient "this is alive" cue. Originally a single thin
+  sweeping gradient line; redone from a reference mockup into three
+  overlapping wavy SVG paths (period-matched translateX loops, so each
+  drifts seamlessly at its own speed) in the AI hues, sitting behind the
+  greeting text as a soft flowing backdrop rather than a line beneath it —
+  `absolute -z-10` inside a `relative isolate` wrapper so it never sits
+  above the (readable, opaque) greeting text or the stat cards below it.
+  Used once, deliberately: directly behind the dashboard greeting. The spec
+  permits it in half a dozen places ("loading states," "empty states,"
   "community sections"...); scattering a decorative element across every
   permitted surface reads as busier, not more premium, so this stayed to
   the one placement that's actually load-bearing for "the interface feels
-  alive."
+  alive." Verified with two screenshots ~2.5s apart confirming the waves
+  visibly moved, not just that the markup renders.
 - `AnimatedNumber` — a real requestAnimationFrame count-up (cubic ease-out,
   500ms), wired into all four Home stat cards. Only animates when a
   *mounted* instance's value prop actually changes (e.g. a future live

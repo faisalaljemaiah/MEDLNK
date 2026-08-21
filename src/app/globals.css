@@ -167,35 +167,37 @@ body {
 }
 
 /*
- * MEDLNK ambient pulse — a very thin sweeping line in the AI hues, for
- * standing "this is alive" moments that aren't tied to any one control
- * (behind the dashboard greeting, currently — see <MedLnkPulse>). Kept to
- * a hairline height and low opacity deliberately: this should read as
- * texture, not as a thing anyone consciously notices animating.
+ * MEDLNK ambient pulse — three overlapping wavy lines in the AI hues,
+ * drifting past each other behind the dashboard greeting (see
+ * <MedLnkPulse>). Low opacity and slow deliberately: texture, not a thing
+ * anyone consciously notices animating. Each keyframe's translateX distance
+ * is exactly one period of its path (see medlnk-pulse.tsx), so the loop has
+ * no visible seam.
  */
-@keyframes medlnk-pulse-sweep {
-  0% {
-    background-position: -120% 0;
+@keyframes medlnk-wave-drift-a {
+  to {
+    transform: translateX(-240px);
   }
-  100% {
-    background-position: 220% 0;
+}
+@keyframes medlnk-wave-drift-b {
+  to {
+    transform: translateX(-200px);
+  }
+}
+@keyframes medlnk-wave-drift-c {
+  to {
+    transform: translateX(280px);
   }
 }
 
-.medlnk-pulse-line {
-  height: 2px;
-  border-radius: 9999px;
-  background-image: linear-gradient(
-    90deg,
-    transparent,
-    var(--ai-hue-1),
-    var(--ai-hue-3),
-    var(--ai-hue-4),
-    transparent
-  );
-  background-size: 220% 100%;
-  animation: medlnk-pulse-sweep 8s linear infinite;
-  opacity: 0.45;
+.medlnk-wave-path-a {
+  animation: medlnk-wave-drift-a 14s linear infinite;
+}
+.medlnk-wave-path-b {
+  animation: medlnk-wave-drift-b 10s linear infinite;
+}
+.medlnk-wave-path-c {
+  animation: medlnk-wave-drift-c 18s linear infinite;
 }
 
 /*
