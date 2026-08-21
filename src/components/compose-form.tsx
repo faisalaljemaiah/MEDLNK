@@ -427,7 +427,7 @@ export function ComposeForm({
               type="button"
               onClick={handlePolish}
               disabled={isPolishing}
-              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-lg bg-accent-soft px-3.5 py-2 text-sm font-medium text-accent transition-opacity disabled:opacity-60"
             >
               <SparkleIcon width={15} height={15} strokeWidth={2} />
               {isPolishing ? "Checking…" : "Check spelling & clarity"}

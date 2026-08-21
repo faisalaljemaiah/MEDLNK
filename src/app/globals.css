@@ -93,18 +93,24 @@ body {
 }
 
 /*
- * The AI "thinking" glow — a rotating, blurred conic gradient halo behind an
+ * The AI "thinking" glow — a rotating conic-gradient rim around an
  * AI-touched control (the compose form's spelling-check button), same family
  * of effect as Gemini's shifting-hue indicator, built from MEDLNK's own
- * --ai-hue-* tokens rather than borrowed brand colors. Idle state cycles
- * slowly as a standing "AI-powered" cue; .ai-glow-active (while a request is
- * actually in flight) speeds it up and turns the opacity up, same relationship
- * Gemini's glow has to its own loading state.
+ * --ai-hue-* tokens rather than borrowed brand colors.
  *
- * .ai-glow must be position: relative (or the ::before below floats loose)
- * and share the button's own rounding so the halo traces its shape — set via
- * a --ai-glow-radius custom property rather than assuming rounded-lg, since
- * the icon-only affordance elsewhere might use a different radius.
+ * Deliberately NOT a blurred halo: filter: blur() has no containment of its
+ * own, so any blur wide enough to read as a "glow" spills well past the
+ * button into whatever sits next to it. Instead, .ai-glow clips a spinning
+ * gradient to its own rounded-rect via overflow: hidden and shows only a
+ * thin padding-width rim of it — the button's own content covers the
+ * center — so the effect never escapes the button's footprint.
+ *
+ * Idle state spins slowly as a standing "AI-powered" cue; .ai-glow-active
+ * (while a request is actually in flight) speeds it up and thickens the rim,
+ * same relationship Gemini's glow has to its own loading state. inset: -50%
+ * on the spinning layer keeps it big enough to cover the rim at every
+ * rotation angle (a square twice the container's size always covers a
+ * rotation of the container's diagonal).
  */
 @keyframes medlnk-ai-spin {
   to {
@@ -114,15 +120,17 @@ body {
 
 .ai-glow {
   position: relative;
-  --ai-glow-radius: var(--radius-lg, 0.5rem);
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 1.5px;
 }
 
 .ai-glow::before {
   content: "";
   position: absolute;
-  inset: -3px;
+  inset: -50%;
   z-index: -1;
-  border-radius: calc(var(--ai-glow-radius) + 3px);
   background: conic-gradient(
     from 0deg,
     var(--ai-hue-1),
@@ -130,13 +138,14 @@ body {
     var(--ai-hue-3),
     var(--ai-hue-1)
   );
-  filter: blur(7px);
-  opacity: 0.35;
   animation: medlnk-ai-spin 6s linear infinite;
 }
 
+.ai-glow-active {
+  padding: 2.5px;
+}
+
 .ai-glow-active::before {
-  opacity: 0.75;
   animation-duration: 1.6s;
 }
 
