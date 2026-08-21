@@ -47,16 +47,18 @@
   /*
    * Decorative-only hues for the AI "thinking" glow (see .ai-glow in
    * globals.css) and the wider "AI gradient" motif (MedLnkPulse, the compose
-   * form's connecting line) — never used as text/background color, so exempt
-   * from the 4.5:1 contrast rule above. --ai-hue-1 reuses --accent so the
-   * gradient reads as "MEDLNK's own", not a borrowed brand color; the rest
-   * form a five-stop teal → cyan → soft blue → violet → soft pink sweep.
-   * --ai-hue-4 reuses --accent-2, already reserved above for "gradients, AI
-   * features" — this is that reservation actually being spent.
+   * form's connecting line, the case-card hover rim) — never used as
+   * text/background color, so exempt from the 4.5:1 contrast rule above.
+   * Deliberately no green here (even though --accent is MEDLNK's brand
+   * green): the point of this sweep is to read as "AI", a distinct visual
+   * language from the rest of the app's teal, so it stays in its own
+   * cyan → blue → indigo → violet → pink lane. --ai-hue-4 reuses --accent-2,
+   * already reserved above for "gradients, AI features" — this is that
+   * reservation actually being spent.
    */
-  --ai-hue-1: var(--accent);
-  --ai-hue-2: #06b6d4;
-  --ai-hue-3: #38bdf8;
+  --ai-hue-1: #22d3ee;
+  --ai-hue-2: #38bdf8;
+  --ai-hue-3: #6366f1;
   --ai-hue-4: var(--accent-2);
   --ai-hue-5: #fb7185;
 
