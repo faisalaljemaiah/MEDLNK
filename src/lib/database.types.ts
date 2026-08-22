@@ -194,13 +194,17 @@ export type Reaction = {
   created_at: string;
 };
 
-/** Mirrors the label check constraint in 0011_comment_labels.sql. */
+/**
+ * Mirrors the label check constraint in 0011_comment_labels.sql, widened in
+ * 0023_comment_label_other.sql.
+ */
 export type CommentLabel =
   | "agree"
   | "differ"
   | "question"
   | "teaching"
-  | "evidence";
+  | "evidence"
+  | "other";
 
 export type Comment = {
   id: string;

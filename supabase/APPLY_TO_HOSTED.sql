@@ -1457,6 +1457,24 @@ begin
 end $$;
 
 -- ============================================================================
+-- 0023_comment_label_other.sql — "Other" reply label
+-- ============================================================================
+-- 0011 was deliberately five reply labels; "Other" is the deliberate
+-- exception so a reply that's genuinely none of the five isn't forced into
+-- the closest-fitting one.
+
+alter table public.comments drop constraint if exists comments_label_check;
+alter table public.comments add constraint comments_label_check
+  check (label is null or label in (
+    'agree',
+    'differ',
+    'question',
+    'teaching',
+    'evidence',
+    'other'
+  ));
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1595,5 +1613,11 @@ from (
          and pg_get_constraintdef(oid) like '%video_post%'
      )),
     ('bucket: case-videos',
-     exists (select 1 from storage.buckets where id = 'case-videos'))
+     exists (select 1 from storage.buckets where id = 'case-videos')),
+    ('comments.label allows other',
+     exists (
+       select 1 from pg_constraint
+       where conrelid = 'public.comments'::regclass and conname = 'comments_label_check'
+         and pg_get_constraintdef(oid) like '%other%'
+     ))
 ) as checks(item, present);

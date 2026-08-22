@@ -26,6 +26,11 @@ posting fails with a normal, non-crashing form error (confirmed — see
 silently wrong, but the three new formats won't actually work until this is
 applied.
 
+Same story for migration 0023 (the "Other" reply label): picking it in the
+"What kind of reply is this?" picker and submitting fails with a clear
+"needs a database update" error (confirmed) until `APPLY_TO_HOSTED.sql` is
+run — the other five labels are unaffected.
+
 ## What MEDLNK is
 
 A clinical knowledge network for verified healthcare professionals and
@@ -614,6 +619,75 @@ confirmed zeroing every new animation's computed duration, not just the
 pre-existing ones. Caught and fixed the bottom-nav glow containment bug
 described above via screenshot before shipping it. `tsc`/lint/build clean;
 local Postgres suite unaffected (no schema changes this pass).
+
+### Feed card: right-side photo thumbnail
+
+Requested directly: a post's photo moved from a full-width block below the
+caption to a small square thumbnail (`aspect-square w-20 sm:w-24`) beside
+the title/caption, `case-card.tsx`. Considered and rejected real
+multi-photo support (a "+3 more" badge) in the same request — a post can
+only carry one photo today (`media_url` is a single column), and the user
+confirmed they just wanted the existing single photo repositioned, not a
+new upload capability. Video posts are untouched: still full-width with
+native `<video controls>`, since a small non-interactive thumbnail can't
+offer those. Verified by posting a real case with a photo through the
+actual compose form and screenshotting the resulting feed card.
+
+### Required specialty/tags for full write-up formats; "Add an update" on cards
+
+Two requested together:
+
+- Specialty and at least one tag are now required (client `required`
+  attribute + server-side check in `createCaseAction`) for every format
+  where `!typeMeta.shortForm` — Clinical case, Near Miss, Safety Alert,
+  Case vs Case, Case Evolution, What Would You Do?, Research Finding. The
+  quick formats (Photo, Quote, "I saw this today", Clinical Pearl, Things I
+  Wish I Knew, Video) stay optional, matching their already-optional body.
+  Rationale: specialty/tags are exactly what search and Global Case
+  Exchange filter on, so an untagged full case was effectively unfindable.
+- Case Evolution already let an author add to their own case without a new
+  post — `CaseTimeline`'s "+ Add an update" (0008/interactive-cases era) —
+  but it only appeared after opening the case page and scrolling past the
+  full body, which reads as "no way to do this but repost" if you don't
+  know it's there. Added a matching "+ Add an update" link next to "Let's
+  dive deep" on the author's own feed cards (`case-card.tsx` gained an
+  optional `viewerId` prop, now threaded through from all four call sites:
+  Home, search, exchange, profile), deep-linking to a new `#case-timeline`
+  anchor on the case page so it lands right on the existing composer
+  instead of just the top of the page.
+- Verified against the real hosted DB: confirmed native validation blocks
+  submitting a Clinical Case without specialty/tags ("Please fill out this
+  field"), confirmed it posts once filled, confirmed the feed-card link
+  shows only for the author, and confirmed clicking it lands exactly on the
+  "+ Add an update" button on the case page (screenshotted, not just
+  asserted). `tsc`/lint/build clean; no schema change.
+
+### "Other" reply label (0023)
+
+0011 was deliberately five reply labels ("a picker long enough to need
+thought stops being used"); requested directly anyway, so widened the
+`comments_label_check` constraint (drop + recreate, same pattern as every
+other constraint widening this session) to add `other`. Everything else —
+the composer's picker, the thread's badges, server-side validation — is
+already data-driven off `COMMENT_LABELS` (`src/lib/comment-labels.ts`), so
+adding the one entry there was the only app-level change needed.
+
+Also fixed a rough edge found while verifying: submitting a reply with a
+label the hosted project's constraint doesn't know about yet surfaced the
+raw Postgres error ("new row for relation... violates check constraint
+...") straight to the user. `addCommentAction` already had a friendly
+42703 ("migration not applied") message for the equivalent missing-column
+case (0011 itself) — added the matching one for 23514 (check_violation) on
+`comments_label_check` specifically, so this and any future label addition
+degrades the same clear way before its migration is applied.
+
+Bundled into `APPLY_TO_HOSTED.sql` (checklist row: `comments.label allows
+other`); **not yet applied to the hosted project** — see the banner at the
+top of this file. Confirmed via `apply-file.sh` (applies cleanly twice)
+and by reproducing the exact pre-migration failure mode live (real login,
+real case, "Other" picked, clear error shown — not a guess) before writing
+the fix for it. `supabase/tests/0023_comment_label_other.test.sql` (3
+assertions) passes locally.
 
 ## Security review
 
