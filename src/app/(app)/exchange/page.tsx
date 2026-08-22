@@ -77,7 +77,12 @@ export default async function ExchangePage({
           </p>
         ) : (
           results.map((c) => (
-            <CaseCard key={c.id} feedCase={c} path={`/exchange?country=${countryCode}`} />
+            <CaseCard
+              key={c.id}
+              feedCase={c}
+              path={`/exchange?country=${countryCode}`}
+              viewerId={user?.id ?? null}
+            />
           ))
         ))}
     </div>

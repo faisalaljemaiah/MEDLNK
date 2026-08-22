@@ -395,8 +395,18 @@ export function ComposeForm({
         </FormSection>
 
         <FormSection number="02" title="Clinical Context">
-          <TextField label="Specialty" name="specialty" placeholder="Internal Medicine" />
-          <TextField label="Tags (comma separated)" name="tags" placeholder="LASA, medication-error" />
+          <TextField
+            label="Specialty"
+            name="specialty"
+            placeholder="Internal Medicine"
+            required={!typeMeta.shortForm}
+          />
+          <TextField
+            label="Tags (comma separated)"
+            name="tags"
+            placeholder="LASA, medication-error"
+            required={!typeMeta.shortForm}
+          />
         </FormSection>
 
         <FormSection number="03" title="Global Exchange">

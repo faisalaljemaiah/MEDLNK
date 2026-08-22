@@ -160,7 +160,9 @@ export default async function FeedPage({
               {emptyMessage}
             </p>
           ) : (
-            cases.map((c) => <CaseCard key={c.id} feedCase={c} path={path} />)
+            cases.map((c) => (
+              <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} />
+            ))
           )}
         </div>
       </ViewTransition>

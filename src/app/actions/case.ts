@@ -102,6 +102,16 @@ export async function createCaseAction(
     return { error: "A title and a short caption are required." };
   }
 
+  // The full write-up formats (clinical case, near miss, safety alert, case
+  // vs case, etc.) need specialty + tags so the case is actually findable —
+  // the whole point of Global Case Exchange and search. The quick formats
+  // (Photo, Quote, "I saw this today"...) stay optional, same as their body.
+  if (!typeMeta.shortForm && (!specialty || tags.length === 0)) {
+    return {
+      error: "Specialty and at least one tag are required for this format.",
+    };
+  }
+
   // Case vs Case names two existing cases by their case number and says what
   // separates them. Resolved before the insert so a typo'd case number is an
   // error the author can fix, not a post with half a comparison attached.

@@ -7,9 +7,22 @@ import { caseTypeMeta } from "@/lib/case-types";
 import { isVideoUrl } from "@/lib/media";
 import type { FeedCase } from "@/lib/cases";
 
-export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string }) {
+export function CaseCard({
+  feedCase,
+  path,
+  viewerId = null,
+}: {
+  feedCase: FeedCase;
+  path: string;
+  /** When this matches the case's author, an "Add an update" link joins
+   *  "Let's dive deep" — the author's way to add to the case without a new
+   *  post, deep-linking straight to the existing timeline composer on the
+   *  case page (CaseTimeline) rather than duplicating that UI here. */
+  viewerId?: string | null;
+}) {
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const typeMeta = caseTypeMeta(feedCase.case_type);
+  const isAuthor = viewerId !== null && viewerId === feedCase.author_id;
 
   return (
     <article
@@ -137,18 +150,28 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </div>
       )}
 
-      <Link
-        href={caseHref}
-        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
-      >
-        Let&apos;s dive deep
-        <span
-          aria-hidden
-          className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Link
+          href={caseHref}
+          className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
         >
-          →
-        </span>
-      </Link>
+          Let&apos;s dive deep
+          <span
+            aria-hidden
+            className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
+          >
+            →
+          </span>
+        </Link>
+        {isAuthor && caseHref !== "#" && (
+          <Link
+            href={`${caseHref}#case-timeline`}
+            className="text-sm font-medium text-muted hover:text-text hover:underline"
+          >
+            + Add an update
+          </Link>
+        )}
+      </div>
 
       <div className="mt-4">
         <ReactionBar

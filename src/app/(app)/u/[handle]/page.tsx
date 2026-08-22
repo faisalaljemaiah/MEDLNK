@@ -176,7 +176,7 @@ export default async function ProfilePage({
           </p>
         ) : (
           visibleCases.map((c) => (
-            <CaseCard key={c.id} feedCase={c} path={path} />
+            <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} />
           ))
         )}
       </div>

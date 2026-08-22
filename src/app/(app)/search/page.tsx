@@ -171,7 +171,9 @@ export default async function SearchPage({
           Nothing matches those filters.
         </p>
       ) : (
-        results.map((c) => <CaseCard key={c.id} feedCase={c} path="/search" />)
+        results.map((c) => (
+          <CaseCard key={c.id} feedCase={c} path="/search" viewerId={user?.id ?? null} />
+        ))
       )}
     </div>
   );
