@@ -288,3 +288,13 @@ export function CompassIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function ImageIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none" />
+      <path d="m21 15-5-5-9 9" />
+    </svg>
+  );
+}

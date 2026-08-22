@@ -689,6 +689,80 @@ real case, "Other" picked, clear error shown — not a guess) before writing
 the fix for it. `supabase/tests/0023_comment_label_other.test.sql` (3
 assertions) passes locally.
 
+### Home layout refactor
+
+Requested as a precise, numbered layout spec (trending strip → streak card
+→ composer pill → segmented tabs → feed → bottom nav), explicitly layout
+only — no token/color/font change, `theme.css` untouched. Two scope
+questions were resolved with the user before building (both answers are
+implemented, not just decided):
+
+- The notification bell **stays removed** (an earlier explicit decision
+  this session) — header keeps Settings + Messages.
+- The 5-tile "What would you like to share?" panel is **replaced
+  entirely** by the new single-pill composer row, not kept alongside it.
+  `HomeGreeting`, `HomeStatCards`, `QuickCreatePanel`, and the old
+  `MedLnkPulse` (the thin sweeping-line version, superseded by the wave
+  redo earlier this session) are now fully unreferenced — deleted rather
+  than left as dead code.
+
+Two spec details didn't map onto real fields in this schema, so they're
+adapted rather than faked, same convention as everywhere else this
+project touches AI/data:
+
+- **"Site" in the card meta line** doesn't exist — MEDLNK deliberately
+  never collects a clinician's hospital/unit. The meta line reads
+  `role · specialty · time` instead (all real fields), with a new
+  `timeAgo()` helper (`src/lib/time.ts`) for the relative timestamp —
+  nothing like it existed before.
+- **Trending topics are real**, not a hardcoded 5-item stub: derived from
+  `cases.tags`, same pattern `getTrendingCommunities` already uses for
+  specialties (`getTrendingTopics`, `src/lib/home.ts`). `momentum` is a
+  real signal too (more of a tag in the last 3 days than the 3 before
+  that = "up"), not a coin flip. Falls back to hiding the strip
+  entirely (`TrendingStrip` returns `null`) rather than fabricating
+  placeholder topics when there's genuinely no tagged activity.
+- **The streak is a real computed value** (`getHomeStreak`,
+  `src/lib/home.ts`): consecutive UTC days with at least one authored
+  case/comment/reaction, walking back from today, not a fabricated
+  number. A brand-new account correctly shows "0-day streak" —
+  confirmed, not assumed.
+- **"Poll" badge**: not a real MEDLNK format. Reused the existing
+  `typeMeta.badge` system as-is (What would you do? / Near miss / Photo /
+  Quote / Video / etc.) — the generic content-type badge this need
+  already had.
+- **Trending pills link to `/search?tag=<name>`**, the existing tag
+  filter on the search page, rather than inventing a new filter axis on
+  the home feed — a better fit for "filters to that topic" than
+  extending `feed-filters.ts`'s type-keyed chip system would have been.
+
+Other implementation notes:
+
+- `Avatar` (`src/components/avatar.tsx`) gained an opt-in `square` prop
+  (`rounded-full` → `rounded-xl`) rather than forking the component —
+  every other call site keeps its circular look untouched.
+- The marquee (`TrendingStrip`) is pure CSS — no "use client" needed. The
+  pill list renders twice in the DOM (second copy `aria-hidden`) and a
+  `translateX(-50%)` keyframe loops it seamlessly; `:hover`/
+  `:focus-within` sets `animation-play-state: paused` so a reader can
+  actually tap a pill. `prefers-reduced-motion` freezes it for free via
+  the existing blanket override in `globals.css`.
+- Following is now the default tab for a signed-in viewer (`/`, no query
+  param) instead of the personalized "For You" feed — `/?view=foryou`
+  still reaches it. Signed-out visitors still land on "For You" (no
+  Following tab without an account).
+- Verified against the real hosted DB (throwaway verified test account,
+  cleaned up after): the full layout top-to-bottom screenshotted, the
+  marquee's motion confirmed via two screenshots ~3s apart (same
+  technique as the dashboard wave), `prefers-reduced-motion` confirmed
+  freezing it (`page.emulateMedia`, checked the computed
+  `animation-duration`), the composer pill and a trending pill both
+  confirmed navigating correctly (`/compose` and
+  `/search?tag=high-alert-medication` respectively, the latter's search
+  results screenshotted too), and the new feed-card meta line/avatar
+  confirmed on a real post. `tsc`/lint/build clean; no schema change, so
+  the local Postgres suite is unaffected.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

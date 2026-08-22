@@ -5,6 +5,7 @@ import { ReactionBar } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
 import { caseTypeMeta } from "@/lib/case-types";
 import { isVideoUrl } from "@/lib/media";
+import { timeAgo } from "@/lib/time";
 import type { FeedCase } from "@/lib/cases";
 
 export function CaseCard({
@@ -42,6 +43,7 @@ export function CaseCard({
           <Avatar
             avatarUrl={feedCase.author?.avatar_url}
             name={feedCase.author?.full_name}
+            square
           />
         </Link>
         <div className="min-w-0">
@@ -54,8 +56,10 @@ export function CaseCard({
               <span className="ml-1 text-positive">✓</span>
             )}
           </Link>
-          <p className="font-label text-xs text-muted">
-            @{feedCase.author?.handle ?? "unknown"} · {feedCase.author?.role}
+          <p className="truncate font-label text-xs text-muted">
+            {[feedCase.author?.role, feedCase.specialty, timeAgo(feedCase.created_at)]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
         <p className="ml-auto shrink-0 font-label text-xs text-muted">

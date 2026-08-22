@@ -16,6 +16,8 @@ import { feedFilter } from "@/lib/feed-filters";
 import { getLiveSafetyAlerts } from "@/lib/safety-alerts";
 import {
   getHomeStats,
+  getHomeStreak,
+  getTrendingTopics,
   getTrendingCommunities,
   getRecommendedPeople,
 } from "@/lib/home";
@@ -23,11 +25,10 @@ import { CaseCard } from "@/components/case-card";
 import { FeedFilterBar } from "@/components/feed-filter-bar";
 import { SafetyAlertBanner } from "@/components/safety-alert-banner";
 import { UnavailableNotice } from "@/components/unavailable-notice";
-import { HomeGreeting } from "@/components/home/greeting";
-import { HomeStatCards } from "@/components/home/stat-cards";
-import { QuickCreatePanel } from "@/components/home/quick-create";
+import { TrendingStrip } from "@/components/home/trending-strip";
+import { StreakCard } from "@/components/home/streak-card";
+import { ComposerRow } from "@/components/home/composer-row";
 import { HomeFeedTabs, type HomeFeedView } from "@/components/home/feed-tabs";
-import { MedLnkPulse } from "@/components/ui/medlnk-pulse";
 import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
@@ -35,15 +36,14 @@ import { RecommendedPeople } from "@/components/home/recommended-people";
 import { TargetIcon } from "@/components/icons";
 import { t } from "@/lib/i18n";
 
+// Following is the default tab for a signed-in viewer (a layout change, not
+// a behavior change to the tabs themselves — /?view=foryou still reaches the
+// personalized feed that used to be the default).
 function parseView(raw: string | undefined, hasViewer: boolean): HomeFeedView {
-  if (raw === "following" && hasViewer) return "following";
   if (raw === "trending") return "trending";
+  if (raw === "foryou") return "foryou";
+  if (hasViewer) return "following";
   return "foryou";
-}
-
-function firstName(fullName: string | null | undefined): string | null {
-  if (!fullName) return null;
-  return fullName.trim().split(/\s+/)[0] ?? null;
 }
 
 export default async function FeedPage({
@@ -60,16 +60,27 @@ export default async function FeedPage({
 
   // Everything the surrounding sections need, none of it dependent on which
   // feed tab is active, so it all goes out together.
-  const [alerts, profile, stats, communities, discussions, people, followedAuthorIds] =
-    await Promise.all([
-      getLiveSafetyAlerts(supabase, viewerId),
-      user ? getViewerProfile() : Promise.resolve(null),
-      user ? getHomeStats(supabase, user.id) : Promise.resolve(null),
-      getTrendingCommunities(supabase, viewerId),
-      getActiveDiscussions(supabase, viewerId),
-      user ? getRecommendedPeople(supabase, user.id) : Promise.resolve(null),
-      user ? getFollowedAuthorIds(supabase, user.id) : Promise.resolve(new Set<string>()),
-    ]);
+  const [
+    alerts,
+    profile,
+    stats,
+    streak,
+    topics,
+    communities,
+    discussions,
+    people,
+    followedAuthorIds,
+  ] = await Promise.all([
+    getLiveSafetyAlerts(supabase, viewerId),
+    user ? getViewerProfile() : Promise.resolve(null),
+    user ? getHomeStats(supabase, user.id) : Promise.resolve(null),
+    user ? getHomeStreak(supabase, user.id) : Promise.resolve(null),
+    getTrendingTopics(supabase, viewerId),
+    getTrendingCommunities(supabase, viewerId),
+    getActiveDiscussions(supabase, viewerId),
+    user ? getRecommendedPeople(supabase, user.id) : Promise.resolve(null),
+    user ? getFollowedAuthorIds(supabase, user.id) : Promise.resolve(new Set<string>()),
+  ]);
 
   let cases: FeedCase[] | null;
   if (view === "following" && user) {
@@ -117,20 +128,27 @@ export default async function FeedPage({
           be hidden behind whichever tab or chip they last picked. */}
       <SafetyAlertBanner alerts={alerts} />
 
-      {user && (
-        <div className="animate-enter stagger-1 relative isolate overflow-hidden bg-gradient-to-b from-surface-2/70 via-surface-2/25 to-transparent pb-3">
-          <MedLnkPulse className="absolute inset-x-0 top-0 -z-10 h-28" />
-          <HomeGreeting firstName={firstName(profile?.full_name)} locale={locale} />
-          {stats && <HomeStatCards stats={stats} locale={locale} />}
-        </div>
-      )}
-      {user && profile?.verified && (
-        <div className="animate-enter stagger-2">
-          <QuickCreatePanel locale={locale} />
+      <div className="animate-enter stagger-1">
+        <TrendingStrip topics={topics} />
+      </div>
+
+      {user && stats && (
+        <div className="animate-enter stagger-2 mt-4">
+          <StreakCard
+            days={streak?.days ?? 0}
+            postsThisWeek={stats.activity.postsThisWeek}
+            commentsThisWeek={stats.activity.commentsThisWeek}
+          />
         </div>
       )}
 
-      <div className="animate-enter stagger-3">
+      {user && profile?.verified && (
+        <div className="animate-enter stagger-2 mt-3">
+          <ComposerRow />
+        </div>
+      )}
+
+      <div className="animate-enter stagger-3 mt-4">
         <HomeFeedTabs active={view} hasViewer={Boolean(user)} locale={locale} />
         {view === "foryou" && (
           <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />

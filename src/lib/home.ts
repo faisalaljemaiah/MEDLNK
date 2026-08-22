@@ -152,6 +152,118 @@ export async function getHomeStats(
   };
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export type HomeStreak = {
+  days: number;
+};
+
+/**
+ * The dashboard's activity streak — real, computed from the viewer's own
+ * case/comment/reaction timestamps, not a fabricated number. Counts
+ * consecutive UTC days with at least one of the three, walking backward from
+ * today; a gap of a full day with nothing breaks the streak. "Today" counts
+ * even with zero activity so far — the streak isn't broken until a whole day
+ * passes with nothing, matching how every other streak feature works.
+ */
+export async function getHomeStreak(
+  supabase: Client,
+  viewerId: string,
+): Promise<HomeStreak> {
+  const since = new Date(Date.now() - 60 * DAY_MS).toISOString();
+
+  const [casesRes, commentsRes, reactionsRes] = await Promise.all([
+    supabase
+      .from("cases")
+      .select("created_at")
+      .eq("author_id", viewerId)
+      .gte("created_at", since),
+    supabase
+      .from("comments")
+      .select("created_at")
+      .eq("user_id", viewerId)
+      .gte("created_at", since),
+    supabase
+      .from("reactions")
+      .select("created_at")
+      .eq("user_id", viewerId)
+      .gte("created_at", since),
+  ]);
+
+  const activeDays = new Set<string>();
+  for (const rows of [casesRes.data, commentsRes.data, reactionsRes.data]) {
+    for (const row of rows ?? []) {
+      activeDays.add(row.created_at.slice(0, 10)); // "YYYY-MM-DD" (UTC)
+    }
+  }
+
+  let days = 0;
+  const cursor = new Date();
+  for (;;) {
+    const key = cursor.toISOString().slice(0, 10);
+    if (!activeDays.has(key)) {
+      // Today not having activity yet doesn't break a streak that's still
+      // in progress — every earlier day does.
+      if (days === 0 && key === new Date().toISOString().slice(0, 10)) {
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
+        continue;
+      }
+      break;
+    }
+    days += 1;
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+
+  return { days };
+}
+
+export type TrendingTopic = {
+  id: string;
+  name: string;
+  count: number;
+  momentum: "up" | "steady";
+};
+
+/**
+ * Tags with the most recent activity — same derivation as
+ * getTrendingCommunities, just grouped by tag instead of specialty, since
+ * MEDLNK has no dedicated topics table either. momentum is a real signal
+ * (more of this tag in the last 3 days than the 3 before that), not a
+ * fabricated one.
+ */
+export async function getTrendingTopics(
+  supabase: Client,
+  viewerId: string | null,
+  limit = 8,
+): Promise<TrendingTopic[]> {
+  const all = await getFeedCases(supabase, viewerId);
+  const now = Date.now();
+  const recentCutoff = now - 3 * DAY_MS;
+  const priorCutoff = now - 6 * DAY_MS;
+
+  const byTag = new Map<string, { count: number; recent: number; prior: number }>();
+  for (const c of all) {
+    const createdAt = new Date(c.created_at).getTime();
+    for (const tag of c.tags) {
+      const entry = byTag.get(tag) ?? { count: 0, recent: 0, prior: 0 };
+      entry.count += 1;
+      if (createdAt >= recentCutoff) entry.recent += 1;
+      else if (createdAt >= priorCutoff) entry.prior += 1;
+      byTag.set(tag, entry);
+    }
+  }
+
+  return [...byTag.entries()]
+    .map(([name, v]) => ({
+      id: name,
+      name,
+      count: v.count,
+      momentum: (v.recent > v.prior ? "up" : "steady") as "up" | "steady",
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
 export type TrendingCommunity = {
   specialty: string;
   caseCount: number;

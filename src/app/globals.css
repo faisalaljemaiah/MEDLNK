@@ -200,6 +200,29 @@ body {
   animation: medlnk-wave-drift-c 18s linear infinite;
 }
 
+/*
+ * TrendingStrip's marquee (src/components/home/trending-strip.tsx) — the
+ * pill list is rendered twice in the DOM and this translates the whole row
+ * by exactly -50% (one full copy's width), so the loop has no visible seam.
+ * Paused on hover/focus so a reader can actually tap a pill without chasing
+ * it; prefers-reduced-motion freezes it for free via the blanket override
+ * below, same as every other ambient animation in this file.
+ */
+@keyframes medlnk-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.medlnk-marquee-track {
+  animation: medlnk-marquee 28s linear infinite;
+}
+
+.medlnk-marquee-track:hover,
+.medlnk-marquee-track:focus-within {
+  animation-play-state: paused;
+}
+
 /* See GlowBlobs (src/components/ui/glow-blobs.tsx) for the rationale. */
 .glow-blob {
   position: absolute;
