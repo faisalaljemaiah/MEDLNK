@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
+import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
 import { CompassIcon } from "@/components/icons";
 
@@ -72,6 +73,18 @@ export default async function SearchPage({
     Boolean,
   ).length;
 
+  // Preserves every other active filter, only ever touches ?specialty= —
+  // clicking the already-active pill clears it instead of re-submitting it.
+  const specialtyHref = (value: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (value) params.set("specialty", value);
+    if (typeFilter) params.set("type", typeFilter);
+    if (tagFilter) params.set("tag", tagFilter);
+    const qs = params.toString();
+    return qs ? `/search?${qs}` : "/search";
+  };
+
   return (
     <div>
       {/* A GET form, so every search is a shareable URL and the results stay
@@ -132,6 +145,32 @@ export default async function SearchPage({
           </button>
         </div>
       </form>
+
+      {/* Curated discipline shortcuts — separate from the <select> above,
+          which only ever lists specialties that already have posts behind
+          them. These jump straight to a discipline even before anyone has
+          posted in it yet (see src/lib/specialties.ts). */}
+      <div className="no-scrollbar overflow-x-auto px-4 pb-3">
+        <div className="flex w-max gap-2">
+          {SPECIALTIES.map((s) => {
+            const active = specialtyFilter === s;
+            return (
+              <Link
+                key={s}
+                href={specialtyHref(active ? "" : s)}
+                aria-pressed={active}
+                className={
+                  active
+                    ? "shrink-0 whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
+                    : "shrink-0 whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
+                }
+              >
+                {s}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="px-4 pb-3">
         <Link

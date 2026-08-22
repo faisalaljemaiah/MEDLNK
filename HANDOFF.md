@@ -763,6 +763,40 @@ Other implementation notes:
   confirmed on a real post. `tsc`/lint/build clean; no schema change, so
   the local Postgres suite is unaffected.
 
+### Specialty quick-filter pills on `/search`
+
+- `src/lib/specialties.ts` (new) — `SPECIALTIES`, a curated, hardcoded
+  list of ~20 healthcare disciplines (Internal Medicine, Emergency
+  Medicine, Critical Care, Surgery, Pediatrics, Obstetrics & Gynecology,
+  Psychiatry, Nursing, Pharmacy, Laboratory Medicine, Radiology,
+  Anesthesiology, Cardiology, Oncology, Physiotherapy, Sports Medicine,
+  Psychology, Social Work, Nutrition & Dietetics, Dentistry, Public
+  Health). This is deliberately a *different* list from the search page's
+  existing specialty `<select>`, which is built only from specialties
+  that already have posted cases behind them (documented in that file's
+  own comment) — the whole point of these pills is to let a reader jump
+  to a discipline even before anyone has posted in it. `specialty` stays
+  free text on the composer, so a pill only surfaces real results when a
+  post's `specialty` string matches the pill's label exactly; when it
+  doesn't (yet), the page's existing "Nothing matches those filters."
+  empty state handles it gracefully — no special-casing needed.
+- `src/app/(app)/search/page.tsx` — added a horizontally-scrolling row of
+  pill links between the search form and the "Browse the Global Case
+  Exchange" link. Each pill is a plain `<Link>` (no client JS) to
+  `/search?specialty=<value>`, built by a `specialtyHref()` helper that
+  preserves the other active filters (`q`, `type`, `tag`) and clears
+  `specialty` if the same pill is clicked again (toggle off). The active
+  pill gets a solid accent background; others are outlined. Shares the
+  same `?specialty=` param as the existing `<select>`, so the two controls
+  always agree with each other — no new filter path.
+- Verified against the real hosted DB (throwaway verified test account
+  with one seeded "Nursing"-specialty case, cleaned up after — profile,
+  case, and auth user): clicking the Nursing pill correctly filtered to
+  the 1 real case (`"1 case · Nursing"`), clicking it again cleared the
+  filter, and clicking a specialty with zero real posts (Dentistry)
+  correctly showed `"0 cases · Dentistry"` and the existing empty-state
+  message rather than erroring. `tsc`/lint/build clean; no schema change.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
