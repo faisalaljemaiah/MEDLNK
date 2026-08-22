@@ -49,7 +49,7 @@ teach, communicate, or improve patient safety.
 | Auth | `getViewer()` (`src/lib/auth.ts`) verifies the JWT locally via `getClaims()` — ES256, ~1-2ms. Server Actions use `getUser()` so writes are checked against the Auth server. Don't "simplify" reads back to `getUser()`: it costs ~250ms per call. |
 | Types | `src/lib/database.types.ts` is hand-written — update it with every migration. Must be `type` aliases, never `interface`. |
 | Performance | Supabase is ~260ms away. Latency is set by **sequential round trips**, not payload. Feed and case reads are single queries using PostgREST embeds. Parallelise with `Promise.all`. |
-| Styling | Every colour is a token in `src/app/theme.css`. Use the generated utilities (`bg-surface`, `text-muted`), never raw hex. Dark navy theme as of this session (was light — see "Dark navy re-theme" below); contrast is WCAG-AA checked either way. |
+| Styling | Every colour is a token in `src/app/theme.css`. Use the generated utilities (`bg-surface`, `text-muted`), never raw hex. Light theme; contrast is WCAG-AA checked. |
 | Layout | Top header (wordmark + messages). Floating translucent bottom nav: Home, Reel, Create, Search, Profile. Mobile-first. |
 | AI | Edge Functions only — the Anthropic key never reaches the browser. All AI is best-effort and must never block a user action. |
 
@@ -614,69 +614,6 @@ confirmed zeroing every new animation's computed duration, not just the
 pre-existing ones. Caught and fixed the bottom-nav glow containment bug
 described above via screenshot before shipping it. `tsc`/lint/build clean;
 local Postgres suite unaffected (no schema changes this pass).
-
-### Dark navy re-theme
-
-Requested directly, twice — first a glow accent on the light theme, then
-explicitly "the background, the text, the overall theme" — reversing the
-"light mode only" direction this project started with. Executed as a
-token-only change: `theme.css`'s color block is documented as "the ONLY
-place color decisions should live," and every component already went
-through those tokens rather than raw hex, so re-skinning the whole app was
-genuinely a one-file change plus one mechanical follow-up.
-
-- New palette (`theme.css`): `--bg: #0a0f24` (deep navy), `--surface:
-  #151d45`, `--surface-2: #202b60`, `--line: #37447f`, `--text: #eef1f8`
-  (near-white), `--muted: #a6b1d6`. `--accent` brightened from #0f766e to
-  #2dd4bf — same teal hue family, just light enough to work as *text* on
-  navy (10.2:1). `--accent-soft` inverted from a light mint wash to a dark
-  teal wash (#123d38) for icon-well backgrounds. `--accent-2`/`--positive`/
-  `--warning`/`--danger` all brightened the same way, each re-checked at
-  6.9–11.4:1 against `--bg`.
-- **The one real structural change, not just token swaps**: a color bright
-  enough to read as text-on-navy (--accent at 10.2:1) is too light to hold
-  white button-label text at 4.5:1 (comes out to ~1.9:1) — the dark theme's
-  version of the light theme's "accent has to clear 4.5:1 in both
-  directions" rule the file already documented, just failing the opposite
-  direction now. Added `--on-accent` (= `--bg`, i.e. navy text on a bright
-  accent background) and its `text-on-accent` Tailwind utility
-  (`@theme inline`), then swapped every `bg-accent`/`bg-positive`/
-  `bg-danger` button's `text-white` to `text-on-accent` — 16 occurrences
-  across 14 files, found by grepping for the exact `text-white` +
-  colored-`bg-*` pairing and hand-checked against every hit to exclude the
-  handful of unrelated `text-white` uses that are legibility treatments for
-  text over an arbitrary uploaded photo (reel cards, dark-mode reactions)
-  and must stay literally white regardless of app theme.
-- `GlowBlobs` (the auth-screen background from the previous pass) and the
-  `--ai-hue-*` sweep (wave, AI button glow, compose connecting line) needed
-  no changes — both were already colorful accents composited over
-  whatever's behind them, and if anything read better against navy than
-  they did against the old light wash.
-- **Found and fixed a real, unrelated layout bug while screenshotting for
-  this**: the profile page's Messages/Consults/Analytics/Learn/Settings/
-  Sign out link row overflowed its 390px viewport (`scrollWidth` 445 vs
-  `clientWidth` 390) — a previous session's fix for the same symptom
-  (`flex-wrap` on both the outer header row and the inner link row) turned
-  out to be incomplete: the intermediate wrapper between them had
-  `shrink-0`, and CSS's max-content sizing algorithm for a `flex-wrap`
-  container ignores wrapping, so `shrink-0` forced that wrapper to the full
-  *unwrapped* width of every link regardless of the `flex-wrap` on its own
-  child. Fixed by swapping `shrink-0` for `min-w-0` on that wrapper (allows
-  it to shrink below max-content so its child's `flex-wrap` actually takes
-  effect), confirmed via the same `scrollWidth`/`clientWidth` check —
-  now 390/390.
-- Verified against the real hosted DB (throwaway verified test account,
-  cleaned up after): welcome, login, home feed (every widget), compose
-  (all four sections + AI glow), reel, settings, and profile all
-  screenshotted and read for legibility, not just glanced at —
-  `tsc`/lint/build clean. No schema changes, so the local Postgres suite is
-  unaffected.
-- **Easy to revert if this doesn't land well**: everything above is
-  confined to `theme.css` (the palette + `--on-accent`), one Tailwind class
-  swap across 14 files (`text-on-accent` → `text-white`), and the one
-  unrelated profile-page fix (keep that one either way). `git revert` the
-  commit, or just restore `theme.css`'s previous color block from git
-  history — the token architecture means nothing else needs to change back.
 
 ## Security review
 

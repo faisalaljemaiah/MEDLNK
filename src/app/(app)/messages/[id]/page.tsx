@@ -57,7 +57,7 @@ export default async function ConversationPage({
                   className={clsx(
                     "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm",
                     isOwn
-                      ? "bg-accent text-on-accent"
+                      ? "bg-accent text-white"
                       : "bg-surface-2 text-text",
                   )}
                 >

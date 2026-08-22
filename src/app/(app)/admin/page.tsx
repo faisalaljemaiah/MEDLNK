@@ -102,7 +102,7 @@ async function VerificationQueue({ supabase }: { supabase: Client }) {
               <form action={approveUserAction.bind(null, p.id)}>
                 <button
                   type="submit"
-                  className="rounded-lg bg-positive px-3.5 py-2 text-sm font-medium text-on-accent"
+                  className="rounded-lg bg-positive px-3.5 py-2 text-sm font-medium text-white"
                 >
                   Approve
                 </button>

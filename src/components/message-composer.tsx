@@ -34,7 +34,7 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent disabled:opacity-60"
+          className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           Send
         </button>
