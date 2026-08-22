@@ -91,7 +91,7 @@ export default async function ProfilePage({
         </div>
 
         {isOwnProfile ? (
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex min-w-0 flex-col items-end gap-2">
             <Link
               href="/onboarding"
               className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
@@ -130,7 +130,7 @@ export default async function ProfilePage({
             </div>
           </div>
         ) : user ? (
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex min-w-0 flex-col items-end gap-2">
             <FollowButton
               followeeId={profile.id}
               initialFollowing={viewerFollows}
