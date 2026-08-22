@@ -200,6 +200,46 @@ body {
   animation: medlnk-wave-drift-c 18s linear infinite;
 }
 
+/* See GlowBlobs (src/components/ui/glow-blobs.tsx) for the rationale. */
+.glow-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+}
+
+.glow-blob-1 {
+  top: -15%;
+  left: -20%;
+  width: 65vw;
+  height: 65vw;
+  max-width: 420px;
+  max-height: 420px;
+  background: radial-gradient(circle, var(--ai-hue-1), transparent 70%);
+  opacity: 0.35;
+}
+
+.glow-blob-2 {
+  bottom: -10%;
+  right: -25%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 460px;
+  max-height: 460px;
+  background: radial-gradient(circle, var(--ai-hue-4), transparent 70%);
+  opacity: 0.3;
+}
+
+.glow-blob-3 {
+  top: 35%;
+  right: -15%;
+  width: 45vw;
+  height: 45vw;
+  max-width: 300px;
+  max-height: 300px;
+  background: radial-gradient(circle, var(--ai-hue-5), transparent 70%);
+  opacity: 0.25;
+}
+
 /*
  * Staggered dashboard entrance — pair with .animate-enter. Declared after it
  * so the animation-delay here wins over .animate-enter's implicit 0s on
