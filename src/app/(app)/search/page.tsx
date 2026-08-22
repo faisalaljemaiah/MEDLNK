@@ -150,8 +150,8 @@ export default async function SearchPage({
           which only ever lists specialties that already have posts behind
           them. These jump straight to a discipline even before anyone has
           posted in it yet (see src/lib/specialties.ts). */}
-      <div className="no-scrollbar overflow-x-auto px-4 pb-3">
-        <div className="flex w-max gap-2">
+      <div className="px-4 pb-3">
+        <div className="flex flex-wrap gap-2">
           {SPECIALTIES.map((s) => {
             const active = specialtyFilter === s;
             return (
@@ -161,8 +161,8 @@ export default async function SearchPage({
                 aria-pressed={active}
                 className={
                   active
-                    ? "shrink-0 whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
-                    : "shrink-0 whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
+                    ? "whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
+                    : "whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
                 }
               >
                 {s}
