@@ -61,57 +61,67 @@ export function CaseCard({ feedCase, path }: { feedCase: FeedCase; path: string 
         </span>
       )}
 
-      <Link href={caseHref}>
-        <h3
-          className={clsx(
-            "font-headline text-lg text-text hover:underline",
-            typeMeta.badge ? "mt-2 block" : "mt-3 block",
-          )}
-        >
-          {feedCase.title}
-        </h3>
-      </Link>
-      {typeMeta.isQuote ? (
-        <p className="mt-2 border-l-2 border-accent-2/40 pl-3 font-headline text-lg italic leading-snug text-text">
-          {feedCase.short_caption}
-        </p>
-      ) : (
-        <p className="mt-1 text-sm leading-relaxed text-muted">
-          {feedCase.short_caption}
-        </p>
-      )}
-
-      {feedCase.media_url && (
-        isVideoUrl(feedCase.media_url) ? (
-          // Not a Link like the image case below: a video needs its native
-          // controls to be directly clickable, which a wrapping Link would
-          // fight over every tap.
-          <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
-            <video
-              src={feedCase.media_url}
-              controls
-              playsInline
-              className="h-full w-full object-contain"
-            />
-          </div>
-        ) : (
-          // Fixed aspect box rather than intrinsic sizing: case photos are
-          // arbitrary, and letting one set its own height makes the feed jump
-          // as images load. Empty alt — the caption above already carries the
-          // meaning, so announcing the file again is noise to a screen reader.
-          <Link
-            href={caseHref}
-            className="relative mt-3 block aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2"
+      {(() => {
+        const hasImageThumb =
+          feedCase.media_url && !isVideoUrl(feedCase.media_url);
+        return (
+          <div
+            className={clsx(
+              typeMeta.badge ? "mt-2" : "mt-3",
+              hasImageThumb && "flex items-start justify-between gap-3",
+            )}
           >
-            <Image
-              src={feedCase.media_url}
-              alt=""
-              fill
-              sizes="(max-width: 640px) 100vw, 640px"
-              className="object-cover"
-            />
-          </Link>
-        )
+            <div className="min-w-0 flex-1">
+              <Link href={caseHref}>
+                <h3 className="font-headline text-lg text-text hover:underline">
+                  {feedCase.title}
+                </h3>
+              </Link>
+              {typeMeta.isQuote ? (
+                <p className="mt-2 border-l-2 border-accent-2/40 pl-3 font-headline text-lg italic leading-snug text-text">
+                  {feedCase.short_caption}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm leading-relaxed text-muted">
+                  {feedCase.short_caption}
+                </p>
+              )}
+            </div>
+
+            {hasImageThumb && (
+              // A small square thumbnail beside the text rather than a
+              // full-width image below it — empty alt, same reasoning as
+              // before: the caption already carries the meaning.
+              <Link
+                href={caseHref}
+                className="relative mt-0.5 aspect-square w-20 shrink-0 overflow-hidden rounded-xl bg-surface-2 sm:w-24"
+              >
+                <Image
+                  src={feedCase.media_url!}
+                  alt=""
+                  fill
+                  sizes="96px"
+                  className="object-cover"
+                />
+              </Link>
+            )}
+          </div>
+        );
+      })()}
+
+      {feedCase.media_url && isVideoUrl(feedCase.media_url) && (
+        // Not a thumbnail like the image case above: a video needs its
+        // native controls to be directly clickable, which a small
+        // non-interactive thumbnail can't offer, so it keeps the full-width
+        // treatment below the text instead.
+        <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
+          <video
+            src={feedCase.media_url}
+            controls
+            playsInline
+            className="h-full w-full object-contain"
+          />
+        </div>
       )}
 
       {feedCase.tags.length > 0 && (
