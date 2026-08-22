@@ -31,6 +31,16 @@ Same story for migration 0023 (the "Other" reply label): picking it in the
 "needs a database update" error (confirmed) until `APPLY_TO_HOSTED.sql` is
 run — the other five labels are unaffected.
 
+Also bundled: migration 0024 (public case-follower visibility, for the
+"who follows this case" count + avatar stack). This one degrades quietly
+rather than failing: until it's run, the case-follow count only ever
+reflects the *viewer's own* row (old `case_followers_select_own` RLS), so a
+signed-out visitor or a viewer who isn't following a case sees "Follow case
+0" even when others follow it, and the "people you follow also follow this"
+avatar stack never has anything to show. No error, no crash — just an
+undercount — confirmed live against the hosted project. See "Case-follower
+count + mutual-follow avatars" below.
+
 ## What MEDLNK is
 
 A clinical knowledge network for verified healthcare professionals and
@@ -796,6 +806,86 @@ Other implementation notes:
   filter, and clicking a specialty with zero real posts (Dentistry)
   correctly showed `"0 cases · Dentistry"` and the existing empty-state
   message rather than erroring. `tsc`/lint/build clean; no schema change.
+
+- Also on `/search`: the search text field now wears the same standing
+  AI-hue rim as `<AIButton>`/the compose nav button (`.ai-glow`,
+  `globals.css`), for visual consistency rather than any new AI behavior
+  — a plain wrapping `<div className="ai-glow ai-glow-round">`.
+- Fixed a real bug in `.ai-glow` while doing that: the spinning layer was
+  sized with `inset: -50%`, which scales each axis off the *container's
+  own* width/height. On a compact button that's close enough to a square
+  to look fine; on the search bar (very wide, short) it produced a
+  squashed ellipse whose hue barely shifted along the long edges, so the
+  "spinning" rim read as static. Fixed by sizing the spinning layer as a
+  true square (`aspect-ratio: 1`, off width) and centering it with
+  `translate` instead — same fix benefits every other `.ai-glow` control
+  (the AI button, the compose nav ring), not just search. Confirmed via a
+  5-frame timed screenshot sequence showing the gradient sweeping evenly
+  all the way around the pill.
+
+### Case-follower count + mutual-follow avatars
+
+- The case-follow count was already computed
+  (`getInteractiveState`/`lib/interactive.ts`) but two things were wrong:
+  it was only ever shown to signed-in viewers (`{user && <CaseFollowButton
+  />}` in `case/[caseNumber]/page.tsx`), and — a real bug found while
+  building this — the underlying query (`case_followers` with
+  `count: "exact", head: true`) was RLS-scoped to `case_followers_select_own`
+  (0008), so even when shown, the number reflected only *the viewer's own*
+  follow, not the true total. A signed-in non-follower and a signed-out
+  visitor both saw an undercount, silently.
+- `supabase/migrations/0024_case_followers_public_select.sql` (new) —
+  drops `case_followers_select_own` and replaces it with
+  `case_followers_select_all` (`using (true)`), the same public-read shape
+  the person-to-person `follows` table already has (0004). Insert/delete
+  stay owner-only — only who can *see* who's following changes. Covered by
+  `supabase/tests/0024_case_followers_public_select.test.sql` (a different
+  signed-in user and an anonymous session can both now read another user's
+  row; `insert_own` still blocks following on someone else's behalf).
+  Folded into `supabase/APPLY_TO_HOSTED.sql` with a matching checklist row.
+- `src/lib/interactive.ts` — new `CaseFollowerProfile` type and
+  `InteractiveState.followedFollowers`: people the viewer follows
+  (`follows` table) who also follow this case (`case_followers`), for a
+  small avatar stack next to the count — the same "people you know already
+  did this" idea used elsewhere in the app, just scoped to a case. Two more
+  entries in the same `Promise.all` this function already batches: all of
+  a case's `case_followers` joined with `profiles` (embed syntax matches
+  the rest of the codebase —
+  `profiles!case_followers_user_id_fkey(...)`, `as unknown as` cast since
+  `database.types.ts` carries no Relationships metadata, same pattern as
+  `cases.ts`), and the viewer's own `followee_id` list from `follows`. The
+  intersection is computed in JS rather than as a second round trip —
+  cheap at this scale, same "filter in JS" convention the search page and
+  others already use.
+- `src/components/avatar.tsx` — added an `"xs"` size (24px) for the
+  overlapping avatar stack; every existing caller is unaffected (`sm`
+  stays the default).
+- `src/components/case-follow-button.tsx` — count is now always rendered
+  (no more `count > 0` gate — "0" is a real, useful answer to "does anyone
+  follow this"). New `followedFollowers` prop renders up to 3 overlapping
+  `xs` avatars (each a `<Link>` to that person's profile) immediately next
+  to the button. New `signedIn` prop: when false, the button is disabled
+  and a "Sign in to follow this case." hint replaces the old "you'll be
+  notified" line — mirrors the existing `signedIn` pattern already used by
+  `CaseQuestion`, rather than hiding the control (and the count with it)
+  entirely.
+- `src/app/(app)/case/[caseNumber]/page.tsx` — `<CaseFollowButton>` moved
+  outside the `{user && ...}` gate so signed-out visitors see the count
+  too; passes `followedFollowers` and `signedIn={Boolean(user)}`.
+- Verified: local Postgres suite (`supabase/tests/run.sh`) and
+  `apply-file.sh` both green, including the new 0024 tests.
+  `tsc`/lint/build clean. Live against the hosted DB (throwaway author +
+  two throwaway viewers, one case, one `case_followers` row, one
+  person-to-person `follows` row, all cleaned up after): confirmed the
+  *current* (pre-migration) safe-degraded state — signed-out and a
+  non-following signed-in viewer both see "Follow case 0" with no crash
+  and no avatar stack, the signed-out hint text renders correctly, and the
+  signed-in state correctly omits it. Separately confirmed the
+  `case_followers → profiles` embed query itself resolves with the exact
+  expected shape (via the service-role key, bypassing RLS to isolate the
+  query syntax from the pending migration) — high confidence the full
+  feature (real count + mutual-follow avatars) works end-to-end the moment
+  `APPLY_TO_HOSTED.sql` is applied.
 
 ## Security review
 

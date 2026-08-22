@@ -1475,6 +1475,20 @@ alter table public.comments add constraint comments_label_check
   ));
 
 -- ============================================================================
+-- 0024_case_followers_public_select.sql — public case-follower visibility
+-- ============================================================================
+-- Case-follower counts and "people you follow also follow this case" both
+-- need every viewer to read case_followers rows, not just the follower
+-- themselves — same public-read shape `follows` already has.
+
+drop policy if exists "case_followers_select_own" on public.case_followers;
+drop policy if exists "case_followers_select_all" on public.case_followers;
+
+create policy "case_followers_select_all"
+  on public.case_followers for select
+  using (true);
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1619,5 +1633,11 @@ from (
        select 1 from pg_constraint
        where conrelid = 'public.comments'::regclass and conname = 'comments_label_check'
          and pg_get_constraintdef(oid) like '%other%'
+     )),
+    ('SECURITY: case_followers select is public',
+     exists (
+       select 1 from pg_policies
+       where schemaname = 'public' and tablename = 'case_followers'
+         and policyname = 'case_followers_select_all'
      ))
 ) as checks(item, present);

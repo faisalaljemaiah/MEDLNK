@@ -2,9 +2,16 @@ import Image from "next/image";
 import { clsx } from "clsx";
 
 const SIZES = {
+  xs: "h-6 w-6 text-[10px]",
   sm: "h-9 w-9 text-xs",
   lg: "h-20 w-20 text-2xl",
 } as const;
+
+const PIXELS: Record<keyof typeof SIZES, number> = {
+  xs: 24,
+  sm: 36,
+  lg: 80,
+};
 
 export function Avatar({
   avatarUrl,
@@ -29,8 +36,8 @@ export function Avatar({
       <Image
         src={avatarUrl}
         alt={name ?? "Profile picture"}
-        width={size === "lg" ? 80 : 36}
-        height={size === "lg" ? 80 : 36}
+        width={PIXELS[size]}
+        height={PIXELS[size]}
         className={clsx("shrink-0 object-cover", shape, SIZES[size], className)}
       />
     );

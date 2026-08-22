@@ -117,14 +117,14 @@ export default async function CasePage({
           </span>
         </Link>
 
-        {user && (
-          <CaseFollowButton
-            caseId={feedCase.id}
-            initialFollowing={interactive.isFollowing}
-            initialCount={interactive.followerCount}
-            path={path}
-          />
-        )}
+        <CaseFollowButton
+          caseId={feedCase.id}
+          initialFollowing={interactive.isFollowing}
+          initialCount={interactive.followerCount}
+          followedFollowers={interactive.followedFollowers}
+          signedIn={Boolean(user)}
+          path={path}
+        />
       </div>
 
       {typeMeta.isQuote ? (
