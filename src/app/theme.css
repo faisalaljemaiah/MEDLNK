@@ -7,42 +7,51 @@
 
 :root {
   /*
-   * --- Color tokens (bright daylight palette) ---
+   * --- Color tokens (dark navy palette) ---
    *
-   * Every value below is contrast-checked to WCAG AA (4.5:1) for how it is
-   * actually used, which is why the green and red are deeper than they look
-   * like they need to be: --accent and --positive are backgrounds for white
-   * button text *and* foregrounds for coloured text on --bg, so each has to
-   * clear 4.5:1 in both directions at once. Lightening them breaks the
-   * buttons; re-check both if you tune them.
+   * Requested directly, from a reference mockup: deep navy background,
+   * near-white text, bright accents. Every value below is contrast-checked
+   * to WCAG AA (4.5:1) for how it is actually used (relative-luminance
+   * formula, computed by hand when this palette was chosen — re-check both
+   * directions if you tune it, same as the light theme's rule). The one
+   * thing a light-mode "just darken it" palette usually gets wrong:
+   * --accent is now bright enough to read as *text* on --bg (10.2:1), which
+   * means it's too light to hold 4.5:1 *white* button text (1.9:1) the way
+   * the old light-mode teal did — button labels on
+   * --accent/--positive/--danger use --on-accent (near-navy, high contrast
+   * against all three) instead of white. See --on-accent below and the
+   * `text-on-accent` utility it generates.
    */
-  --bg: #f6f8fc; /* app background — very light cool gray/off-white */
-  --surface: #ffffff; /* cards, sheets, composer */
-  --surface-2: #eaf0fa; /* raised elements on top of surface */
-  --line: #d9e3f2; /* borders/dividers */
-  --text: #10203a; /* primary text — deep navy ink, softer than pure black */
-  --muted: #56657f; /* secondary text, labels, timestamps */
+  --bg: #0a0f24; /* app background — deep navy, not near-black/pure dark */
+  --surface: #151d45; /* cards, sheets, composer — a touch lighter than bg */
+  --surface-2: #202b60; /* raised elements on top of surface */
+  --line: #37447f; /* borders/dividers — visible against navy without glowing */
+  --text: #eef1f8; /* primary text — near-white, not pure white */
+  --muted: #a6b1d6; /* secondary text, labels, timestamps */
   /*
-   * Caribbean green / turquoise-green, not LinkedIn blue — deliberately
-   * darker than the brand-swatch version of this color: at the lighter,
-   * more "turquoise" end (e.g. #0d9488) white button text clears only
-   * ~3.7:1, under the 4.5:1 AA floor. #0f766e keeps the same hue family
-   * while passing 4.5:1 in both directions (white-on-accent for buttons,
-   * accent-on-bg for links/active states) — re-check both if this is tuned.
+   * Caribbean green / turquoise-green, not LinkedIn blue — kept as the same
+   * hue family as the light theme's teal, just brightened enough (from
+   * #0f766e to #2dd4bf) to work as foreground text on a navy background.
    * Distinct from --positive on purpose: --positive is a leaf green
-   * (~148° hue) for verified/success signals, this is a bluer teal
-   * (~176° hue) for interactive elements, so the two don't read as the same
+   * (~160° hue) for verified/success signals, this is a bluer teal
+   * (~174° hue) for interactive elements, so the two don't read as the same
    * color doing two different jobs.
    */
-  --accent: #0f766e; /* primary brand accent (links, active states, logo) */
-  /* A light mint tint of --accent, for backgrounds/chips/icon wells that want
-     "green, but as a wash rather than a foreground color" — distinct from
-     --surface-2, which is a blue-gray, not a green, tint. */
-  --accent-soft: #e1f3ef;
-  --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
-  --positive: #0b7c44; /* verified badges, success states */
-  --warning: #b45309; /* privacy/identifier warnings */
-  --danger: #cf2231; /* destructive actions, errors */
+  --accent: #2dd4bf; /* primary brand accent (links, active states, logo) */
+  /* A dark teal wash of --accent, for backgrounds/chips/icon wells that want
+     "teal, but as a low wash rather than a foreground color" — distinct from
+     --surface-2, which is a navy-blue, not a green, tint. */
+  --accent-soft: #123d38;
+  --accent-2: #a78bfa; /* secondary accent (gradients, AI features) */
+  --positive: #34d399; /* verified badges, success states */
+  --warning: #fbbf24; /* privacy/identifier warnings */
+  --danger: #f87171; /* destructive actions, errors */
+  /* The text color for content sitting ON a --accent/--positive/--danger
+     background — see the comment above. Reuses --bg rather than a separate
+     literal, since "the app's own background color" is exactly what a
+     button on a bright accent needs for the button to read as a filled
+     shape rather than a hole punched through to the page. */
+  --on-accent: var(--bg);
 
   /*
    * Decorative-only hues for the AI "thinking" glow (see .ai-glow in
@@ -93,6 +102,7 @@
   --color-positive: var(--positive);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-on-accent: var(--on-accent);
 
   --font-headline: var(--font-headline);
   --font-body: var(--font-body);

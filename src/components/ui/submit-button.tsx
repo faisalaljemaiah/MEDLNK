@@ -20,7 +20,7 @@ export function SubmitButton({
       type="submit"
       disabled={pending || disabled}
       className={clsx(
-        "rounded-lg bg-accent px-4 py-2.5 font-medium text-white transition-opacity disabled:opacity-60",
+        "rounded-lg bg-accent px-4 py-2.5 font-medium text-on-accent transition-opacity disabled:opacity-60",
         className,
       )}
     >

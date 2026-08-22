@@ -126,7 +126,7 @@ export default async function SearchPage({
 
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
+            className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-on-accent transition-transform duration-150 ease-out active:scale-95"
           >
             Search
           </button>

@@ -40,9 +40,8 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
     <section className="flex h-[calc(100dvh-145px)] w-full shrink-0 snap-start items-stretch px-3 py-2">
       {/* max-w-sm keeps the card portrait on desktop; on a phone the viewport
           is already narrower than that, so it just fills the gutters.
-          No photo: a plain light card, same surface/border/text as the rest
-          of the app — MEDLNK is light-mode only, no colour-block or dark
-          "poster" treatment standing in for a missing image. */}
+          No photo: a plain card in the app's own surface/border/text, not a
+          colour-block or gradient standing in for a missing image. */}
       <div
         className={clsx(
           "relative mx-auto flex h-full w-full max-w-sm flex-col justify-center overflow-hidden rounded-3xl border px-5 py-10 shadow-lg shadow-slate-900/10",

@@ -1,10 +1,9 @@
 /**
  * Soft, blurred ambient glow blobs — the auth screens' background treatment,
- * borrowed from a reference mockup (dark background, glowing corner blobs)
- * but built from MEDLNK's own AI-hue palette instead of a dark theme: the
- * app stays light-mode only, this just gives the welcome/login/signup
- * screens a bit of the same premium "glow" the dashboard's AI features
- * already use, rather than the flat accent-soft wash that was there before.
+ * borrowed from a reference mockup (dark background, glowing corner blobs),
+ * built from MEDLNK's own AI-hue palette. Predates the app-wide dark theme
+ * (theme.css) — kept afterward because it still reads exactly as intended
+ * against navy, arguably more so than it did against the old light wash.
  *
  * Pure CSS radial gradients, no images — cheap, and scales with the
  * viewport instead of pixelating. Static (no drift animation): the blobs

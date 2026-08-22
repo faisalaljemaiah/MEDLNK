@@ -498,7 +498,7 @@ export function ComposeForm({
               <button
                 type="button"
                 onClick={acceptAll}
-                className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white"
+                className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-on-accent"
               >
                 Use all
               </button>

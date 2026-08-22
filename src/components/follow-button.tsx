@@ -38,7 +38,7 @@ export function FollowButton({
         className={
           following
             ? "rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[background-color,border-color,transform] duration-150 ease-out active:scale-95 disabled:opacity-60"
-            : "rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white transition-[background-color,transform] duration-150 ease-out active:scale-95 disabled:opacity-60"
+            : "rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-on-accent transition-[background-color,transform] duration-150 ease-out active:scale-95 disabled:opacity-60"
         }
       >
         {following ? "Following" : "Follow"}
