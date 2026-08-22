@@ -118,10 +118,17 @@ body {
  *
  * .ai-glow-round swaps the corner radius for controls that are circles
  * (the bottom nav's compose button) rather than the default rounded-lg.
+ *
+ * The spinning layer is sized off width alone (aspect-ratio: 1) and
+ * centered with a translate rather than inset: -50% on all four sides —
+ * inset: -50% scales each axis by the *container's own* dimension, so on
+ * a wide, short control (the search bar) it produces a squashed ellipse
+ * whose hue barely shifts along the long edges and reads as static. A
+ * true square rotates evenly no matter how elongated the control is.
  */
 @keyframes medlnk-ai-spin {
   to {
-    transform: rotate(360deg);
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
@@ -140,7 +147,10 @@ body {
 .ai-glow::before {
   content: "";
   position: absolute;
-  inset: -50%;
+  top: 50%;
+  left: 50%;
+  width: 250%;
+  aspect-ratio: 1 / 1;
   z-index: -1;
   background: conic-gradient(
     from 0deg,
@@ -151,6 +161,7 @@ body {
     var(--ai-hue-5),
     var(--ai-hue-1)
   );
+  transform: translate(-50%, -50%);
   animation: medlnk-ai-spin var(--motion-ambient) linear infinite;
 }
 
