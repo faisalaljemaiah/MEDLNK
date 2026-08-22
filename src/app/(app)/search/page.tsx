@@ -90,14 +90,19 @@ export default async function SearchPage({
       {/* A GET form, so every search is a shareable URL and the results stay
           server-rendered. */}
       <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Search cases, tags, specialties…"
-          autoFocus
-          className="w-full rounded-full border border-line bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        />
+        {/* Same standing AI-hue rim as <AIButton>/the compose nav button —
+            .ai-glow, globals.css — so search reads as part of the same
+            visual language rather than a plain bordered field. */}
+        <div className="ai-glow ai-glow-round w-full">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Search cases, tags, specialties…"
+            autoFocus
+            className="w-full rounded-full bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:outline-none"
+          />
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <select
