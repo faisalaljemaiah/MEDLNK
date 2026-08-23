@@ -6,7 +6,6 @@ import Image from "next/image";
 import { clsx } from "clsx";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
-import { DOUBLE_TAP_REACTION } from "@/lib/reaction-types";
 import { isVideoUrl } from "@/lib/media";
 import type { FeedCase } from "@/lib/cases";
 
@@ -16,9 +15,6 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const hasMedia = Boolean(feedCase.media_url);
   const isVideo = hasMedia && isVideoUrl(feedCase.media_url!);
-  const [revealed, setRevealed] = useState(
-    feedCase.viewerReactions.includes(DOUBLE_TAP_REACTION),
-  );
   const [burst, setBurst] = useState(false);
   const lastTapRef = useRef(0);
   const reactionBarRef = useRef<ReactionBarHandle>(null);
@@ -27,7 +23,6 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
     const now = Date.now();
     if (now - lastTapRef.current < DOUBLE_TAP_MS) {
       reactionBarRef.current?.reactIfNotAlready();
-      setRevealed(true);
       setBurst(true);
       setTimeout(() => setBurst(false), 600);
     }
@@ -150,19 +145,17 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
               </span>
             </Link>
 
-            {revealed && (
-              <Link
-                href={caseHref}
-                className={clsx(
-                  "pointer-events-auto mt-5 rounded-full px-4 py-2 text-sm font-medium backdrop-blur",
-                  hasMedia
-                    ? "bg-white/20 text-white"
-                    : "bg-accent-soft text-accent",
-                )}
-              >
-                Let&apos;s dive deep →
-              </Link>
-            )}
+            <Link
+              href={caseHref}
+              className={clsx(
+                "pointer-events-auto mt-5 rounded-full px-4 py-2 text-sm font-medium backdrop-blur",
+                hasMedia
+                  ? "bg-white/20 text-white"
+                  : "bg-accent-soft text-accent",
+              )}
+            >
+              Let&apos;s dive deep →
+            </Link>
           </div>
 
           <div className="pointer-events-auto mt-6 flex w-full justify-center">
@@ -174,9 +167,6 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
               path={path}
               tone={hasMedia ? "dark" : "light"}
               center
-              onToggle={(type, active) => {
-                if (type === DOUBLE_TAP_REACTION && active) setRevealed(true);
-              }}
             />
           </div>
         </div>
