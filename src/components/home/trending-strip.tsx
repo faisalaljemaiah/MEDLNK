@@ -19,12 +19,27 @@ export function TrendingStrip({ topics }: { topics: TrendingTopic[] }) {
   return (
     <section aria-labelledby="trending-strip-label" className="pt-4">
       <div className="flex items-center gap-2 px-4">
+        {/* A scrolling ECG trace instead of a plain pulsing dot — same
+            heartbeat-blip shape as the app's own logo mark (Logo,
+            src/components/logo.tsx), drawn twice back to back and looped
+            by translating exactly one copy's width (.medlnk-ecg-scroll,
+            globals.css) — same seamless-loop technique as the marquee
+            below it and MedLnkPulse's wave. */}
         <span
           aria-hidden
-          className="relative flex size-2 shrink-0"
+          className="relative h-4 w-4 shrink-0 overflow-hidden text-danger"
         >
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger/60" />
-          <span className="relative inline-flex size-2 rounded-full bg-danger" />
+          <svg
+            viewBox="0 0 48 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="medlnk-ecg-scroll absolute inset-y-0 left-0 h-4 w-8"
+          >
+            <polyline points="2 12 7 12 9.5 5 13 19 15.5 12 22 12 26 12 31 12 33.5 5 37 19 39.5 12 46 12" />
+          </svg>
         </span>
         <p
           id="trending-strip-label"

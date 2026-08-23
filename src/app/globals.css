@@ -234,6 +234,24 @@ body {
   animation-play-state: paused;
 }
 
+/*
+ * TrendingStrip's ECG trace (src/components/home/trending-strip.tsx) — the
+ * same heartbeat-blip polyline as the app's logo mark, drawn twice back to
+ * back at rendered width 32px and looped by translating exactly one copy's
+ * width (16px, half of 32) so it reads as one continuous scrolling trace
+ * rather than a dot pulsing in place. Brisk on purpose — a heart-monitor
+ * pace, not the slow ambient drift the rest of this file uses.
+ */
+@keyframes medlnk-ecg-scroll {
+  to {
+    transform: translateX(-16px);
+  }
+}
+
+.medlnk-ecg-scroll {
+  animation: medlnk-ecg-scroll 1.4s linear infinite;
+}
+
 /* See GlowBlobs (src/components/ui/glow-blobs.tsx) for the rationale. */
 .glow-blob {
   position: absolute;
