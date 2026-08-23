@@ -304,31 +304,6 @@ export async function getTrendingCommunities(
     .slice(0, limit);
 }
 
-/**
- * "My Communities" for the Communities page (IA redesign) — since there's
- * no real membership/join concept, this is honestly what the viewer is
- * actually part of: specialties they've posted a case in, plus their own
- * profile specialty if set. Reuses getTrendingCommunities' counts rather
- * than recomputing them, just filtered down to that set.
- */
-export async function getMyCommunities(
-  supabase: Client,
-  viewerId: string,
-): Promise<TrendingCommunity[]> {
-  const [{ data: myCases }, { data: profile }] = await Promise.all([
-    supabase.from("cases").select("specialty").eq("author_id", viewerId),
-    supabase.from("profiles").select("specialty").eq("id", viewerId).maybeSingle(),
-  ]);
-
-  const mySpecialties = new Set<string>();
-  for (const c of myCases ?? []) if (c.specialty) mySpecialties.add(c.specialty);
-  if (profile?.specialty) mySpecialties.add(profile.specialty);
-  if (mySpecialties.size === 0) return [];
-
-  const all = await getTrendingCommunities(supabase, viewerId, 500);
-  return all.filter((c) => mySpecialties.has(c.specialty));
-}
-
 export type RecommendedPerson = {
   id: string;
   handle: string;

@@ -55,12 +55,6 @@ export function TrendingCommunities({
           </li>
         ))}
       </ul>
-      <Link
-        href="/communities"
-        className="mt-2.5 inline-block text-xs font-medium text-accent hover:underline"
-      >
-        See all communities →
-      </Link>
     </section>
   );
 }

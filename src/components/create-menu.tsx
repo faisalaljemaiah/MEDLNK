@@ -50,15 +50,7 @@ const CREATE_OPTIONS = [
  * active-state ring) since NavLink itself renders a Link, not a button,
  * and this needs to open a sheet instead of navigating.
  */
-export function CreateMenu({
-  active,
-  label,
-}: {
-  active: boolean;
-  /** Desktop sidebar row (icon + "Create") instead of the bottom nav's
-   *  small round icon button — same sheet, different trigger chrome. */
-  label?: string;
-}) {
+export function CreateMenu({ active }: { active: boolean }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -79,24 +71,19 @@ export function CreateMenu({
         aria-expanded={open}
         aria-label="Create"
         className={clsx(
-          label
-            ? "flex w-full items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out"
-            : "relative flex items-center justify-center rounded-full p-2.5 transition-[color,transform] duration-150 ease-out active:scale-90",
-          // Opaque backing so the wrapping .ai-glow's rim doesn't bleed
-          // through the center, on both the icon-only and labeled variants.
-          !active && (label ? "bg-surface-2" : "bg-surface"),
+          "relative flex items-center justify-center rounded-full p-2.5 transition-[color,transform] duration-150 ease-out active:scale-90",
+          !active && "bg-surface",
           active ? "text-accent" : "text-muted hover:text-text",
         )}
       >
         <span
           className={clsx(
-            !label && "relative z-[1] transition-transform duration-150 ease-out",
-            !label && active && "-translate-y-0.5",
+            "relative z-[1] transition-transform duration-150 ease-out",
+            active && "-translate-y-0.5",
           )}
         >
           <PlusSquareIcon />
         </span>
-        {label && <span>{label}</span>}
       </button>
 
       {open && (

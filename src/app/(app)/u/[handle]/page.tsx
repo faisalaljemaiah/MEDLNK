@@ -78,6 +78,16 @@ export default async function ProfilePage({
             </p>
           )}
           <ReputationBadge tier={computeReputationTier(stats)} />
+          <div className="mt-2 flex gap-4 text-sm text-muted">
+            <span>
+              <span className="font-medium text-text">{followerCount}</span>{" "}
+              followers
+            </span>
+            <span>
+              <span className="font-medium text-text">{followingCount}</span>{" "}
+              following
+            </span>
+          </div>
         </div>
 
         {isOwnProfile ? (
@@ -94,9 +104,6 @@ export default async function ProfilePage({
               </Link>
               <Link href="/consults" className="hover:text-text">
                 Consults
-              </Link>
-              <Link href="/communities" className="hover:text-text">
-                Communities
               </Link>
               <Link href="/analytics" className="hover:text-text">
                 Analytics
@@ -145,20 +152,6 @@ export default async function ProfilePage({
       </div>
 
       <ProfileStats stats={stats} />
-
-      {/* Contribution stats above lead the profile; follower/following
-          counts sit here, after them, deliberately — this is a record of
-          what someone has taught, not a social leaderboard. */}
-      <div className="flex gap-4 px-4 pb-3 text-sm text-muted">
-        <span>
-          <span className="font-medium text-text">{followerCount}</span>{" "}
-          followers
-        </span>
-        <span>
-          <span className="font-medium text-text">{followingCount}</span>{" "}
-          following
-        </span>
-      </div>
 
       {isOwnProfile && (
         <div className="flex border-t border-line">

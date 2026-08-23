@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useRef, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createCaseAction } from "@/app/actions/case";
@@ -30,28 +30,6 @@ const FIELD_LABELS: Record<string, string> = {
   actions: "What we did",
   lesson: "The lesson",
 };
-
-/** Same de-identification standard as the "Keep it de-identified" notice
- *  above the title field — restated here as a final self-check, not a new
- *  rule. Gates the submit button client-side only; the server action's own
- *  validation is untouched. */
-const PUBLISH_CHECKLIST = [
-  {
-    key: "deidentified",
-    label:
-      "No patient names, medical record numbers, exact dates of birth, addresses, or identifying photographs.",
-  },
-  {
-    key: "anonymized",
-    label:
-      "Details are generalized enough (age ranges, rounded dates) that the patient couldn't be recognized.",
-  },
-  {
-    key: "permission",
-    label:
-      "I have the right to share this case for educational discussion.",
-  },
-] as const;
 
 function Textarea({
   label,
@@ -123,11 +101,6 @@ export function ComposeForm({
   const acknowledgeRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [convertingImage, setConvertingImage] = useState(false);
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
-  const allChecked = useMemo(
-    () => PUBLISH_CHECKLIST.every((item) => checklist[item.key]),
-    [checklist],
-  );
 
   const [suggestions, setSuggestions] = useState<PolishedField[]>([]);
   const [polishNote, setPolishNote] = useState<string | null>(null);
@@ -727,29 +700,7 @@ export function ComposeForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-2/60 p-3.5">
-        <p className="font-label text-xs uppercase tracking-wide text-muted">
-          Before you publish
-        </p>
-        {PUBLISH_CHECKLIST.map((item) => (
-          <label
-            key={item.key}
-            className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-muted"
-          >
-            <input
-              type="checkbox"
-              checked={checklist[item.key] ?? false}
-              onChange={(e) =>
-                setChecklist((prev) => ({ ...prev, [item.key]: e.target.checked }))
-              }
-              className="mt-0.5 size-3.5 shrink-0 accent-accent"
-            />
-            {item.label}
-          </label>
-        ))}
-      </div>
-
-      <SubmitButton disabled={convertingImage || !allChecked}>
+      <SubmitButton disabled={convertingImage}>
         {typeMeta.requiresImage || typeMeta.requiresVideo || typeMeta.isQuote
           ? "Post"
           : "Post case"}

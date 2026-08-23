@@ -122,15 +122,69 @@ export default async function FeedPage({
         ? "Nothing trending yet — check back soon."
         : filter.empty;
 
-  // Rendered twice below (mobile flow vs. desktop right rail) via visibility
-  // toggles, not fetched twice — same data, same JSX, just where it lands
-  // depends on the breakpoint. See the layout shell's own comment
-  // (src/app/(app)/layout.tsx) for why the right rail lives here rather
-  // than in the shared layout: only Home has this much side content worth
-  // giving a column to, so it's this page's own concern, not forced onto
-  // every route.
-  const sidebarWidgets = (
-    <>
+  return (
+    <div>
+      {/* Above everything: an alert the reader hasn't acknowledged should not
+          be hidden behind whichever tab or chip they last picked. */}
+      <SafetyAlertBanner alerts={alerts} />
+
+      <div className="animate-enter stagger-1">
+        <TrendingStrip topics={topics} />
+      </div>
+
+      {user && stats && (
+        <div className="animate-enter stagger-2 mt-4">
+          <StreakCard
+            days={streak?.days ?? 0}
+            postsThisWeek={stats.activity.postsThisWeek}
+            commentsThisWeek={stats.activity.commentsThisWeek}
+          />
+        </div>
+      )}
+
+      {user && profile?.verified && (
+        <div className="animate-enter stagger-2 mt-3">
+          <QuickActions />
+        </div>
+      )}
+
+      <div className="animate-enter stagger-3 mt-4">
+        <HomeFeedTabs active={view} hasViewer={Boolean(user)} locale={locale} />
+        {view === "foryou" && (
+          <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />
+        )}
+      </div>
+
+      {personalized && profile?.specialty && (
+        <p className="flex items-center gap-1.5 px-4 pb-1 pt-2 font-label text-xs text-accent">
+          <TargetIcon width={13} height={13} strokeWidth={2.25} />
+          {t(locale, "greeting.personalized", { specialty: profile.specialty })}
+        </p>
+      )}
+
+      {/* Switching tabs/chips is a real navigation (see HomeFeedTabs/
+          FeedFilterBar), but it stays inside this one page — a crossfade
+          says "same place, different content" instead of the harder cut a
+          plain server-rendered swap would otherwise give. Falls back to an
+          instant swap wherever the browser has no View Transitions support. */}
+      <ViewTransition key={`${view}-${filter.key}`} name="feed-content" share="auto" enter="auto" default="none">
+        <div>
+          {cases === null ? (
+            <UnavailableNotice
+              feature={view === "following" ? "Your network feed" : "This feed"}
+            />
+          ) : cases.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-muted">
+              {emptyMessage}
+            </p>
+          ) : (
+            cases.map((c) => (
+              <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} />
+            ))
+          )}
+        </div>
+      </ViewTransition>
+
       {user && stats && (
         <WeeklyActivityCard activity={stats.activity} locale={locale} />
       )}
@@ -139,79 +193,6 @@ export default async function FeedPage({
       {user && people && (
         <RecommendedPeople people={people} path="/" locale={locale} />
       )}
-    </>
-  );
-
-  return (
-    <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
-      <div className="min-w-0">
-        {/* Above everything: an alert the reader hasn't acknowledged should
-            not be hidden behind whichever tab or chip they last picked. */}
-        <SafetyAlertBanner alerts={alerts} />
-
-        <div className="animate-enter stagger-1">
-          <TrendingStrip topics={topics} />
-        </div>
-
-        {user && stats && (
-          <div className="animate-enter stagger-2 mt-4">
-            <StreakCard
-              days={streak?.days ?? 0}
-              postsThisWeek={stats.activity.postsThisWeek}
-              commentsThisWeek={stats.activity.commentsThisWeek}
-            />
-          </div>
-        )}
-
-        {user && profile?.verified && (
-          <div className="animate-enter stagger-2 mt-3">
-            <QuickActions />
-          </div>
-        )}
-
-        <div className="animate-enter stagger-3 mt-4">
-          <HomeFeedTabs active={view} hasViewer={Boolean(user)} locale={locale} />
-          {view === "foryou" && (
-            <FeedFilterBar active={filter.key} hasViewer={Boolean(user)} />
-          )}
-        </div>
-
-        {personalized && profile?.specialty && (
-          <p className="flex items-center gap-1.5 px-4 pb-1 pt-2 font-label text-xs text-accent">
-            <TargetIcon width={13} height={13} strokeWidth={2.25} />
-            {t(locale, "greeting.personalized", { specialty: profile.specialty })}
-          </p>
-        )}
-
-        {/* Switching tabs/chips is a real navigation (see HomeFeedTabs/
-            FeedFilterBar), but it stays inside this one page — a crossfade
-            says "same place, different content" instead of the harder cut a
-            plain server-rendered swap would otherwise give. Falls back to an
-            instant swap wherever the browser has no View Transitions support. */}
-        <ViewTransition key={`${view}-${filter.key}`} name="feed-content" share="auto" enter="auto" default="none">
-          <div>
-            {cases === null ? (
-              <UnavailableNotice
-                feature={view === "following" ? "Your network feed" : "This feed"}
-              />
-            ) : cases.length === 0 ? (
-              <p className="px-4 py-10 text-center text-sm text-muted">
-                {emptyMessage}
-              </p>
-            ) : (
-              cases.map((c) => (
-                <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} />
-              ))
-            )}
-          </div>
-        </ViewTransition>
-
-        <div className="lg:hidden">{sidebarWidgets}</div>
-      </div>
-
-      <aside className="hidden lg:flex lg:flex-col lg:gap-4 lg:pt-4">
-        {sidebarWidgets}
-      </aside>
     </div>
   );
 }

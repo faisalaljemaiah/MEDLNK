@@ -72,11 +72,6 @@ export default async function CasePage({
 
   const staged = feedCase.reveal_mode === "staged";
 
-  // Distinct participants, not raw comment count — one clinician replying
-  // three times still reads as "1 clinician discussing," not 3. Computed
-  // from the comments already fetched above rather than a second query.
-  const discussingCount = new Set((comments ?? []).map((c) => c.user_id)).size;
-
   // Null (every case posted before 0025) means the same thing "top" does —
   // media above the write-up, exactly where it's always rendered.
   const mediaPlacement = feedCase.media_placement ?? "top";
@@ -297,19 +292,6 @@ export default async function CasePage({
           commentsHref="#comments"
         />
       </div>
-
-      {discussingCount > 0 && (
-        <a
-          href="#comments"
-          className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface-2/50 px-4 py-3 text-sm transition-colors duration-150 ease-out hover:border-accent/40"
-        >
-          <span className="text-text">
-            <span className="font-medium">{discussingCount}</span>{" "}
-            {discussingCount === 1 ? "clinician" : "clinicians"} discussing
-          </span>
-          <span className="font-medium text-accent">Join the discussion →</span>
-        </a>
-      )}
 
       <SpecialistThreads
         caseId={feedCase.id}

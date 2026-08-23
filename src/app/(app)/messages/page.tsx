@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getConversations } from "@/lib/messages";
-import { ConversationsList } from "@/components/messages/conversations-list";
+import { Avatar } from "@/components/avatar";
 
 export default async function MessagesPage() {
   const supabase = await createClient();
@@ -30,7 +31,43 @@ export default async function MessagesPage() {
   return (
     <div>
       <h1 className="px-4 py-4 font-headline text-xl text-text">Messages</h1>
-      <ConversationsList conversations={conversations} viewerId={user.id} />
+      {conversations.length === 0 ? (
+        <p className="px-4 py-10 text-center text-sm text-muted">
+          No conversations yet. Message a clinician from their profile to start
+          one.
+        </p>
+      ) : (
+        conversations.map((c) => (
+          <Link
+            key={c.id}
+            href={`/messages/${c.id}`}
+            className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0"
+          >
+            <Avatar
+              avatarUrl={c.otherUser?.avatar_url}
+              name={c.otherUser?.full_name}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-text">
+                {c.otherUser?.full_name ?? "Unknown clinician"}
+              </p>
+              <p className="truncate text-sm text-muted">
+                {c.lastMessage
+                  ? `${c.lastMessage.sender_id === user.id ? "You: " : ""}${c.lastMessage.body}`
+                  : "No messages yet"}
+              </p>
+            </div>
+            {c.lastMessage && (
+              <p className="shrink-0 font-label text-xs text-muted">
+                {new Date(c.lastMessage.created_at).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
+            )}
+          </Link>
+        ))
+      )}
     </div>
   );
 }
