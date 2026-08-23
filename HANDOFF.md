@@ -1045,6 +1045,92 @@ Other implementation notes:
   `country_code` form field for a client to send any more, so there's
   nothing left to verify by trying to spoof one.
 
+### Information architecture redesign, Phase 1 — navigation & entry points
+
+The user asked for a full IA/layout redesign in two rounds: the first asked
+for a whole new minimal clinical/editorial visual identity (interrupted
+before any work started, not built); the second explicitly reversed that —
+keep every current visual element (teal branding, the AI-hue glow, the ECG
+trace, motion, card styling) exactly as-is, change only layout/IA/navigation.
+Given the size (nearly every screen), the work is phased; this is Phase 1.
+Full context, the resolved scope questions, and the Phase 2-4 roadmap live in
+the plan file this session wrote at
+`/root/.claude/plans/groovy-sleeping-shell.md` (not committed — a local
+planning artifact, not part of the app).
+
+One process note worth flagging: the initial round of Explore research
+agents (spawned in isolated git worktrees) reported a version of the
+codebase missing this session's ~20 prior commits — no `src/components/home/`
+directory, no numbered sections in the compose form, a notification bell
+that was actually removed earlier this session. Caught by spot-checking
+three of their claims directly against the real branch and finding all
+three wrong. Every fact this plan and this writeup rely on was re-verified
+directly (Read/Grep/Bash against the actual working tree), not taken from
+those agents.
+
+- **Bottom nav** (`src/components/bottom-nav.tsx`) — was Home / Reel-or-Learn
+  (Student Mode swap) / Compose / Search / Profile. Now Home / Discover /
+  Create / Messages / Profile: the Search slot is relabeled Discover (same
+  route, `/search` — see below), a new Messages slot points at `/messages`
+  (previously only reachable via the header icon), and Reel/Learn both lose
+  their dedicated slot. `student_mode` and the `matte` prop on the local
+  `NavLink` helper were both dead after this change and removed rather than
+  left unused.
+- **New `src/components/create-menu.tsx`** — the Compose slot's `.ai-glow`
+  ring wrapper is unchanged, but it now opens a bottom sheet (this
+  codebase's first modal/dialog — no prior pattern existed to reuse) instead
+  of navigating straight to `/compose`. Four grounded options, each just
+  `/compose?type=<value>` (the query param `ComposeForm` already reads via
+  `initialType` — no new plumbing): Share a Case (`clinical_case`), Ask a
+  Question (`what_would_you_do`), Report a Near Miss (`near_miss`), Quick
+  Update (`saw_this_today`). Every other post format is still reachable from
+  the full post-type picker on `/compose` itself. Closes on Escape, backdrop
+  click, or picking an option; respects `prefers-reduced-motion` for free
+  via the existing blanket override (reuses `.animate-enter`, no new
+  animation).
+- **`src/app/(app)/search/page.tsx`** — gained an H1 ("Discover") and a
+  compact Reel quick-access link near the top; nothing else changed. The
+  spec calls this page "Discover" but every internal link already pointed
+  at `/search?...` (`TrendingStrip`, the specialty pills, filter chips) —
+  rewriting the route itself would only be cosmetic and would mean touching
+  every one of those links for no visible difference, so the URL stays
+  `/search` and only the on-screen framing + nav label changed.
+- **`src/app/(app)/u/[handle]/page.tsx`** — own-profile action-links row
+  gained a "Reel" link next to the existing "Learn" one, so Reel has a
+  second easy entry point beyond Discover after losing its nav slot.
+- **`src/components/home/quick-actions.tsx`** (new) replaces
+  `src/components/home/composer-row.tsx` (deleted) on the Home page — three
+  compact chips (Share a Case / Ask a Question / Quick Update) instead of
+  the single "Share a case or ask a question" pill. This directly reverses
+  a decision made earlier *this same session* (an explicit AskUserQuestion
+  answer: "replace the panel with the pill") — flagged here because the
+  new spec asked for the action cards back, not because it's being done
+  quietly. Not the old full-height 5-tile panel either: three slim chips,
+  same border/surface/hover treatment as everything else on Home. "Start a
+  Discussion" and "Post an Update" from the spec don't map to a distinct
+  real case type, so both folded into "Quick Update" → `saw_this_today`
+  rather than inventing new formats.
+- Verified: `tsc`/lint/build clean. No schema/migration involved, so the
+  local Postgres suite wasn't run. Live against the hosted DB with a
+  throwaway verified test account: all 5 bottom-nav destinations resolve to
+  the right routes (confirmed via each link's actual `href`), the Create
+  sheet opens/closes and "Ask a Question" correctly lands on
+  `/compose?type=what_would_you_do`, Reel is reachable from both the
+  profile and Discover, the Home quick-action chips render and link
+  correctly, `prefers-reduced-motion` still freezes every animation
+  (`.animate-enter` and the ECG trace both checked), and the Discover/
+  Messages page headings render as expected once past the (Turbopack
+  cold-compile) loading skeleton.
+- **Not done yet** (Phases 2-4, each gets its own plan/review before being
+  built — see the plan file): full Discover category filters (Questions/
+  Discussions/People) and trending/specialty/topic sections; Case/Discussion
+  page reorder; a real `/communities` page (no new schema — a front-end over
+  the existing specialty-derived grouping); Profile section reorder;
+  the app's first `lg:` desktop responsive layout; Messages search box;
+  Post Case form wording pass. Resources (guidelines/PDFs) was explicitly
+  dropped from the whole redesign — no schema, no route, no placeholder —
+  since it would be new backend work, not a layout change.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

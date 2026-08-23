@@ -27,7 +27,7 @@ import { SafetyAlertBanner } from "@/components/safety-alert-banner";
 import { UnavailableNotice } from "@/components/unavailable-notice";
 import { TrendingStrip } from "@/components/home/trending-strip";
 import { StreakCard } from "@/components/home/streak-card";
-import { ComposerRow } from "@/components/home/composer-row";
+import { QuickActions } from "@/components/home/quick-actions";
 import { HomeFeedTabs, type HomeFeedView } from "@/components/home/feed-tabs";
 import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 import { TrendingCommunities } from "@/components/home/trending-communities";
@@ -144,7 +144,7 @@ export default async function FeedPage({
 
       {user && profile?.verified && (
         <div className="animate-enter stagger-2 mt-3">
-          <ComposerRow />
+          <QuickActions />
         </div>
       )}
 

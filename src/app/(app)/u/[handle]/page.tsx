@@ -108,6 +108,9 @@ export default async function ProfilePage({
               <Link href="/analytics" className="hover:text-text">
                 Analytics
               </Link>
+              <Link href="/reel" className="hover:text-text">
+                Reel
+              </Link>
               <Link href="/learn" className="hover:text-text">
                 Learn
               </Link>
