@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { createCaseAction } from "@/app/actions/case";
 import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
-import { COUNTRIES } from "@/lib/countries";
+import { countryName } from "@/lib/countries";
 import { toUploadableImage } from "@/lib/heic";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -84,12 +85,16 @@ function FormSection({
 
 export function ComposeForm({
   initialType = "clinical_case",
+  viewerCountryCode = null,
 }: {
   /** Preselects the post-type picker — e.g. a Home page quick-create action
    *  linking in as `/compose?type=what_would_you_do`. Falls back to the
    *  standard format for an unknown value, same as caseTypeMeta everywhere
    *  else. */
   initialType?: string;
+  /** Display-only (0026) — the case's actual country is set server-side
+   *  from the author's profile, never from anything this form submits. */
+  viewerCountryCode?: string | null;
 }) {
   const [state, action] = useActionState(createCaseAction, undefined);
   const formRef = useRef<HTMLFormElement>(null);
@@ -416,28 +421,26 @@ export function ComposeForm({
 
         <FormSection number="03" title="Global Exchange">
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="country_code"
-              className="font-label text-xs uppercase tracking-wide text-muted"
-            >
-              Country (optional)
-            </label>
-            <select
-              id="country_code"
-              name="country_code"
-              defaultValue=""
-              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-            >
-              <option value="">Prefer not to say</option>
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <span className="font-label text-xs uppercase tracking-wide text-muted">
+              Country
+            </span>
+            {viewerCountryCode ? (
+              <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-2.5 text-sm text-text">
+                {countryName(viewerCountryCode) ?? viewerCountryCode}
+              </p>
+            ) : (
+              <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-2.5 text-xs text-muted">
+                Not set —{" "}
+                <Link href="/onboarding" className="text-accent hover:underline">
+                  add your country to your profile
+                </Link>{" "}
+                to include this case in the Global Case Exchange.
+              </p>
+            )}
             <p className="text-xs text-muted">
-              Country only, never a hospital or unit — this is what lets clinicians
-              elsewhere find and learn from this case.
+              Taken from your profile, not picked per case — so every case is
+              tagged with where its author actually practices, never a
+              hospital or unit.
             </p>
           </div>
         </FormSection>

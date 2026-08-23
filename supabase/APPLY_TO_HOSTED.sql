@@ -1508,6 +1508,19 @@ alter table public.cases add constraint cases_media_placement_check
   ));
 
 -- ============================================================================
+-- 0026_profile_country.sql — a clinician's own country
+-- ============================================================================
+-- The authoritative source for which country a case is tagged with in the
+-- Global Case Exchange — set once on the profile, not picked per post, so
+-- nobody can tag a case as originating somewhere they don't practice.
+
+alter table public.profiles add column if not exists country_code text;
+
+alter table public.profiles drop constraint if exists profiles_country_code_check;
+alter table public.profiles add constraint profiles_country_code_check
+  check (country_code is null or country_code ~ '^[A-Z]{2}$');
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1662,5 +1675,9 @@ from (
     ('column: cases.media_placement',
      exists (select 1 from information_schema.columns
              where table_schema = 'public' and table_name = 'cases'
-               and column_name = 'media_placement'))
+               and column_name = 'media_placement')),
+    ('column: profiles.country_code',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'country_code'))
 ) as checks(item, present);

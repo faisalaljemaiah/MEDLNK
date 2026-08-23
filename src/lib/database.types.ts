@@ -100,6 +100,12 @@ export type Profile = {
   role: string | null;
   city: string | null;
   specialty: string | null;
+  /**
+   * The clinician's own country (0026) — the only source a case's
+   * country_code is ever set from at post time; never picked per case, so
+   * nobody can tag a case as posted from a country they don't practice in.
+   */
+  country_code: string | null;
   avatar_url: string | null;
   verified: boolean;
   verification_status: VerificationStatus;

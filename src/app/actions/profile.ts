@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isMissingColumnError } from "@/lib/supabase/errors";
 import { ROLES } from "@/lib/roles";
+import { COUNTRIES } from "@/lib/countries";
 import { validateImageUpload } from "@/lib/uploads";
 
 export type ProfileFormState = { error: string } | undefined;
@@ -29,6 +31,10 @@ export async function updateProfileAction(
   const city = String(formData.get("city") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
   const license_number = String(formData.get("license_number") ?? "").trim();
+  const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
+  const country_code = COUNTRIES.some((c) => c.code === rawCountry)
+    ? rawCountry
+    : null;
 
   if (!full_name || !handle || !role || !license_number) {
     return {
@@ -63,18 +69,30 @@ export async function updateProfileAction(
     avatar_url = publicUrl.publicUrl;
   }
 
-  const { error } = await supabase
+  const baseUpdate = {
+    full_name,
+    handle,
+    role,
+    city: city || null,
+    specialty: specialty || null,
+    license_number,
+    ...(avatar_url ? { avatar_url } : {}),
+  };
+
+  let { error } = await supabase
     .from("profiles")
-    .update({
-      full_name,
-      handle,
-      role,
-      city: city || null,
-      specialty: specialty || null,
-      license_number,
-      ...(avatar_url ? { avatar_url } : {}),
-    })
+    .update({ ...baseUpdate, country_code })
     .eq("id", user.id);
+
+  // country_code (0026) may not exist on this project yet — same
+  // missing-column retry createCaseAction uses, so a profile edit still
+  // saves everything else instead of failing outright.
+  if (isMissingColumnError(error)) {
+    ({ error } = await supabase
+      .from("profiles")
+      .update(baseUpdate)
+      .eq("id", user.id));
+  }
 
   if (error) {
     if (error.code === "23505") {

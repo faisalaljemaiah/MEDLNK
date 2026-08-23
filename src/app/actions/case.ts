@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isMissingColumnError } from "@/lib/supabase/errors";
 import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
 import { resolveCaseNumbers } from "@/lib/comparisons";
@@ -16,20 +17,6 @@ const MEDIA_PLACEMENTS: MediaPlacement[] = [
   "actions",
   "lesson",
 ];
-
-/**
- * A column that's genuinely missing shows up two different ways depending
- * on where the request fails: 42703 (undefined_column) if it somehow
- * reaches Postgres directly, or PostgREST's own PGRST204 ("Could not find
- * the '...' column ... in the schema cache") when PostgREST's cached
- * schema — built from its last introspection of the database — rejects an
- * insert payload before a query is ever sent. In practice it's always
- * PGRST204 for an insert like this one, but both are checked so this stays
- * correct regardless of PostgREST version or query shape.
- */
-function isMissingColumnError(error: { code?: string } | null): boolean {
-  return error?.code === "42703" || error?.code === "PGRST204";
-}
 
 export type ComposeFormState =
   | { error: string }
@@ -73,8 +60,19 @@ export async function createCaseAction(
   const lesson = String(formData.get("lesson") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
   const tags = parseTags(String(formData.get("tags") ?? ""));
-  const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
-  const country_code = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
+
+  // A case's Global Case Exchange country comes only from the author's own
+  // profile (0026) — never a per-post choice, so nobody can tag a case as
+  // posted from a country they don't actually practice in. The client
+  // can't spoof this: there's no country_code form field to read here at
+  // all, and the value is looked up fresh, not trusted from anything the
+  // form could have sent.
+  const { data: authorProfile } = await supabase
+    .from("profiles")
+    .select("country_code")
+    .eq("id", user.id)
+    .maybeSingle();
+  const country_code = authorProfile?.country_code ?? null;
   const image = formData.get("image");
   const video = formData.get("video");
   // Only meaningful for full-write-up formats — every other format still

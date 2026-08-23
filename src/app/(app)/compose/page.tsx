@@ -34,7 +34,7 @@ export default async function ComposePage({
       <p className="mb-6 text-sm text-muted">
         Cases are public to every verified clinician on MEDLNK.
       </p>
-      <ComposeForm initialType={type} />
+      <ComposeForm initialType={type} viewerCountryCode={profile.country_code} />
     </div>
   );
 }

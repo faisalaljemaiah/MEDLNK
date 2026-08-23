@@ -52,6 +52,14 @@ placement" below for why that mattered) and the media just renders at the
 top of the case, same as every case posted before this existed. No error,
 no crash, no data loss — the case still posts.
 
+Also bundled: migration 0026 (`profiles.country_code` — a clinician's own
+country, the new authoritative source for a case's Global Case Exchange
+tag; see "Global Case Exchange is now account-locked" below). Degrades
+quietly too, confirmed live: the onboarding form's Country field still
+saves the rest of the profile, it just can't save the country itself yet
+(same missing-column retry pattern), and the composer shows "Not set"
+regardless of what's actually on the profile. No error, no crash.
+
 ## What MEDLNK is
 
 A clinical knowledge network for verified healthcare professionals and
@@ -979,6 +987,63 @@ Other implementation notes:
   correct by the local Postgres suite (which runs against a database that
   *does* have 0025) plus the JSX itself — same confidence level used for
   0022/0023/0024's pending-migration features.
+
+### Global Case Exchange is now account-locked
+
+- The composer's "Country" field used to be a free `<select>` from the
+  full `COUNTRIES` list — any verified clinician could tag any case as
+  posted from any country, with no relationship to where they actually
+  practice. Asked to fix: a case's country should come from the author's
+  own account, not a per-post pick, while the Global Case Exchange itself
+  (`/exchange`) stays fully open to browse — that part was already public
+  and needed no change.
+- `supabase/migrations/0026_profile_country.sql` (new) —
+  `profiles.country_code text`, same two-letter-code check
+  `cases.country_code` already has (0017). Self-editable like `city`/
+  `specialty` — not one of the five columns
+  `profiles_guard_privilege_columns` (0018) locks to admin-only, since
+  there's no privilege boundary here, just "this is what you tell us
+  about yourself." Covered by `supabase/tests/0026_profile_country.test.sql`;
+  folded into `supabase/APPLY_TO_HOSTED.sql` with a matching checklist row.
+- `src/lib/database.types.ts` — `Profile.country_code`.
+- `src/components/onboarding-form.tsx` (doubles as the profile-edit form,
+  reached via "Edit profile" on your own profile page) — new "Country"
+  `<select>` from `COUNTRIES`, right after City. Optional, matching the
+  "Prefer not to say" ethos the old per-case field had.
+- `src/app/actions/profile.ts` — `updateProfileAction` validates the
+  submitted code against the real `COUNTRIES` list (not just the
+  two-letter shape) and saves it; a missing-column retry
+  (`isMissingColumnError`, see below) means the rest of a profile edit
+  still saves even before 0026 is applied.
+- `src/app/actions/case.ts` — **the actual lock**: `createCaseAction` no
+  longer reads `country_code` from the submitted form at all — there's
+  nothing for a client to spoof. It looks up the *author's own*
+  `profiles.country_code` fresh, server-side, and uses that unconditionally.
+  A verified member in Riyadh can no longer tag a case "United States";
+  their cases are always tagged Saudi Arabia (or nothing, if they haven't
+  set a country) regardless of what any request claims.
+- `src/components/compose-form.tsx` — the old free `<select>` is gone,
+  replaced with a read-only line showing the viewer's own country (or
+  "Not set — add your country to your profile" linking to `/onboarding`
+  when they haven't). Nothing here is submitted; it's purely informational,
+  since the real value is decided server-side regardless of what this form
+  sends.
+- `src/lib/supabase/errors.ts` (new) — `isMissingColumnError()` extracted
+  from `case.ts` (0025's PGRST204 fix) into a shared helper, now used by
+  both `createCaseAction` and `updateProfileAction` rather than duplicated.
+- Verified: local Postgres suite + `apply-file.sh` both green including
+  the new 0026 tests. `tsc`/lint/build clean. Live against the hosted DB
+  (throwaway verified account, cleaned up after): confirmed the composer
+  no longer has any country `<select>` at all and shows "Not set" with a
+  working link to `/onboarding`; confirmed the onboarding form's new
+  Country field saves without crashing (profile PATCH degrades gracefully
+  pre-0026, same as everything else pending); confirmed posting a case
+  still works end-to-end with no crash even though the author-country
+  lookup silently returns null pre-migration. The actual lock (a case
+  always getting the author's real profile country, never a submitted
+  value) is proven by reading the code path directly — there is no
+  `country_code` form field for a client to send any more, so there's
+  nothing left to verify by trying to spoof one.
 
 ## Security review
 
