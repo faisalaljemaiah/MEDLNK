@@ -311,13 +311,20 @@ export default async function SearchPage({
             </div>
           </div>
 
-          <div className="px-4 pb-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-3">
             <Link
               href="/exchange"
               className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
             >
               <CompassIcon width={13} height={13} strokeWidth={2.25} />
               Browse the Global Case Exchange →
+            </Link>
+            <Link
+              href="/communities"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+            >
+              <UsersIcon width={13} height={13} strokeWidth={2.25} />
+              Browse Communities →
             </Link>
           </div>
         </>

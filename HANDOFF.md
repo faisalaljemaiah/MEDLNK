@@ -1121,15 +1121,99 @@ those agents.
   (`.animate-enter` and the ECG trace both checked), and the Discover/
   Messages page headings render as expected once past the (Turbopack
   cold-compile) loading skeleton.
-- **Not done yet** (Phases 2-4, each gets its own plan/review before being
-  built — see the plan file): full Discover category filters (Questions/
-  Discussions/People) and trending/specialty/topic sections; Case/Discussion
-  page reorder; a real `/communities` page (no new schema — a front-end over
-  the existing specialty-derived grouping); Profile section reorder;
-  the app's first `lg:` desktop responsive layout; Messages search box;
-  Post Case form wording pass. Resources (guidelines/PDFs) was explicitly
-  dropped from the whole redesign — no schema, no route, no placeholder —
-  since it would be new backend work, not a layout change.
+### Information architecture redesign, Phase 2 — Discover categories + case discussion count
+
+- **`src/lib/profile.ts`** — new `searchProfiles(supabase, query, limit=20)`
+  and `PersonResult` type. Fetches a bounded set of profiles and filters by
+  name/handle/specialty in JS rather than building a raw PostgREST `.or()`
+  filter string from user input — that mini-language treats commas/dots/
+  parens as syntax, so interpolating a search term into it directly is
+  injection-adjacent. Same "filter in JS over one query" convention this
+  codebase already uses for case search.
+- **`src/app/(app)/search/page.tsx`** — rewritten with category tabs (All /
+  Cases / Questions / Discussions / People) via a `cat` URL param. Questions
+  forces `typeFilter="what_would_you_do"`; Discussions reuses the existing
+  `getActiveDiscussions`; People uses the new `searchProfiles`. Added a
+  "Trending this week" topic-pill row (reuses `getTrendingTopics`, already
+  built for Home) on the landing state, and a small People-preview block on
+  the All tab. Existing case search/filter behavior unchanged.
+- **`src/app/(app)/case/[caseNumber]/page.tsx`** — added a distinct-
+  participant count (`new Set(comments.map(c => c.user_id)).size`, computed
+  from data already fetched for the page, no new query) shown as "N
+  clinicians discussing → Join the discussion," linking to `#comments`.
+- Verified: `tsc`/lint/build clean, no schema change. Live against the
+  hosted DB: each Discover tab returns the right filtered set, People search
+  finds real profiles by partial name/handle/specialty, the discussion-count
+  line renders the correct number and jumps to the comments section.
+
+### Information architecture redesign, Phase 3 — Communities, Profile reorder, desktop layout
+
+- **New `/communities` page** (`src/app/(app)/communities/page.tsx`) — My
+  Communities / All Communities tabs. No new schema: both are a proper
+  front-end over the same specialty-derived grouping that already powers
+  the Home "Trending Communities" widget (`getTrendingCommunities`,
+  `src/lib/home.ts`). New sibling `getMyCommunities(supabase, viewerId)`
+  intersects the full trending-communities list against the specialties
+  the viewer has actually touched (their own posted cases' specialties,
+  plus their profile specialty if set) — real activity, not a fabricated
+  membership table. Clicking a community goes to `/search?specialty=X`,
+  the same destination the Home widget's links already use. Empty states
+  are honest ("Post a case, or set your specialty in your profile, to see
+  your communities here" / "No specialty has real activity yet").
+- **`src/components/home/trending-communities.tsx`** — added a "See all
+  communities →" link to `/communities`.
+- **`src/app/(app)/search/page.tsx`** — added a "Browse Communities →" link
+  next to the existing Global Case Exchange link.
+- **Profile reorder** (`src/app/(app)/u/[handle]/page.tsx`) — contribution
+  stats (`ProfileStats`, cases/replies) now render directly above the
+  follower/following count line, which moved out of the header block into
+  its own line right after; matches the spec's "what they've contributed
+  before how many people follow them." Also added a "Communities" link to
+  the own-profile action-links row.
+- **First desktop (`lg:`) responsive layout** — previously the app had zero
+  `lg:`/`md:` breakpoints anywhere; the mobile shell (single centered
+  column, floating bottom nav) is untouched below `lg:`.
+  - **New `src/components/desktop-sidebar.tsx`** — left nav rail (`hidden
+    lg:flex`, sticky, full viewport height): logo → Home → Discover →
+    Create → Messages → Communities → Profile (pinned to the bottom via
+    `mt-auto`). Same destinations as the bottom nav, plus Communities since
+    desktop has room for it.
+  - **`src/components/create-menu.tsx`** — gained an optional `label?:
+    string` prop so the same bottom-sheet component serves both the bottom
+    nav's icon-only round trigger and the sidebar's full-width labeled row
+    (`Create` next to a plus icon), each kept opaque-backed (`bg-surface`
+    vs `bg-surface-2`) so the wrapping `.ai-glow` ring never bleeds through
+    the button's center on either variant.
+  - **`src/app/(app)/layout.tsx`** — added `<DesktopSidebar>`, wrapped the
+    existing `<BottomNav>` in `lg:hidden`, and the shell becomes
+    `lg:flex-row` with a `lg:max-w-6xl` cap so the sidebar and content sit
+    side by side above the breakpoint.
+  - **`src/app/(app)/page.tsx`** (Home) — added its own right rail above
+    `lg:` (`lg:grid lg:grid-cols-[1fr_320px]`): WeeklyActivityCard /
+    TrendingCommunities / ActiveDiscussions / RecommendedPeople now live in
+    a single `sidebarWidgets` JSX constant, rendered twice via visibility
+    toggles (`lg:hidden` inline in the mobile flow, `hidden lg:flex` in a
+    desktop `<aside>`) — same data, fetched once, just repositioned by
+    breakpoint. No other page grew a right rail; that's Home's own content
+    density, not something forced onto every route.
+- Verified: `tsc`/lint/build clean, no schema change. Live against the
+  hosted DB at both a mobile (390×800) and desktop (1440×900) viewport with
+  a throwaway verified test account: mobile shows the floating bottom nav
+  and no sidebar; desktop shows the left sidebar and right rail with the
+  bottom nav hidden; the sidebar's Communities link and Create sheet both
+  work; the Communities page renders both tabs with real specialty/case/
+  clinician counts; the profile page shows contribution stats above the
+  follower count. (Two earlier check runs flagged the Communities heading
+  and the profile ordering as not-found — both were Turbopack cold-compile
+  timing artifacts in the test script's fixed-sleep waits, not real bugs;
+  re-run with explicit `waitFor()` on the actual elements confirmed both
+  render correctly.)
+
+**Not done yet** (Phase 4, in progress): Messages conversation search box;
+Post Case form "before you publish" wording pass. Resources (guidelines/
+PDFs) stays explicitly dropped from the whole redesign — no schema, no
+route, no placeholder — since it would be new backend work, not a layout
+change.
 
 ## Security review
 
