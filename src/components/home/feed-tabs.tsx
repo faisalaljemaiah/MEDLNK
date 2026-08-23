@@ -12,8 +12,14 @@ const TABS: { key: HomeFeedView; labelKey: TranslationKey; requiresViewer?: bool
   { key: "trending", labelKey: "tabs.trending" },
 ];
 
+/**
+ * Always an explicit query, even for "foryou" — bare "/" now defaults to
+ * the Following tab for a signed-in viewer (see parseView in
+ * app/(app)/page.tsx), so a bare "/" link here would silently reload
+ * whichever tab the viewer is already on instead of switching to For You.
+ */
 export function homeFeedViewHref(key: HomeFeedView): string {
-  return key === "foryou" ? "/" : `/?view=${key}`;
+  return `/?view=${key}`;
 }
 
 /**

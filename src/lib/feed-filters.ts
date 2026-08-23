@@ -68,6 +68,14 @@ export function feedFilter(key: string | null | undefined, hasViewer: boolean) {
   return found;
 }
 
+/**
+ * Always an explicit ?view=foryou rather than bare "/" — bare "/" now
+ * defaults to the Following tab for a signed-in viewer (see parseView in
+ * app/(app)/page.tsx), so relying on it here would silently land a chip
+ * click on the wrong tab.
+ */
 export function feedFilterHref(key: string) {
-  return key === DEFAULT_FEED_FILTER.key ? "/" : `/?filter=${key}`;
+  return key === DEFAULT_FEED_FILTER.key
+    ? "/?view=foryou"
+    : `/?view=foryou&filter=${key}`;
 }

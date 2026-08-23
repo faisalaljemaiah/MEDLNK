@@ -112,8 +112,8 @@ export default async function FeedPage({
     view !== "foryou"
       ? `/?view=${view}`
       : filter.key === "all"
-        ? "/"
-        : `/?filter=${filter.key}`;
+        ? "/?view=foryou"
+        : `/?view=foryou&filter=${filter.key}`;
 
   const emptyMessage =
     view === "following"
