@@ -1209,11 +1209,36 @@ those agents.
   re-run with explicit `waitFor()` on the actual elements confirmed both
   render correctly.)
 
-**Not done yet** (Phase 4, in progress): Messages conversation search box;
-Post Case form "before you publish" wording pass. Resources (guidelines/
-PDFs) stays explicitly dropped from the whole redesign — no schema, no
-route, no placeholder — since it would be new backend work, not a layout
-change.
+### Information architecture redesign, Phase 4 — Messages search + Compose checklist
+
+- **New `src/components/messages/conversations-list.tsx`** — the Messages
+  page's conversation list is now a client component with a search box
+  (`SearchIcon`, plain bordered pill) that filters the already-fetched list
+  in-browser by the other clinician's name/handle or the last message body
+  (`useMemo`, no new query — the inbox is small enough that a client-side
+  filter is simpler than round-tripping to the server). `src/app/(app)/
+  messages/page.tsx` still does the real `getConversations` fetch and just
+  hands the array down.
+- **Compose form "Before you publish" checklist**
+  (`src/components/compose-form.tsx`) — three checkboxes directly above the
+  submit button, restating the existing "Keep it de-identified" standard as
+  a final self-check rather than a new rule: no patient-identifiable
+  details, details generalized enough to protect identity, and permission
+  to share. All three must be checked to enable `SubmitButton` — client-side
+  gating only (`useState`/`useMemo`), the server action's own validation and
+  every underlying field/upload path are untouched.
+- Verified: `tsc`/lint/build clean, no schema change. Live against the
+  hosted DB with two throwaway verified test accounts and a seeded
+  conversation: the search box hides/shows the right conversation as the
+  query changes and shows the empty-search message when nothing matches;
+  the compose submit button starts disabled, becomes enabled once all three
+  checklist boxes are checked, and re-disables the moment any one is
+  unchecked.
+
+Resources (guidelines/PDFs) stays explicitly dropped from the whole
+redesign — no schema, no route, no placeholder — since it would be new
+backend work, not a layout change. This completes all four phases of the
+IA redesign.
 
 ## Security review
 
