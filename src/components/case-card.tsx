@@ -3,6 +3,7 @@ import Image from "next/image";
 import { clsx } from "clsx";
 import { ReactionBar } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
+import { MutedIcon } from "@/components/icons";
 import { caseTypeMeta } from "@/lib/case-types";
 import { isVideoUrl } from "@/lib/media";
 import { timeAgo } from "@/lib/time";
@@ -127,18 +128,32 @@ export function CaseCard({
       })()}
 
       {feedCase.media_url && isVideoUrl(feedCase.media_url) && (
-        // Not a thumbnail like the image case above: a video needs its
-        // native controls to be directly clickable, which a small
-        // non-interactive thumbnail can't offer, so it keeps the full-width
-        // treatment below the text instead.
-        <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
+        // Feed preview, not a player: autoplaying, muted and looping like
+        // any other social feed's video preview, with no native controls to
+        // fumble with mid-scroll — tapping it opens the full case instead,
+        // same as the photo thumbnail above. The muted badge is the only
+        // affordance that it has sound at all; the case page's own <video>
+        // (case/[caseNumber]/page.tsx) is the one with real controls and
+        // audio.
+        <Link
+          href={caseHref}
+          className="relative mt-3 block aspect-[4/3] w-full overflow-hidden rounded-xl bg-black"
+        >
           <video
             src={feedCase.media_url}
-            controls
+            autoPlay
+            muted
+            loop
             playsInline
-            className="h-full w-full object-contain"
+            className="h-full w-full object-cover"
           />
-        </div>
+          <span
+            aria-hidden
+            className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-white"
+          >
+            <MutedIcon width={13} height={13} strokeWidth={2.25} />
+          </span>
+        </Link>
       )}
 
       {feedCase.tags.length > 0 && (

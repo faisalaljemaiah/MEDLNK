@@ -41,6 +41,17 @@ avatar stack never has anything to show. No error, no crash — just an
 undercount — confirmed live against the hosted project. See "Case-follower
 count + mutual-follow avatars" below.
 
+Also bundled: migration 0025 (`cases.media_placement`, for attaching a
+video/photo to a full-write-up case under a chosen section instead of only
+ever at the top). Degrades quietly and was confirmed live: until it's run,
+the composer's "Place it under" choice is silently not saved (the insert
+retries without that column — same missing-column retry `createCaseAction`
+already used for 0008/0017, extended in this same change to also catch
+PostgREST's `PGRST204`, not just Postgres's `42703` — see "Case media
+placement" below for why that mattered) and the media just renders at the
+top of the case, same as every case posted before this existed. No error,
+no crash, no data loss — the case still posts.
+
 ## What MEDLNK is
 
 A clinical knowledge network for verified healthcare professionals and
@@ -886,6 +897,88 @@ Other implementation notes:
   query syntax from the pending migration) — high confidence the full
   feature (real count + mutual-follow avatars) works end-to-end the moment
   `APPLY_TO_HOSTED.sql` is applied.
+
+### Case media placement + muted autoplay preview
+
+- Two asks: (1) let an author attach a video (not just a photo) to a
+  full-write-up case and choose which section it renders under —
+  Presentation / What was tricky / What we did / The lesson, instead of
+  only ever at the top — and (2) show that video autoplaying, muted, on
+  the feed card too, not just the case page.
+- `supabase/migrations/0025_case_media_placement.sql` (new) —
+  `cases.media_placement text`, nullable, checked against `'top'`,
+  `'presentation'`, `'tricky'`, `'actions'`, `'lesson'`. Null (every case
+  posted before this existed) is treated identically to `'top'` — media
+  above the write-up, exactly where it's always rendered. Covered by
+  `supabase/tests/0025_case_media_placement.test.sql`; folded into
+  `supabase/APPLY_TO_HOSTED.sql` with a matching checklist row.
+- `src/lib/database.types.ts` — new `MediaPlacement` type, `Case.media_placement`.
+- `src/components/compose-form.tsx` — the "Supporting Material" section
+  gets a third branch (only for `showFullBody` post types — clinical case,
+  What would you do?, Blind case, Case evolution, Case vs case, Research
+  finding; near miss/safety alert/short-form formats are unaffected and
+  keep their existing image-only behaviour exactly as before): an
+  "Attach (optional)" None/Photo/Video toggle, the matching file input
+  (video reuses the same `case-videos` bucket and 50MB/MP4-WebM-MOV
+  validation the dedicated Video post format already has), and — only once
+  something is attached — a "Place it under" select. This is additive to
+  every other post type's media handling, not a replacement.
+- `src/app/actions/case.ts` — new `media_kind`/`media_placement` form
+  fields, read only for full-body formats; a new upload branch alongside
+  the existing `requiresVideo`/`requiresImage` ones (same validate → upload
+  to `case-videos` → `getPublicUrl` pattern, not a new code path). The
+  three-stage `42703` insert retry (for 0008/0017's columns, in case either
+  isn't applied yet) is now a four-stage retry, `media_placement` dropped
+  first since it's the newest.
+  - **Real bug found and fixed while verifying this live**: the retry only
+    checked Postgres's own `42703` (undefined_column), but for an insert
+    payload referencing a column PostgREST's cached schema doesn't know
+    about, PostgREST short-circuits with its own `PGRST204`
+    ("Could not find the '...' column ... in the schema cache") *before*
+    the query ever reaches Postgres — so `42703` never fired, and the raw
+    PostgREST error text was reaching the composer's error banner
+    verbatim. Confirmed via a live submission attempt (screenshot: "Could
+    not find the 'media_placement' column of 'cases' in the schema
+    cache"). Fixed with a small `isMissingColumnError()` helper checking
+    both codes, used at all three retry stages. Worth checking whether the
+    *existing* 0008/0017 retry stages have ever silently had the same gap
+    if either of those columns is ever genuinely absent — they weren't hit
+    in this session's testing since both are already applied to the hosted
+    project.
+- `src/app/(app)/case/[caseNumber]/page.tsx` — the media block is computed
+  once (`mediaBlock`) and rendered either at the top (`media_placement`
+  null or `'top'`, exactly the old behaviour) or passed into the matching
+  section: `CaseBlock` gained an optional `media` node rendered after its
+  text; the "What we did" list (not a `CaseBlock`) gets it appended after
+  the `<ul>`; the lesson section gets it in both its `RevealSection` (staged
+  reveal) and plain `CaseBlock` branches.
+- `src/components/case-card.tsx` — the feed-card video block changed from
+  `controls` (click-to-play, has sound, not wrapped in a link) to
+  `autoPlay muted loop playsInline`, no controls, wrapped in a `<Link>` to
+  the case (tapping it now opens the case, same as the photo thumbnail,
+  since there's no native play button to intercept the tap any more) —
+  matches the feed-preview convention every major app uses (autoplay
+  muted, tap for the real thing with sound). A small muted-speaker badge
+  (`MutedIcon`, new — `src/components/icons.tsx`) sits in the corner as the
+  only cue that it has sound at all. This applies to *any* case with a
+  video, regardless of `media_placement` — the card preview isn't tied to
+  where the video ends up on the detail page.
+- Verified: local Postgres suite + `apply-file.sh` both green including
+  the new 0025 tests. `tsc`/lint/build clean. Live against the hosted DB
+  (throwaway verified account, real video-file upload via the composer,
+  case + storage object cleaned up after): the "Attach" toggle correctly
+  shows/hides the photo/video inputs and the placement select
+  (screenshotted); a real submission — video attached, placement set to
+  "What we did" — hit the `PGRST204` bug above on the first pass (caught
+  and fixed, re-verified), then posted successfully; the video correctly
+  fell back to rendering at the top of the case (0025 isn't applied to the
+  hosted project yet, so the placement itself couldn't be saved — the
+  intended, confirmed-safe degradation); the feed card was confirmed with
+  `autoplay`/`muted`/`loop` all present, `controls` absent, and the video
+  wrapped in a link. The actual under-a-section placement is proven
+  correct by the local Postgres suite (which runs against a database that
+  *does* have 0025) plus the JSX itself — same confidence level used for
+  0022/0023/0024's pending-migration features.
 
 ## Security review
 

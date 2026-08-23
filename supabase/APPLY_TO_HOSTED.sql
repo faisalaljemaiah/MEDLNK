@@ -1489,6 +1489,25 @@ create policy "case_followers_select_all"
   using (true);
 
 -- ============================================================================
+-- 0025_case_media_placement.sql — inline media placement within a case
+-- ============================================================================
+-- Lets an author attach a video (or photo) to a full-write-up case and
+-- choose where it renders — inline under a specific section instead of
+-- always at the top. Null/'top' preserves existing behaviour.
+
+alter table public.cases add column if not exists media_placement text;
+
+alter table public.cases drop constraint if exists cases_media_placement_check;
+alter table public.cases add constraint cases_media_placement_check
+  check (media_placement is null or media_placement in (
+    'top',
+    'presentation',
+    'tricky',
+    'actions',
+    'lesson'
+  ));
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1639,5 +1658,9 @@ from (
        select 1 from pg_policies
        where schemaname = 'public' and tablename = 'case_followers'
          and policyname = 'case_followers_select_all'
-     ))
+     )),
+    ('column: cases.media_placement',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'cases'
+               and column_name = 'media_placement'))
 ) as checks(item, present);

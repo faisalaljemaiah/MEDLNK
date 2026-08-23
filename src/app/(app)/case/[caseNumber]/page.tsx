@@ -72,6 +72,35 @@ export default async function CasePage({
 
   const staged = feedCase.reveal_mode === "staged";
 
+  // Null (every case posted before 0025) means the same thing "top" does —
+  // media above the write-up, exactly where it's always rendered.
+  const mediaPlacement = feedCase.media_placement ?? "top";
+  const mediaBlock = feedCase.media_url ? (
+    isVideoUrl(feedCase.media_url) ? (
+      <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
+        <video
+          src={feedCase.media_url}
+          controls
+          playsInline
+          className="h-full w-full object-contain"
+        />
+      </div>
+    ) : (
+      // Empty alt: the caption above carries the meaning, and a clinical
+      // image has no useful text equivalent a poster could be relied on to
+      // write.
+      <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2">
+        <Image
+          src={feedCase.media_url}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 100vw, 640px"
+          className="object-contain"
+        />
+      </div>
+    )
+  ) : null;
+
   return (
     <div className="px-4 py-6">
       <p className="font-label text-xs uppercase tracking-wide text-muted">
@@ -137,32 +166,7 @@ export default async function CasePage({
         </p>
       )}
 
-      {feedCase.media_url && (
-        isVideoUrl(feedCase.media_url) ? (
-          <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
-            <video
-              src={feedCase.media_url}
-              controls
-              playsInline
-              className="h-full w-full object-contain"
-            />
-          </div>
-        ) : (
-          // Empty alt: the caption above carries the meaning, and a clinical
-          // image has no useful text equivalent a poster could be relied on to
-          // write. It sits above the body so the reader has seen the image
-          // before the presentation refers to it.
-          <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-2">
-            <Image
-              src={feedCase.media_url}
-              alt=""
-              fill
-              sizes="(max-width: 640px) 100vw, 640px"
-              className="object-contain"
-            />
-          </div>
-        )
-      )}
+      {mediaPlacement === "top" && mediaBlock}
 
       <CaseComparison comparison={comparison} />
 
@@ -202,8 +206,16 @@ export default async function CasePage({
           </section>
 
           <div className="mt-5 flex flex-col gap-5">
-            <CaseBlock label="Presentation" text={feedCase.full_body.presentation} />
-            <CaseBlock label="What was tricky" text={feedCase.full_body.tricky} />
+            <CaseBlock
+              label="Presentation"
+              text={feedCase.full_body.presentation}
+              media={mediaPlacement === "presentation" ? mediaBlock : null}
+            />
+            <CaseBlock
+              label="What was tricky"
+              text={feedCase.full_body.tricky}
+              media={mediaPlacement === "tricky" ? mediaBlock : null}
+            />
             {feedCase.full_body.actions.length > 0 && (
               <div>
                 <p className="font-label text-xs uppercase tracking-wide text-muted">
@@ -214,6 +226,7 @@ export default async function CasePage({
                     <li key={i}>{action}</li>
                   ))}
                 </ul>
+                {mediaPlacement === "actions" && mediaBlock}
               </div>
             )}
 
@@ -227,9 +240,14 @@ export default async function CasePage({
                   <p className="text-sm leading-relaxed text-text">
                     {feedCase.full_body.lesson}
                   </p>
+                  {mediaPlacement === "lesson" && mediaBlock}
                 </RevealSection>
               ) : (
-                <CaseBlock label="The lesson" text={feedCase.full_body.lesson} />
+                <CaseBlock
+                  label="The lesson"
+                  text={feedCase.full_body.lesson}
+                  media={mediaPlacement === "lesson" ? mediaBlock : null}
+                />
               ))}
           </div>
         </>
@@ -327,7 +345,17 @@ export default async function CasePage({
   );
 }
 
-function CaseBlock({ label, text }: { label: string; text: string }) {
+function CaseBlock({
+  label,
+  text,
+  media,
+}: {
+  label: string;
+  text: string;
+  /** The author's chosen video/photo, when they placed it under this
+   *  section instead of the top of the case (0025). */
+  media?: React.ReactNode;
+}) {
   return (
     <div>
       <p className="font-label text-xs uppercase tracking-wide text-muted">
@@ -336,6 +364,7 @@ function CaseBlock({ label, text }: { label: string; text: string }) {
       <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-text">
         {text}
       </p>
+      {media}
     </div>
   );
 }

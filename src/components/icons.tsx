@@ -298,3 +298,13 @@ export function ImageIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function MutedIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M11 5 6 9H3v6h3l5 4Z" />
+      <path d="m17 9 5 6" />
+      <path d="m22 9-5 6" />
+    </svg>
+  );
+}

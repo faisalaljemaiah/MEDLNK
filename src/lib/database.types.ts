@@ -45,6 +45,19 @@ export type CaseType =
 
 export type RevealMode = "none" | "staged";
 
+/**
+ * Where cases.media_url renders on a full-write-up case (0025) — "top" (or
+ * null, for every case posted before this existed) keeps it above the
+ * write-up, same as always; anything else moves it inline under that
+ * section instead.
+ */
+export type MediaPlacement =
+  | "top"
+  | "presentation"
+  | "tricky"
+  | "actions"
+  | "lesson";
+
 export type ModerationStatus = "visible" | "removed";
 
 /** Mirrors the reason check constraint in 0009_reports_moderation.sql. */
@@ -110,6 +123,7 @@ export type Case = {
   full_body: CaseBody;
   tags: string[];
   media_url: string | null;
+  media_placement: MediaPlacement | null;
   specialty: string | null;
   case_number: string | null;
   case_type: CaseType;

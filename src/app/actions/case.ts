@@ -7,7 +7,29 @@ import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
 import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
 import { validateImageUpload, validateVideoUpload } from "@/lib/uploads";
-import type { CaseType, NearMiss } from "@/lib/database.types";
+import type { CaseType, MediaPlacement, NearMiss } from "@/lib/database.types";
+
+const MEDIA_PLACEMENTS: MediaPlacement[] = [
+  "top",
+  "presentation",
+  "tricky",
+  "actions",
+  "lesson",
+];
+
+/**
+ * A column that's genuinely missing shows up two different ways depending
+ * on where the request fails: 42703 (undefined_column) if it somehow
+ * reaches Postgres directly, or PostgREST's own PGRST204 ("Could not find
+ * the '...' column ... in the schema cache") when PostgREST's cached
+ * schema — built from its last introspection of the database — rejects an
+ * insert payload before a query is ever sent. In practice it's always
+ * PGRST204 for an insert like this one, but both are checked so this stays
+ * correct regardless of PostgREST version or query shape.
+ */
+function isMissingColumnError(error: { code?: string } | null): boolean {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
 
 export type ComposeFormState =
   | { error: string }
@@ -55,6 +77,11 @@ export async function createCaseAction(
   const country_code = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
   const image = formData.get("image");
   const video = formData.get("video");
+  // Only meaningful for full-write-up formats — every other format still
+  // decides its media entirely from typeMeta (requiresImage/requiresVideo),
+  // exactly as before this existed.
+  const mediaKind = String(formData.get("media_kind") ?? "none");
+  const rawPlacement = String(formData.get("media_placement") ?? "top");
   const acknowledgeWarning = formData.get("acknowledge_warning") === "true";
 
   // Post type decides which fields are required and which payloads are built.
@@ -209,6 +236,31 @@ export async function createCaseAction(
     media_url = publicUrl.publicUrl;
   } else if (typeMeta.requiresImage && !(image instanceof File && image.size > 0)) {
     return { error: "A photo is required for this format." };
+  } else if (needsFullBody && mediaKind === "video") {
+    // The one case where a full-write-up format gets a video too — every
+    // other format's media is entirely decided by typeMeta above, this is
+    // additive to that, not a replacement.
+    if (!(video instanceof File) || video.size === 0) {
+      return {
+        error: 'Choose a video file, or switch the attachment back to "None".',
+      };
+    }
+    const validated = validateVideoUpload(video);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("case-videos")
+      .upload(path, video, { contentType: video.type });
+
+    if (uploadError) {
+      return { error: `Video upload failed: ${uploadError.message}` };
+    }
+    const { data: publicUrl } = supabase.storage
+      .from("case-videos")
+      .getPublicUrl(path);
+    media_url = publicUrl.publicUrl;
   } else if (image instanceof File && image.size > 0) {
     const validated = validateImageUpload(image);
     if (!validated.ok) {
@@ -227,6 +279,17 @@ export async function createCaseAction(
       .getPublicUrl(path);
     media_url = publicUrl.publicUrl;
   }
+
+  // Placement only means anything on a full-write-up case with media
+  // attached — everywhere else it stays null, which the case page already
+  // treats the same as "top" (the only place media has ever rendered
+  // before this existed).
+  const media_placement: MediaPlacement | null =
+    media_url && needsFullBody
+      ? MEDIA_PLACEMENTS.includes(rawPlacement as MediaPlacement)
+        ? (rawPlacement as MediaPlacement)
+        : "top"
+      : null;
 
   const baseRow = {
     author_id: user.id,
@@ -249,16 +312,26 @@ export async function createCaseAction(
 
   let { data: inserted, error } = await supabase
     .from("cases")
-    .insert({ ...interactiveRow, country_code })
+    .insert({ ...interactiveRow, country_code, media_placement })
     .select("id")
     .single();
 
-  // 42703 = undefined_column. Two migrations added columns here (0008, then
-  // 0017's country_code) and either, both, or neither may be applied to this
-  // project, so retry in stages rather than dropping straight to the
-  // lowest-common-denominator row — a project with 0008 but not yet 0017
-  // should still get case_type recorded.
-  if (error?.code === "42703") {
+  // Three migrations added columns here (0008, 0017's country_code, 0025's
+  // media_placement) and any subset may be applied to this project, so
+  // retry in stages — newest column dropped first — rather than falling
+  // straight to the lowest-common-denominator row. A project with 0008 and
+  // 0017 but not yet 0025 should still get case_type and country_code
+  // recorded; the video just renders at the top of the case instead of
+  // inline until 0025 is applied.
+  if (isMissingColumnError(error)) {
+    ({ data: inserted, error } = await supabase
+      .from("cases")
+      .insert({ ...interactiveRow, country_code })
+      .select("id")
+      .single());
+  }
+
+  if (isMissingColumnError(error)) {
     ({ data: inserted, error } = await supabase
       .from("cases")
       .insert(interactiveRow)
@@ -266,7 +339,7 @@ export async function createCaseAction(
       .single());
   }
 
-  if (error?.code === "42703") {
+  if (isMissingColumnError(error)) {
     ({ data: inserted, error } = await supabase
       .from("cases")
       .insert(baseRow)

@@ -103,6 +103,11 @@ export function ComposeForm({
   const [caseType, setCaseType] = useState<string>(
     () => caseTypeMeta(initialType).value,
   );
+  // Only shown/used for full-write-up formats — every other format still
+  // decides its media entirely from the post type (see typeMeta below).
+  const [mediaKind, setMediaKind] = useState<"none" | "photo" | "video">(
+    "none",
+  );
 
   const typeMeta = caseTypeMeta(caseType);
   const showFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
@@ -456,6 +461,104 @@ export function ComposeForm({
               />
               <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
             </div>
+          ) : showFullBody ? (
+            <>
+              <input type="hidden" name="media_kind" value={mediaKind} />
+              <div className="flex flex-col gap-1.5">
+                <span className="font-label text-xs uppercase tracking-wide text-muted">
+                  Attach (optional)
+                </span>
+                <div className="flex gap-2">
+                  {(
+                    [
+                      { key: "none", label: "None" },
+                      { key: "photo", label: "Photo" },
+                      { key: "video", label: "Video" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setMediaKind(opt.key)}
+                      aria-pressed={mediaKind === opt.key}
+                      className={clsx(
+                        "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
+                        mediaKind === opt.key
+                          ? "border-accent bg-accent/10 font-medium text-accent"
+                          : "border-line text-muted hover:text-text",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {mediaKind === "photo" && (
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="image"
+                    className="font-label text-xs uppercase tracking-wide text-muted"
+                  >
+                    Photo
+                  </label>
+                  <input
+                    ref={imageInputRef}
+                    id="image"
+                    name="image"
+                    type="file"
+                    accept="image/*,.heic,.heif"
+                    onChange={handleImageChange}
+                    className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+                  />
+                  {convertingImage && (
+                    <p className="text-xs text-muted">Converting photo…</p>
+                  )}
+                </div>
+              )}
+
+              {mediaKind === "video" && (
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="video"
+                    className="font-label text-xs uppercase tracking-wide text-muted"
+                  >
+                    Video
+                  </label>
+                  <input
+                    id="video"
+                    name="video"
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime,.mov"
+                    className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+                  />
+                  <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
+                </div>
+              )}
+
+              {mediaKind !== "none" && (
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="media_placement"
+                    className="font-label text-xs uppercase tracking-wide text-muted"
+                  >
+                    Place it under
+                  </label>
+                  <select
+                    id="media_placement"
+                    name="media_placement"
+                    defaultValue="top"
+                    className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                  >
+                    <option value="top">Top of the case</option>
+                    <option value="presentation">Presentation</option>
+                    <option value="tricky">What was tricky</option>
+                    <option value="actions">What we did</option>
+                    <option value="lesson">The lesson</option>
+                  </select>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col gap-1.5">
               <label
