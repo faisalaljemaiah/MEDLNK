@@ -68,3 +68,31 @@ export function validateVideoUpload(file: File): ImageValidation {
   }
   return { ok: true, ext };
 }
+
+/**
+ * License / proof-of-study documents (0027) — a photo of the document or a
+ * PDF, checked against the private verification-docs bucket's own
+ * file_size_limit/allowed_mime_types.
+ */
+const ALLOWED_DOCUMENT_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/pdf": "pdf",
+};
+
+const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024; // 8 MiB, matches the bucket limit
+
+export function validateDocumentUpload(file: File): ImageValidation {
+  const ext = ALLOWED_DOCUMENT_TYPES[file.type];
+  if (!ext) {
+    return {
+      ok: false,
+      error: "A photo (JPEG, PNG, WebP) or PDF only.",
+    };
+  }
+  if (file.size > MAX_DOCUMENT_BYTES) {
+    return { ok: false, error: "The document must be 8MB or smaller." };
+  }
+  return { ok: true, ext };
+}

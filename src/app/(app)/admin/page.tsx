@@ -82,9 +82,24 @@ async function VerificationQueue({ supabase }: { supabase: Client }) {
     );
   }
 
+  // Signed, not public — verification-docs (0027) is a private bucket, so
+  // reviewing a document means minting a short-lived URL server-side rather
+  // than ever exposing a public one. 10 minutes is long enough to review
+  // one queue pass without leaving a stale link usable long after.
+  const withDocs = await Promise.all(
+    pending.map(async (p) => {
+      const path = p.license_document_path;
+      if (!path) return { ...p, documentUrl: null };
+      const { data } = await supabase.storage
+        .from("verification-docs")
+        .createSignedUrl(path, 600);
+      return { ...p, documentUrl: data?.signedUrl ?? null };
+    }),
+  );
+
   return (
     <ul className="mt-5 flex flex-col gap-3">
-      {pending.map((p) => (
+      {withDocs.map((p) => (
         <li key={p.id} className="rounded-xl border border-line bg-surface p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -97,6 +112,20 @@ async function VerificationQueue({ supabase }: { supabase: Client }) {
               <p className="mt-1 text-sm text-muted">
                 License: {p.license_number || "—"}
               </p>
+              {p.documentUrl ? (
+                <a
+                  href={p.documentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 inline-block text-sm text-accent hover:underline"
+                >
+                  View license / proof of study →
+                </a>
+              ) : (
+                <p className="mt-1 text-sm text-danger">
+                  No document uploaded
+                </p>
+              )}
             </div>
             <div className="flex gap-2">
               <form action={approveUserAction.bind(null, p.id)}>

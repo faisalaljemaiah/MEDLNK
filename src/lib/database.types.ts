@@ -110,6 +110,12 @@ export type Profile = {
   verified: boolean;
   verification_status: VerificationStatus;
   license_number: string | null;
+  /**
+   * Path within the private `verification-docs` bucket (0027) — never a
+   * public URL, since a license/student-ID photo is identifying. Read via a
+   * short-lived signed URL generated server-side for the owner or an admin.
+   */
+  license_document_path: string | null;
   is_admin: boolean;
   /** Student Mode (0014) — a preference, not a role. Leads with Learn. */
   student_mode: boolean;

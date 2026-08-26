@@ -1121,15 +1121,63 @@ those agents.
   (`.animate-enter` and the ECG trace both checked), and the Discover/
   Messages page headings render as expected once past the (Turbopack
   cold-compile) loading skeleton.
-- **Not done yet** (Phases 2-4, each gets its own plan/review before being
-  built — see the plan file): full Discover category filters (Questions/
-  Discussions/People) and trending/specialty/topic sections; Case/Discussion
-  page reorder; a real `/communities` page (no new schema — a front-end over
-  the existing specialty-derived grouping); Profile section reorder;
-  the app's first `lg:` desktop responsive layout; Messages search box;
-  Post Case form wording pass. Resources (guidelines/PDFs) was explicitly
-  dropped from the whole redesign — no schema, no route, no placeholder —
-  since it would be new backend work, not a layout change.
+- **Phases 2-4 were built, then reverted at the owner's request** (three
+  clean `git revert` commits, no conflicts) — Discover category filters,
+  the Communities page, the desktop sidebar/right-rail layout, the Profile
+  reorder, Messages search, and the Compose "before you publish" checklist
+  all existed at one point this session and are now gone again. Only Phase 1
+  (this section) and the unrelated reel-button fix from the same window
+  survive. Not planned to be rebuilt unless asked again.
+
+### License / proof-of-study verification documents
+
+The admin verification queue (`/admin`) previously only showed a typed
+license *number* — no way to see the actual document behind it before
+approving someone. Two migrations:
+
+- **`0027_verification_documents.sql`** — `profiles.license_document_path`
+  plus a new **private** storage bucket, `verification-docs` (8 MiB,
+  image/PDF only). Unlike every other bucket in this app, it is not public —
+  a license or student ID is identifying, so it's read via a short-lived
+  signed URL (`createSignedUrl`, 10 minutes) generated server-side, never a
+  public URL. RLS: the owner can read/write their own folder; an admin
+  (`public.is_admin()`) can read anyone's, to review it.
+- **`0028_verification_resubmission.sql`** — without this, a rejected member
+  had no way back into the queue at all: `VerificationQueue` only lists
+  `verification_status = 'pending'` rows, and the existing privilege guards
+  (0018, plus an older one from 0003 doing the same job by silently
+  reverting instead of raising) block *any* self-driven change to that
+  column. This widens both guard functions by exactly one transition —
+  `rejected -> pending`, only when `verified` doesn't change alongside it —
+  so fixing a license number or re-uploading a document actually requeues
+  someone. Every other self-driven transition (self-approval, clearing a
+  suspension, self-granting admin) stays exactly as blocked as before; new
+  tests in `0028_verification_resubmission.test.sql` assert both.
+
+App changes: the onboarding form (doubling as the profile editor) gained a
+license/proof-of-study file input, required until a document is on file at
+all; `updateProfileAction` uploads it, and treats a corrected license number
+or a fresh document as a resubmission (flips `verification_status` back to
+`pending`) whenever the profile was previously `rejected`. The admin queue
+now shows a "View license / proof of study →" link per pending applicant
+(the signed URL) or "No document uploaded" if there isn't one.
+
+**Not yet applied to the hosted project** — same as every migration this
+session, never run against hosted directly. Until `APPLY_TO_HOSTED.sql` is
+re-pasted, this degrades safely rather than breaking onboarding: the
+document section doesn't even render (`"license_document_path" in profile`
+is used, not a falsy check, to tell "column doesn't exist yet" apart from
+"no document uploaded" — the same distinction a missing-column retry makes
+elsewhere), and a chosen file that hits the not-yet-existing bucket fails
+with "Bucket not found," which is now treated the same as a missing column:
+the rest of the profile still saves. Verified live against the real hosted
+project exactly this way — a fresh signup completes onboarding with no
+document section and no error, and the existing admin approve flow still
+works end to end. Confirmed locally: the full local Postgres suite
+(`supabase/tests/run.sh`) and `supabase/tests/apply-file.sh` (paste-file
+applies twice cleanly from the hosted project's actual current schema, then
+runs the whole behavioral suite) — 48/48 checklist rows read `ok`, including
+the three new ones.
 
 ## Security review
 

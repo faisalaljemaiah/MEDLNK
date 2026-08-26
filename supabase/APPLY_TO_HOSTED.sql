@@ -1521,6 +1521,117 @@ alter table public.profiles add constraint profiles_country_code_check
   check (country_code is null or country_code ~ '^[A-Z]{2}$');
 
 -- ============================================================================
+-- 0027_verification_documents.sql — license/proof-of-study uploads
+-- ============================================================================
+-- Private storage bucket for the document a clinician uploads during
+-- onboarding, reviewed by an admin before approving verification.
+
+alter table public.profiles add column if not exists license_document_path text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'verification-docs', 'verification-docs', false,
+  8388608,
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+)
+on conflict (id) do nothing;
+
+drop policy if exists "verification_docs_select_own_or_admin" on storage.objects;
+create policy "verification_docs_select_own_or_admin"
+  on storage.objects for select
+  using (
+    bucket_id = 'verification-docs'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or public.is_admin()
+    )
+  );
+
+drop policy if exists "verification_docs_insert_own_folder" on storage.objects;
+create policy "verification_docs_insert_own_folder"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'verification-docs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "verification_docs_update_own_folder" on storage.objects;
+create policy "verification_docs_update_own_folder"
+  on storage.objects for update
+  using (
+    bucket_id = 'verification-docs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "verification_docs_delete_own_folder" on storage.objects;
+create policy "verification_docs_delete_own_folder"
+  on storage.objects for delete
+  using (
+    bucket_id = 'verification-docs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ============================================================================
+-- 0028_verification_resubmission.sql — a rejected member can resubmit
+-- ============================================================================
+-- Widens the profile privilege guards by exactly one self-driven
+-- transition — verification_status rejected -> pending, never touching
+-- `verified` — so fixing a license number or re-uploading a document
+-- actually gets a rejected member back into the admin's queue.
+
+create or replace function public.guard_profile_privilege_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if current_user in ('anon', 'authenticated') and not public.is_admin() then
+    if new.is_admin is distinct from old.is_admin then
+      raise exception 'Only an admin can change is_admin';
+    end if;
+    if new.verified is distinct from old.verified then
+      raise exception 'Only an admin can change verification status';
+    end if;
+    if new.verification_status is distinct from old.verification_status then
+      if not (old.verification_status = 'rejected' and new.verification_status = 'pending') then
+        raise exception 'Only an admin can change verification status';
+      end if;
+    end if;
+    if new.suspended_at is distinct from old.suspended_at
+       or new.suspended_reason is distinct from old.suspended_reason then
+      raise exception 'Only an admin can change suspension status';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.guard_profile_privilege_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null
+    and not exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)
+  then
+    if new.verified is distinct from old.verified then
+      new.verified := old.verified;
+    end if;
+    if new.is_admin is distinct from old.is_admin then
+      new.is_admin := old.is_admin;
+    end if;
+    if new.verification_status is distinct from old.verification_status
+       and not (old.verification_status = 'rejected' and new.verification_status = 'pending') then
+      new.verification_status := old.verification_status;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1679,5 +1790,14 @@ from (
     ('column: profiles.country_code',
      exists (select 1 from information_schema.columns
              where table_schema = 'public' and table_name = 'profiles'
-               and column_name = 'country_code'))
+               and column_name = 'country_code')),
+    ('column: profiles.license_document_path',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'license_document_path')),
+    ('bucket: verification-docs (private)',
+     exists (select 1 from storage.buckets where id = 'verification-docs' and public = false)),
+    ('SECURITY: rejected members can resubmit to pending',
+     coalesce((select prosrc like '%rejected%'
+               from pg_proc where proname = 'guard_profile_privilege_columns'), false))
 ) as checks(item, present);

@@ -10,7 +10,16 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Avatar } from "@/components/avatar";
 import type { Profile } from "@/lib/database.types";
 
-export function OnboardingForm({ profile }: { profile: Profile }) {
+export function OnboardingForm({
+  profile,
+  documentUploadAvailable,
+}: {
+  profile: Profile;
+  /** False on a project that hasn't applied 0027 yet — hides the upload
+   *  section entirely rather than showing a control that would silently
+   *  no-op, and it reappears on its own once the migration lands. */
+  documentUploadAvailable: boolean;
+}) {
   const [state, action] = useActionState(updateProfileAction, undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [convertingAvatar, setConvertingAvatar] = useState(false);
@@ -149,6 +158,29 @@ export function OnboardingForm({ profile }: { profile: Profile }) {
         placeholder="Used for manual verification only"
         required
       />
+      {documentUploadAvailable && (
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="license_document"
+            className="font-label text-xs uppercase tracking-wide text-muted"
+          >
+            License or proof of study
+          </label>
+          <input
+            id="license_document"
+            name="license_document"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            required={!profile.license_document_path}
+            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+          />
+          <p className="text-xs text-muted">
+            {profile.license_document_path
+              ? "Document on file — choose a new one only if you need to replace it."
+              : "A photo or PDF of your professional license or student ID. Reviewed manually, never shown publicly."}
+          </p>
+        </div>
+      )}
       {state?.error && (
         <p className="text-sm text-danger" role="alert">
           {state.error}

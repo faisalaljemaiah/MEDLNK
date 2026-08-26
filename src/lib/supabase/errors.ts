@@ -14,3 +14,15 @@
 export function isMissingColumnError(error: { code?: string } | null): boolean {
   return error?.code === "42703" || error?.code === "PGRST204";
 }
+
+/**
+ * A storage bucket that hasn't been created yet (e.g. verification-docs,
+ * 0027, on a project that hasn't run the migration) fails an upload with a
+ * plain "Bucket not found" StorageApiError — no numeric code shared with
+ * isMissingColumnError above, since this never reaches PostgREST at all.
+ * Used the same way: let a write degrade gracefully instead of hard-failing
+ * a whole form over one not-yet-migrated piece of infrastructure.
+ */
+export function isMissingBucketError(error: { message?: string } | null): boolean {
+  return Boolean(error?.message?.toLowerCase().includes("bucket not found"));
+}
