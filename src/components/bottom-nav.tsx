@@ -44,7 +44,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
             standing, subtle AI-hue ring — same visual language as the AI
             button, just idling permanently rather than reacting to a
             request in flight, since there's no "processing" state here. */}
-        <span className="ai-glow ai-glow-round inline-flex">
+        <span className="ai-glow ai-glow-round ai-glow-brand inline-flex">
           <CreateMenu active={pathname === "/compose"} />
         </span>
         <NavLink href="/messages" active={pathname.startsWith("/messages")}>

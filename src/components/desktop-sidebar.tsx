@@ -62,7 +62,7 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
       </SidebarLink>
 
       <div className="px-3 py-1">
-        <span className="ai-glow ai-glow-round inline-flex w-full">
+        <span className="ai-glow ai-glow-round ai-glow-brand inline-flex w-full">
           <CreateMenu active={pathname === "/compose"} label="Create" />
         </span>
       </div>

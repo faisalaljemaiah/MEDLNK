@@ -1365,6 +1365,22 @@ consequence (permanent block) always applied to any patient-identifiable
 content regardless of medium. Matches the "Keep it de-identified" notice
 earlier in the same form, which already called out photographs.
 
+**Follow-up**: the Create button (bottom nav + desktop sidebar) had a real
+bug in its `.ai-glow` active state — `create-menu.tsx`'s opaque backing
+(`bg-surface`/`bg-surface-2`, needed so the glow's rim doesn't bleed into
+the center) was conditioned on `!active`, so while on `/compose` the
+backing disappeared entirely and the full multi-hue AI gradient filled the
+whole button instead of staying a thin rim. Fixed by keeping the backing
+regardless of active state. Separately, Create isn't an AI feature, so it
+now gets its own `.ai-glow-brand` modifier (`src/app/globals.css`) — a
+Caribbean-green-and-white conic gradient instead of the app's five-stop
+AI-hue sweep — stacked alongside the base class
+(`ai-glow ai-glow-round ai-glow-brand`) on both the bottom nav and desktop
+sidebar's Create button. Every other `.ai-glow` usage (the AI button, the
+search bar) is untouched. Verified live at both idle and active states,
+desktop and mobile: the rim reads as green/white only, and the button's
+interior stays plain in every state.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

@@ -178,6 +178,19 @@ body {
 }
 
 /*
+ * Brand-only variant for the Create button specifically (bottom nav +
+ * desktop sidebar) — Create is a plain compose action, not an AI feature,
+ * so it gets MEDLNK's own Caribbean green plus white instead of the
+ * AI-hue sweep the rest of .ai-glow's usages (the AI button, the search
+ * bar) keep. Same rim-only mechanic as .ai-glow — this only overrides the
+ * spinning layer's color, stacked alongside the base class:
+ * `ai-glow ai-glow-round ai-glow-brand`.
+ */
+.ai-glow-brand::before {
+  background: conic-gradient(from 0deg, var(--accent), white, var(--accent));
+}
+
+/*
  * MEDLNK ambient pulse — three overlapping wavy lines in the AI hues,
  * drifting past each other behind the dashboard greeting (see
  * <MedLnkPulse>). Low opacity and slow deliberately: texture, not a thing
