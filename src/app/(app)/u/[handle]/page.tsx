@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getProfileByHandle } from "@/lib/profile";
 import { Avatar } from "@/components/avatar";
+import { SettingsIcon } from "@/components/icons";
 import { FollowButton } from "@/components/follow-button";
 import { CaseCard } from "@/components/case-card";
 import { ProfileStats } from "@/components/profile-stats";
@@ -92,12 +93,21 @@ export default async function ProfilePage({
 
         {isOwnProfile ? (
           <div className="flex min-w-0 flex-col items-end gap-2">
-            <Link
-              href="/onboarding"
-              className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
-            >
-              Edit profile
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/onboarding"
+                className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+              >
+                Edit profile
+              </Link>
+              <Link
+                href="/settings"
+                aria-label="Settings"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-text transition-transform duration-150 ease-out active:scale-90"
+              >
+                <SettingsIcon width={16} height={16} strokeWidth={2} />
+              </Link>
+            </div>
             <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">
               <Link href="/messages" className="hover:text-text">
                 Messages
@@ -116,9 +126,6 @@ export default async function ProfilePage({
               </Link>
               <Link href="/notifications" className="hover:text-text">
                 Notifications
-              </Link>
-              <Link href="/settings" className="hover:text-text">
-                Settings
               </Link>
               {profile.is_admin && (
                 <Link href="/admin" className="hover:text-text">

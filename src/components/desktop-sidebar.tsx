@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { HomeIcon, CompassIcon, SendIcon } from "@/components/icons";
+import { HomeIcon, CompassIcon, SendIcon, SettingsIcon } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
@@ -61,6 +61,9 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
         active={pathname.startsWith("/messages")}
       >
         <SendIcon />
+      </SidebarLink>
+      <SidebarLink href="/settings" label="Settings" active={pathname === "/settings"}>
+        <SettingsIcon />
       </SidebarLink>
 
       <Link

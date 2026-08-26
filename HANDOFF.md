@@ -1228,6 +1228,14 @@ portrait (820px) and desktop (1440px) both show only the sidebar, with
 Discover, the sidebar's Create sheet (each option correctly pre-selecting
 its post type), and the profile row all navigating correctly.
 
+Follow-up: `DesktopSidebar` gained a fifth item, Settings (`SettingsIcon`,
+between Messages and the pinned profile row). On the mobile profile page
+(`src/app/(app)/u/[handle]/page.tsx`), the "Settings" text link that used
+to live in the small link row below "Edit profile" was promoted to a small
+round icon button directly beside the "Edit profile" pill instead — same
+destination, just surfaced where it's easier to find rather than duplicated
+in both places. Verified live at both mobile and desktop widths.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
