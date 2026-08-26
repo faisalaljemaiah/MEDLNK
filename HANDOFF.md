@@ -1162,22 +1162,32 @@ or a fresh document as a resubmission (flips `verification_status` back to
 now shows a "View license / proof of study →" link per pending applicant
 (the signed URL) or "No document uploaded" if there isn't one.
 
-**Not yet applied to the hosted project** — same as every migration this
-session, never run against hosted directly. Until `APPLY_TO_HOSTED.sql` is
-re-pasted, this degrades safely rather than breaking onboarding: the
-document section doesn't even render (`"license_document_path" in profile`
-is used, not a falsy check, to tell "column doesn't exist yet" apart from
-"no document uploaded" — the same distinction a missing-column retry makes
-elsewhere), and a chosen file that hits the not-yet-existing bucket fails
-with "Bucket not found," which is now treated the same as a missing column:
-the rest of the profile still saves. Verified live against the real hosted
-project exactly this way — a fresh signup completes onboarding with no
-document section and no error, and the existing admin approve flow still
-works end to end. Confirmed locally: the full local Postgres suite
-(`supabase/tests/run.sh`) and `supabase/tests/apply-file.sh` (paste-file
-applies twice cleanly from the hosted project's actual current schema, then
-runs the whole behavioral suite) — 48/48 checklist rows read `ok`, including
-the three new ones.
+**Applied to the hosted project and verified live end-to-end** (owner ran
+`APPLY_TO_HOSTED.sql`; confirmed directly — `verification-docs` exists as a
+private bucket, `profiles.license_document_path` is selectable). Before
+that, this degraded safely rather than breaking onboarding: the document
+section didn't even render (`"license_document_path" in profile` is used,
+not a falsy check, to tell "column doesn't exist yet" apart from "no
+document uploaded" — the same distinction a missing-column retry makes
+elsewhere), and a chosen file hitting the not-yet-existing bucket failed
+with "Bucket not found," treated the same as a missing column so the rest
+of the profile still saved — verified live in that state too, before the
+migration landed.
+
+Post-migration live verification, real hosted project, throwaway accounts
+cleaned up after: the upload section now renders and is enforced (browser
+`required` blocks submitting onboarding with no file selected); a real PNG
+upload completes onboarding and lands `license_document_path` on the
+profile; the admin queue's "View license / proof of study" link resolves to
+a working signed URL (fetched directly — `200`, `image/png`, scoped to
+`verification-docs`); and a separate admin account approving the applicant
+flips `verified: true, verification_status: "approved"` end to end (a
+Server Action `POST` confirmed at `200`, then read back from the database
+directly, not just trusted from the UI). Confirmed locally too: the full
+local Postgres suite (`supabase/tests/run.sh`) and
+`supabase/tests/apply-file.sh` (paste-file applies twice cleanly from the
+hosted project's actual prior schema, then runs the whole behavioral suite)
+— 48/48 checklist rows read `ok`, including the three new ones.
 
 ## Security review
 
