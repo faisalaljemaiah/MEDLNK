@@ -21,11 +21,17 @@ type NavProfile = {
  * profile row, just vertical instead of a floating pill; the mobile shell
  * is untouched by this, it's a parallel nav for wider viewports.
  *
- * Height is intrinsic to its content (no `h-dvh` + `mt-auto` push) — five
- * nav items don't come close to filling a typical viewport, and stretching
- * the profile row down to the bottom of the screen just left a large dead
- * gap above it. `sticky top-0` still keeps it in view while the page
- * scrolls, it just doesn't force full-height any more.
+ * `fixed left-0 top-0`, not a flex sibling of the content column — the
+ * layout shell (`src/app/(app)/layout.tsx`) centers that column inside the
+ * page, and a sidebar living inside that same centered wrapper would leave
+ * a wide empty margin in front of it on any screen wider than the content
+ * itself. Fixed positioning pins it to the browser's actual left edge
+ * instead, independent of how the content column is centered; the content
+ * column reserves the sidebar's width with `md:pl-56` so nothing sits
+ * underneath it. Height is intrinsic to its own content, not the viewport —
+ * five nav items don't come close to filling a typical screen, and forcing
+ * full height (stretching the profile row down via `mt-auto`) just left a
+ * large dead gap above it.
  */
 export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
   const pathname = usePathname();
@@ -39,7 +45,7 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
     : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
 
   return (
-    <aside className="sticky top-0 hidden w-56 shrink-0 flex-col gap-1 border-r border-line py-6 pr-4 md:flex">
+    <aside className="fixed left-0 top-0 z-10 hidden max-h-dvh w-56 flex-col gap-1 overflow-y-auto border-r border-line bg-bg px-4 py-6 md:flex">
       <Link
         href="/"
         className="mb-6 flex items-center gap-2 px-3 font-headline text-lg text-text"

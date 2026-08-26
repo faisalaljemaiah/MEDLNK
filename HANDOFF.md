@@ -1236,6 +1236,27 @@ round icon button directly beside the "Edit profile" pill instead — same
 destination, just surfaced where it's easier to find rather than duplicated
 in both places. Verified live at both mobile and desktop widths.
 
+Two more fixes to the sidebar itself, both reported directly from a real
+screenshot of the deployed preview:
+
+- **Dead vertical space**: the sidebar was `h-dvh` with the profile row
+  pushed down via `mt-auto`, leaving a large empty gap between Settings and
+  the profile row on any normal-height screen. Height is now intrinsic to
+  its own content instead, with the profile row directly below Settings
+  behind a divider.
+- **Empty margin in front of the sidebar on wide screens**: the sidebar was
+  a flex sibling of the content column inside a `max-w-5xl`-centered
+  wrapper — on anything wider than that (a real monitor), the whole pair
+  centered together and left a wide, empty gap between the actual left edge
+  of the browser and the sidebar itself, which is what the screenshot
+  showed. Fixed by making the sidebar `fixed left-0 top-0` — pinned to the
+  browser's real left edge, independent of how the content column is
+  centered — with `md:pl-56` on the content wrapper reserving its width so
+  nothing sits underneath it. Verified live at 1440px (matches the reported
+  screenshot) and a deliberately extreme 2200px width: the sidebar's left
+  edge sits at `x = 0` at both, stays correctly pinned in place while the
+  page scrolls, and every nav item still resolves to the right route.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

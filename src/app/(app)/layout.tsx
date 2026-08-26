@@ -11,10 +11,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     // untouched below `md:` — this is purely additive, the app's first
     // tablet/desktop layout. From `md:` up (roughly iPad-portrait and
     // wider), a left nav rail takes over navigation and the bottom nav
-    // hides.
-    <div className="flex min-h-dvh flex-1 flex-col md:mx-auto md:w-full md:max-w-5xl md:flex-row md:items-start md:gap-6 md:px-6">
+    // hides. The sidebar is `fixed` to the actual left edge of the browser
+    // window (not a flex sibling inside a centered wrapper) — a centered
+    // wrapper would leave a wide, empty margin in front of it on anything
+    // wider than the content column, which is exactly what looked broken
+    // before this. `md:pl-56` on the content column reserves the sidebar's
+    // width so nothing sits underneath it.
+    <div className="flex min-h-dvh flex-1 flex-col md:pl-56">
       <DesktopSidebar profile={profile} />
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col md:mx-0 md:min-w-0">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
         <TopHeader loggedIn={Boolean(user)} />
         <main className="flex flex-1 flex-col pb-24 md:pb-10">{children}</main>
       </div>
