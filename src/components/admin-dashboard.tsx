@@ -231,13 +231,17 @@ async function UsersDirectory({
     <div className="mt-5">
       <form action={basePath} className="flex gap-2">
         <input type="hidden" name="tab" value="users" />
-        <input
-          type="text"
-          name="uq"
-          defaultValue={query}
-          placeholder="Search by name, handle, role, or specialty"
-          className="w-full rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
-        />
+        {/* Same rim as every other search bar in the app (.ai-glow
+            .ai-glow-brand, globals.css) — Caribbean green and white. */}
+        <div className="ai-glow ai-glow-round w-full ai-glow-brand">
+          <input
+            type="text"
+            name="uq"
+            defaultValue={query}
+            placeholder="Search by name, handle, role, or specialty"
+            className="w-full rounded-full bg-surface px-3.5 py-2 text-sm text-text placeholder:text-muted focus:outline-none"
+          />
+        </div>
       </form>
 
       {withDocs.length === 0 ? (
@@ -345,13 +349,15 @@ async function PostsDirectory({
     <div className="mt-5">
       <form action={basePath} className="flex gap-2">
         <input type="hidden" name="tab" value="posts" />
-        <input
-          type="text"
-          name="cq"
-          defaultValue={query}
-          placeholder="Search by title, case number, or author"
-          className="w-full rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
-        />
+        <div className="ai-glow ai-glow-round w-full ai-glow-brand">
+          <input
+            type="text"
+            name="cq"
+            defaultValue={query}
+            placeholder="Search by title, case number, or author"
+            className="w-full rounded-full bg-surface px-3.5 py-2 text-sm text-text placeholder:text-muted focus:outline-none"
+          />
+        </div>
       </form>
 
       {cases.length === 0 ? (

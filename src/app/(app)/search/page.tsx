@@ -105,10 +105,12 @@ export default async function SearchPage({
       {/* A GET form, so every search is a shareable URL and the results stay
           server-rendered. */}
       <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
-        {/* Same standing AI-hue rim as <AIButton>/the compose nav button —
-            .ai-glow, globals.css — so search reads as part of the same
-            visual language rather than a plain bordered field. */}
-        <div className="ai-glow ai-glow-round w-full">
+        {/* Same rim mechanic as <AIButton>/the compose nav button
+            (.ai-glow, globals.css), but in MEDLNK's own Caribbean green
+            and white (.ai-glow-brand) rather than the AI-hue sweep —
+            search isn't an AI feature, and every search bar in the app
+            (this one, the admin dashboard's) now shares this same look. */}
+        <div className="ai-glow ai-glow-round ai-glow-brand w-full">
           <input
             type="text"
             name="q"

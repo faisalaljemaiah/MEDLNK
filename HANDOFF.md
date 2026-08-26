@@ -1376,10 +1376,20 @@ now gets its own `.ai-glow-brand` modifier (`src/app/globals.css`) — a
 Caribbean-green-and-white conic gradient instead of the app's five-stop
 AI-hue sweep — stacked alongside the base class
 (`ai-glow ai-glow-round ai-glow-brand`) on both the bottom nav and desktop
-sidebar's Create button. Every other `.ai-glow` usage (the AI button, the
-search bar) is untouched. Verified live at both idle and active states,
+sidebar's Create button. Verified live at both idle and active states,
 desktop and mobile: the rim reads as green/white only, and the button's
 interior stays plain in every state.
+
+**Follow-up**: every search bar now shares that same `.ai-glow-brand`
+treatment, not just Create — the Discover page's main search bar
+(`src/app/(app)/search/page.tsx`, previously the AI-hue sweep) and the
+admin dashboard's Users/Posts search inputs (`src/components/
+admin-dashboard.tsx`, previously plain bordered fields with no rim at all)
+all now render the same green/white ring. The AI button (spelling/clarity
+check) is the one `.ai-glow` usage left on the AI-hue sweep, since it
+actually is an AI feature. Verified live across all three search bars
+(Discover, admin Users, admin Posts) and confirmed the Users search still
+filters correctly after the markup change.
 
 ## Security review
 
