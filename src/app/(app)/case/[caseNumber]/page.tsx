@@ -206,16 +206,20 @@ export default async function CasePage({
           </section>
 
           <div className="mt-5 flex flex-col gap-5">
-            <CaseBlock
-              label="Presentation"
-              text={feedCase.full_body.presentation}
-              media={mediaPlacement === "presentation" ? mediaBlock : null}
-            />
-            <CaseBlock
-              label="What was tricky"
-              text={feedCase.full_body.tricky}
-              media={mediaPlacement === "tricky" ? mediaBlock : null}
-            />
+            {feedCase.full_body.presentation && (
+              <CaseBlock
+                label="Presentation"
+                text={feedCase.full_body.presentation}
+                media={mediaPlacement === "presentation" ? mediaBlock : null}
+              />
+            )}
+            {feedCase.full_body.tricky && (
+              <CaseBlock
+                label="What was tricky"
+                text={feedCase.full_body.tricky}
+                media={mediaPlacement === "tricky" ? mediaBlock : null}
+              />
+            )}
             {feedCase.full_body.actions.length > 0 && (
               <div>
                 <p className="font-label text-xs uppercase tracking-wide text-muted">

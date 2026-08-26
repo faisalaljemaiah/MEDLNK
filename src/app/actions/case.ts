@@ -94,8 +94,11 @@ export async function createCaseAction(
     const entries = NEAR_MISS_PROMPTS.map(
       (p) => [p.name, String(formData.get(`near_miss_${p.name}`) ?? "").trim()] as const,
     );
-    if (entries.some(([, value]) => !value)) {
-      return { error: "Every patient-safety prompt needs an answer." };
+    // Every prompt used to be mandatory; now the author picks which ones
+    // apply (compose-form.tsx's toggle chips), so only at least one filled
+    // is required — the rest store as "", same NearMiss shape either way.
+    if (entries.every(([, value]) => !value)) {
+      return { error: "Answer at least one patient-safety prompt." };
     }
     near_miss = Object.fromEntries(entries) as unknown as NearMiss;
   }
@@ -171,14 +174,19 @@ export async function createCaseAction(
     comparison = { left: left!, right: right!, discriminator };
   }
 
+  // These four used to be all-or-nothing; now the author picks which
+  // sections apply (compose-form.tsx's toggle chips), so only at least one
+  // filled is required.
   const needsFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
   if (
     needsFullBody &&
-    (!presentation || !tricky || actions.length === 0 || !lesson)
+    !presentation &&
+    !tricky &&
+    actions.length === 0 &&
+    !lesson
   ) {
     return {
-      error:
-        "Presentation, what was tricky, at least one action, and the lesson are all required for this format.",
+      error: "Add at least one section (presentation, what was tricky, what you did, or the lesson) for this format.",
     };
   }
 

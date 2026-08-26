@@ -53,6 +53,39 @@ function Textarea({
 }
 
 /**
+ * A pick-your-own-sections toggle, same pill styling as the post-type and
+ * Attach-kind buttons — tap to include that section's textarea below, tap
+ * again to remove it (and its text along with it, since the field
+ * unmounts). Used for both the full-case body and the Patient Safety
+ * prompts: neither forces every prompt any more, just at least one.
+ */
+function SectionChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={clsx(
+        "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
+        active
+          ? "border-accent bg-accent/10 font-medium text-accent"
+          : "border-line text-muted hover:text-text",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+/**
  * One of the four numbered groups the form is organized into — Case,
  * Clinical Context, Global Exchange, Supporting Material. The connecting
  * line between them is a single element drawn by the parent (not one per
@@ -114,9 +147,35 @@ export function ComposeForm({
   const [mediaKind, setMediaKind] = useState<"none" | "photo" | "video">(
     "none",
   );
+  // Which of the full-case/Patient-Safety sections the author has chosen to
+  // write — none forced any more, just at least one (enforced server-side
+  // in createCaseAction). Empty by default: "add a section" reads as an
+  // invitation, not four blank required boxes.
+  const [bodySections, setBodySections] = useState<string[]>([]);
+  const [nearMissSections, setNearMissSections] = useState<string[]>([]);
+  const [mediaPlacement, setMediaPlacement] = useState("top");
 
   const typeMeta = caseTypeMeta(caseType);
   const showFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
+
+  const FULL_BODY_SECTIONS = [
+    { name: "presentation", label: "Presentation" },
+    { name: "tricky", label: "What was tricky" },
+    { name: "actions", label: "What we did" },
+    {
+      name: "lesson",
+      label: typeMeta.usesStagedReveal ? "The lesson (hidden until reveal)" : "The lesson",
+    },
+  ] as const;
+
+  // A media placement pointing at a section the author has since removed
+  // would silently attach the photo/video to a section that never renders —
+  // derived during render rather than corrected after the fact in an
+  // effect, since it's a pure function of state already in hand.
+  const effectiveMediaPlacement =
+    mediaPlacement !== "top" && !bodySections.includes(mediaPlacement)
+      ? "top"
+      : mediaPlacement;
 
   const warning = state && "warning" in state ? state.warning : null;
   const error = state && "error" in state ? state.error : null;
@@ -266,44 +325,86 @@ export function ComposeForm({
 
           {showFullBody && (
             <div className="rounded-xl border border-line bg-surface-2/40 p-4">
-              <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
+              <p className="font-label mb-1 text-xs uppercase tracking-wide text-accent">
                 Full case
               </p>
-              <div className="flex flex-col gap-4">
-                <Textarea label="Presentation" name="presentation" required />
-                <Textarea label="What was tricky" name="tricky" required />
-                <Textarea
-                  label="What we did (one action per line)"
-                  name="actions"
-                  placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
-                  required
-                />
-                <Textarea
-                  label={
-                    typeMeta.usesStagedReveal ? "The lesson (hidden until reveal)" : "The lesson"
-                  }
-                  name="lesson"
-                  required
-                />
+              <p className="mb-3 text-xs text-muted">
+                Add whichever sections fit this case — pick at least one.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {FULL_BODY_SECTIONS.map((s) => (
+                  <SectionChip
+                    key={s.name}
+                    label={s.label}
+                    active={bodySections.includes(s.name)}
+                    onClick={() =>
+                      setBodySections((prev) =>
+                        prev.includes(s.name)
+                          ? prev.filter((n) => n !== s.name)
+                          : [...prev, s.name],
+                      )
+                    }
+                  />
+                ))}
               </div>
+              {bodySections.length > 0 && (
+                <div className="mt-4 flex flex-col gap-4">
+                  {FULL_BODY_SECTIONS.filter((s) => bodySections.includes(s.name)).map((s) =>
+                    s.name === "actions" ? (
+                      <Textarea
+                        key="actions"
+                        label="What we did (one action per line)"
+                        name="actions"
+                        placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
+                        required
+                      />
+                    ) : (
+                      <Textarea key={s.name} label={s.label} name={s.name} required />
+                    ),
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {typeMeta.usesNearMiss && (
             <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
-              <p className="font-label mb-3 text-xs uppercase tracking-wide text-warning">
+              <p className="font-label mb-1 text-xs uppercase tracking-wide text-warning">
                 Patient safety
               </p>
-              <div className="flex flex-col gap-4">
+              <p className="mb-3 text-xs text-muted">
+                Add whichever prompts apply here — pick at least one.
+              </p>
+              <div className="flex flex-wrap gap-2">
                 {NEAR_MISS_PROMPTS.map((prompt) => (
-                  <Textarea
+                  <SectionChip
                     key={prompt.name}
                     label={prompt.label}
-                    name={`near_miss_${prompt.name}`}
-                    required
+                    active={nearMissSections.includes(prompt.name)}
+                    onClick={() =>
+                      setNearMissSections((prev) =>
+                        prev.includes(prompt.name)
+                          ? prev.filter((n) => n !== prompt.name)
+                          : [...prev, prompt.name],
+                      )
+                    }
                   />
                 ))}
               </div>
+              {nearMissSections.length > 0 && (
+                <div className="mt-4 flex flex-col gap-4">
+                  {NEAR_MISS_PROMPTS.filter((p) => nearMissSections.includes(p.name)).map(
+                    (prompt) => (
+                      <Textarea
+                        key={prompt.name}
+                        label={prompt.label}
+                        name={`near_miss_${prompt.name}`}
+                        required
+                      />
+                    ),
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -551,14 +652,16 @@ export function ComposeForm({
                   <select
                     id="media_placement"
                     name="media_placement"
-                    defaultValue="top"
+                    value={effectiveMediaPlacement}
+                    onChange={(e) => setMediaPlacement(e.target.value)}
                     className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                   >
                     <option value="top">Top of the case</option>
-                    <option value="presentation">Presentation</option>
-                    <option value="tricky">What was tricky</option>
-                    <option value="actions">What we did</option>
-                    <option value="lesson">The lesson</option>
+                    {FULL_BODY_SECTIONS.filter((s) => bodySections.includes(s.name)).map((s) => (
+                      <option key={s.name} value={s.name}>
+                        {s.name === "actions" ? "What we did" : s.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}

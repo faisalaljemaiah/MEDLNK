@@ -1329,6 +1329,35 @@ at the admin's profile URL, the admin never appears in "People You May
 Know," and the admin themselves can still reach their own dashboard at
 that same URL.
 
+### Compose form: pick-your-own sections instead of all-required
+
+The clinical-case body (Presentation / What was tricky / What we did / The
+lesson) and the Near Miss "Patient safety" prompts (all five) used to force
+every field — a full write-up whether or not it fit the case. Both now
+start with no textareas at all: just a row of toggle chips
+(`src/components/compose-form.tsx`'s new `SectionChip`, same pill styling
+as the post-type picker) per section/prompt. Tapping one reveals its
+textarea (and requires it, since it's now visibly part of the form); the
+only server-side rule (`src/app/actions/case.ts`) is at least one section
+overall, not all of them — `near_miss`/`full_body` keep their existing
+fixed JSON shape (`NearMiss`/`CaseBody`), skipped sections just store `""`
+rather than the key being dropped.
+
+Two follow-on fixes so a skipped section doesn't render as an empty
+heading: the case detail page (`src/app/(app)/case/[caseNumber]/page.tsx`)
+now guards `Presentation`/`What was tricky` behind a truthiness check, the
+same way `actions`/`lesson` already were; and the media-placement dropdown
+(`Place it under`) only offers sections the author has actually included,
+resetting to "Top of the case" (derived during render, not an effect) if
+a chosen section gets deselected out from under it.
+
+Verified live end-to-end: composed a clinical case with only Presentation
+and The lesson picked, and a near-miss with only two of five prompts
+picked — confirmed in the database that the picked fields saved and the
+rest stored as `""`, and on the rendered case page that only the picked
+sections appear (no "What was tricky" heading, no other three
+prompts) — for both types of full-write-up post.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
