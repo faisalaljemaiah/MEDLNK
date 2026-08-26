@@ -1205,6 +1205,29 @@ throwaway verified account: the checkbox is unchecked by default, the
 submit button stays disabled with the rest of the form fully filled in
 until it's checked, and re-unchecking it disables the button again.
 
+### Desktop / iPad left-hand navigation
+
+The app's first tablet/desktop layout — previously mobile-only (single
+centered column, floating bottom nav) at every viewport width. New
+`src/components/desktop-sidebar.tsx`: a left nav rail, `hidden md:flex`
+(Tailwind's `md:` is 768px — roughly iPad-portrait and up), with the same
+four destinations as `BottomNav` (Home, Discover, Create, Messages) plus a
+profile row pinned to the bottom via `mt-auto`. `src/app/(app)/layout.tsx`
+renders it alongside the existing content column and wraps `BottomNav` in
+`md:hidden` so exactly one nav is ever visible at a time; the mobile shell
+below `md:` is untouched. `CreateMenu` (`src/components/create-menu.tsx`)
+gained back an optional `label?: string` prop so the same bottom-sheet
+component serves both the bottom nav's icon-only round trigger and the
+sidebar's full-width labeled "Create" row — kept opaque-backed on both
+variants (`bg-surface` vs `bg-surface-2`) so the wrapping `.ai-glow` ring
+never bleeds through the button's center.
+
+Verified live against the real hosted project with a throwaway verified
+account at three widths: mobile (390px) shows only the bottom nav; iPad
+portrait (820px) and desktop (1440px) both show only the sidebar, with
+Discover, the sidebar's Create sheet (each option correctly pre-selecting
+its post type), and the profile row all navigating correctly.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
