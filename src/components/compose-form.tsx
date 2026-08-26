@@ -101,6 +101,7 @@ export function ComposeForm({
   const acknowledgeRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [convertingImage, setConvertingImage] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [suggestions, setSuggestions] = useState<PolishedField[]>([]);
   const [polishNote, setPolishNote] = useState<string | null>(null);
@@ -700,7 +701,26 @@ export function ComposeForm({
         </div>
       )}
 
-      <SubmitButton disabled={convertingImage}>
+      <label className="flex items-start gap-2.5 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-3 text-xs leading-relaxed text-text">
+        <input
+          type="checkbox"
+          checked={agreedToTerms}
+          onChange={(e) => setAgreedToTerms(e.target.checked)}
+          required
+          className="mt-0.5 size-3.5 shrink-0 accent-[var(--danger)]"
+        />
+        <span>
+          I confirm this post contains no real patient names, medical record
+          numbers, or other personally identifying information, and that
+          everything I&apos;ve written is accurate to the best of my
+          knowledge. I understand I am solely responsible for what I post,
+          and that if patient-identifiable information is found, my account
+          will be <span className="font-medium">permanently blocked from MEDLNK</span> —
+          I will not be able to sign up again.
+        </span>
+      </label>
+
+      <SubmitButton disabled={convertingImage || !agreedToTerms}>
         {typeMeta.requiresImage || typeMeta.requiresVideo || typeMeta.isQuote
           ? "Post"
           : "Post case"}

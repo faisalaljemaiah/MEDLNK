@@ -1189,6 +1189,22 @@ local Postgres suite (`supabase/tests/run.sh`) and
 hosted project's actual prior schema, then runs the whole behavioral suite)
 — 48/48 checklist rows read `ok`, including the three new ones.
 
+### Compose form: mandatory accountability agreement
+
+`src/components/compose-form.tsx` gained a required checkbox, danger-styled,
+directly above the submit button: the author confirms the post has no real
+patient-identifying information and is accurate, accepts sole
+responsibility for what they post, and acknowledges that being found to
+have posted identifiable patient information gets their account
+permanently blocked — no new account, ever. Client-side only (`useState`,
+gates `SubmitButton`'s `disabled`), no schema change and no new enforcement
+mechanism: the actual detection/ban is still the existing report → admin
+review → suspension path, this is the explicit up-front consent gate before
+anyone can post. Verified live against the real hosted project with a
+throwaway verified account: the checkbox is unchecked by default, the
+submit button stays disabled with the rest of the form fully filled in
+until it's checked, and re-unchecking it disables the button again.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
