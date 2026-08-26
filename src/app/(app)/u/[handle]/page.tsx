@@ -73,6 +73,14 @@ export default async function ProfilePage({
     );
   }
 
+  // An admin account has no public profile at all — running the platform
+  // isn't a social presence, and an admin identity is exactly the kind of
+  // thing worth not making an easy target to find or message. Anyone who
+  // isn't that admin gets a plain 404, the same as a handle that never
+  // existed; getRecommendedPeople (src/lib/home.ts) also excludes admins so
+  // nothing ever links here in the first place.
+  if (profile.is_admin) notFound();
+
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "posts";
   const visibleCases =
     tab === "marked" ? markedCases : tab === "saved" ? savedCases : cases;

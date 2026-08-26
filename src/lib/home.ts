@@ -333,9 +333,12 @@ export async function getRecommendedPeople(
   const [candidatesRes, followsRes] = await Promise.all([
     supabase
       .from("profiles")
+      // is_admin excluded — an admin account has no public profile page
+      // (src/app/(app)/u/[handle]/page.tsx) to send a recommendation to.
       .select("id,handle,full_name,role,specialty,avatar_url,verified")
       .neq("id", viewerId)
       .not("handle", "is", null)
+      .eq("is_admin", false)
       .order("created_at", { ascending: false })
       .limit(50),
     supabase.from("follows").select("follower_id,followee_id"),

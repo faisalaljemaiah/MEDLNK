@@ -1315,6 +1315,20 @@ confirmed the Users tab's "View license / proof of study" link renders,
 resolves to a genuine signed `verification-docs` URL, and that URL actually
 serves the file (fetched directly, `200`, correct content-type).
 
+**Follow-up**: an admin account now has no public profile at all.
+`src/app/(app)/u/[handle]/page.tsx` calls `notFound()` for anyone viewing an
+admin's profile who isn't that admin themselves (signed out or signed in as
+someone else, admin or not) — same 404 as a handle that never existed, no
+name/avatar/case feed leaks through first. `getRecommendedPeople`
+(`src/lib/home.ts`, the Home page's "People You May Know" widget) now
+excludes `is_admin` rows at the query level too, so nothing in the app ever
+surfaces a link to a profile that would just 404 anyway. Verified live with
+a real admin + a separate regular member: a signed-out visitor and a
+signed-in regular member both get the 404 content (not the admin's name)
+at the admin's profile URL, the admin never appears in "People You May
+Know," and the admin themselves can still reach their own dashboard at
+that same URL.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
