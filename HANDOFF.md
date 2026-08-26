@@ -1257,6 +1257,54 @@ screenshot of the deployed preview:
   edge sits at `x = 0` at both, stays correctly pinned in place while the
   page scrolls, and every nav item still resolves to the right route.
 
+### Admin's own profile page becomes the moderation dashboard
+
+An admin's own `/u/[handle]` no longer shows the normal social profile
+(avatar, follower counts, case feed) — it renders the full moderation
+dashboard in its place, which now has six tabs instead of four:
+
+- **Requests** (renamed from "Verification") — unchanged: pending
+  applicants, their license document, Approve/Reject.
+- **Users** (new) — a searchable directory of every member
+  (`src/lib/admin-directory.ts`'s `searchAllUsers`, filtered in JS over one
+  bounded fetch, same "filter in JS" convention as case search) with a
+  Suspend/Unsuspend toggle per row (wires up `setSuspensionAction`, which
+  already existed in `src/app/actions/reports.ts` but had no UI calling it
+  until now).
+- **Posts** (new) — a searchable directory of every case, not just reported
+  ones (`searchAllCases`), with a Remove/Restore toggle per row
+  (`removeCaseAction`/`restoreCaseAction`, `src/app/actions/admin.ts`) —
+  the same soft-removal (`moderation_status = 'removed'`) the Reports tab's
+  "Remove content" decision already used, just reachable proactively
+  instead of only after someone files a report. Logged to
+  `moderation_events` like every other moderation action here.
+- **Reports**, **Audit log**, **Analytics** — unchanged.
+
+The dashboard itself (`src/components/admin-dashboard.tsx`) is one shared
+component used two ways: standalone at `/admin` (still works, e.g. for a
+bookmarked link), and embedded directly in `src/app/(app)/u/[handle]/page.tsx`
+in place of the normal profile render when `isOwnProfile && profile.is_admin`
+— a `basePath` prop keeps tab links correct either way. Every admin action
+now revalidates both `/admin` and the admin's own `/u/[handle]`, since a
+write can show up on either route depending on how the admin got there.
+
+Losing the normal profile view also means an admin loses the "Edit
+profile"/"Sign out" links that used to live there, so both moved to
+`/settings` (reachable from the sidebar/bottom nav for everyone, not just
+admins). An admin viewing *someone else's* profile still sees the normal
+profile page unchanged — only their own profile page is affected.
+
+Verified live with three throwaway accounts (admin, a pending applicant, a
+normal verified member with a test case) covering every tab: the admin's
+own profile renders the dashboard (not "Edit profile"); Requests approves
+the applicant (confirmed in the database, not just the UI); Users finds the
+member by search and suspends/unsuspends them; Posts finds the test case
+by search and removes/restores it (`moderation_status` confirmed each way
+in the database); Analytics renders; the standalone `/admin` route still
+works; a non-admin's own profile is completely unaffected (still shows
+"Edit profile", no dashboard heading); and the dashboard renders correctly
+at mobile width too (tab bar scrolls horizontally instead of wrapping).
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

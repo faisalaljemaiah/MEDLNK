@@ -13,6 +13,7 @@ import { ReputationBadge } from "@/components/reputation-badge";
 import { computeReputationTier } from "@/lib/reputation";
 import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
+import { AdminDashboard } from "@/components/admin-dashboard";
 
 const TABS = [
   { key: "posts", label: "Posts" },
@@ -27,10 +28,15 @@ export default async function ProfilePage({
   searchParams,
 }: {
   params: Promise<{ handle: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    resolved?: string;
+    uq?: string;
+    cq?: string;
+  }>;
 }) {
   const { handle } = await params;
-  const { tab: rawTab } = await searchParams;
+  const { tab: rawTab, resolved, uq, cq } = await searchParams;
   const supabase = await createClient();
   const user = await getViewer();
 
@@ -49,6 +55,23 @@ export default async function ProfilePage({
     isOwnProfile,
   } = data;
   const path = `/u/${handle}`;
+
+  // An admin's own profile becomes the moderation dashboard instead of the
+  // normal social profile — the account still exists (Edit profile/Sign
+  // out live on /settings now), but this page's real estate goes to
+  // running the platform instead of a feed of their own cases.
+  if (isOwnProfile && profile.is_admin) {
+    return (
+      <AdminDashboard
+        tab={rawTab}
+        resolved={resolved === "1"}
+        userQuery={uq}
+        caseQuery={cq}
+        basePath={path}
+        viewerHandle={profile.handle}
+      />
+    );
+  }
 
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "posts";
   const visibleCases =
@@ -127,11 +150,6 @@ export default async function ProfilePage({
               <Link href="/notifications" className="hover:text-text">
                 Notifications
               </Link>
-              {profile.is_admin && (
-                <Link href="/admin" className="hover:text-text">
-                  Admin
-                </Link>
-              )}
               <form action={signOutAction}>
                 <button type="submit" className="hover:text-text">
                   Sign out
