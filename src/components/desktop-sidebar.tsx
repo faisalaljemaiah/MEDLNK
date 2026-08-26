@@ -20,6 +20,12 @@ type NavProfile = {
  * still owns navigation. Same four destinations as the bottom nav plus the
  * profile row, just vertical instead of a floating pill; the mobile shell
  * is untouched by this, it's a parallel nav for wider viewports.
+ *
+ * Height is intrinsic to its content (no `h-dvh` + `mt-auto` push) — five
+ * nav items don't come close to filling a typical viewport, and stretching
+ * the profile row down to the bottom of the screen just left a large dead
+ * gap above it. `sticky top-0` still keeps it in view while the page
+ * scrolls, it just doesn't force full-height any more.
  */
 export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
   const pathname = usePathname();
@@ -33,7 +39,7 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
     : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 border-r border-line py-6 pr-4 md:flex">
+    <aside className="sticky top-0 hidden w-56 shrink-0 flex-col gap-1 border-r border-line py-6 pr-4 md:flex">
       <Link
         href="/"
         className="mb-6 flex items-center gap-2 px-3 font-headline text-lg text-text"
@@ -66,16 +72,18 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
         <SettingsIcon />
       </SidebarLink>
 
-      <Link
-        href={profileHref}
-        className={clsx(
-          "mt-auto flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out",
-          isProfileActive ? "bg-accent-soft text-accent" : "text-muted hover:text-text",
-        )}
-      >
-        <Avatar avatarUrl={profile?.avatar_url} name={profile?.full_name} size="sm" />
-        <span className="truncate">{profile?.full_name ?? "Profile"}</span>
-      </Link>
+      <div className="mt-2 border-t border-line pt-2">
+        <Link
+          href={profileHref}
+          className={clsx(
+            "flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out",
+            isProfileActive ? "bg-accent-soft text-accent" : "text-muted hover:text-text",
+          )}
+        >
+          <Avatar avatarUrl={profile?.avatar_url} name={profile?.full_name} size="sm" />
+          <span className="truncate">{profile?.full_name ?? "Profile"}</span>
+        </Link>
+      </div>
     </aside>
   );
 }
