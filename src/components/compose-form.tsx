@@ -814,12 +814,13 @@ export function ComposeForm({
         />
         <span>
           I confirm this post contains no real patient names, medical record
-          numbers, or other personally identifying information, and that
-          everything I&apos;ve written is accurate to the best of my
-          knowledge. I understand I am solely responsible for what I post,
-          and that if patient-identifiable information is found, my account
-          will be <span className="font-medium">permanently blocked from MEDLNK</span> —
-          I will not be able to sign up again.
+          numbers, identifying photographs, or other personally identifying
+          information, and that everything I&apos;ve written is accurate to
+          the best of my knowledge. I understand I am solely responsible for
+          what I post, and that if patient-identifiable information — in
+          text or in any photo or video — is found, my account will be{" "}
+          <span className="font-medium">permanently blocked from MEDLNK</span>{" "}
+          — I will not be able to sign up again.
         </span>
       </label>
 

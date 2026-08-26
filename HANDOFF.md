@@ -1358,6 +1358,13 @@ rest stored as `""`, and on the rendered case page that only the picked
 sections appear (no "What was tricky" heading, no other three
 prompts) — for both types of full-write-up post.
 
+**Follow-up**: the accountability checkbox's wording now explicitly names
+identifying photographs and video alongside patient names/MRNs — it
+previously only spelled out text-based identifiers, even though the
+consequence (permanent block) always applied to any patient-identifiable
+content regardless of medium. Matches the "Keep it de-identified" notice
+earlier in the same form, which already called out photographs.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
