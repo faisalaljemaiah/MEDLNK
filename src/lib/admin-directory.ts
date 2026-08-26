@@ -14,6 +14,11 @@ export type DirectoryUser = {
   is_admin: boolean;
   suspended_at: string | null;
   created_at: string;
+  /** Path within the private verification-docs bucket (0027), not a URL —
+   *  the Users directory turns this into a signed URL itself, same as the
+   *  Requests queue does, so a member's document stays reviewable long
+   *  after they've already been approved, not just while pending. */
+  license_document_path: string | null;
 };
 
 /**
@@ -31,12 +36,13 @@ export async function searchAllUsers(
   const { data } = await supabase
     .from("profiles")
     .select(
-      "id, handle, full_name, role, specialty, verified, verification_status, is_admin, suspended_at, created_at",
+      "id, handle, full_name, role, specialty, verified, verification_status, " +
+        "is_admin, suspended_at, created_at, license_document_path",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  const rows = (data ?? []) as DirectoryUser[];
+  const rows = (data ?? []) as unknown as DirectoryUser[];
   const q = query.trim().toLowerCase();
   if (!q) return rows.slice(0, 50);
 

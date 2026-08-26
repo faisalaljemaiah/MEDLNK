@@ -214,6 +214,19 @@ async function UsersDirectory({
 }) {
   const users = await searchAllUsers(supabase, query);
 
+  // Signed, not public — same as the Requests queue — so a member's
+  // document stays reviewable from here at any point, not just while
+  // their verification is pending.
+  const withDocs = await Promise.all(
+    users.map(async (u) => {
+      if (!u.license_document_path) return { ...u, documentUrl: null };
+      const { data } = await supabase.storage
+        .from("verification-docs")
+        .createSignedUrl(u.license_document_path, 600);
+      return { ...u, documentUrl: data?.signedUrl ?? null };
+    }),
+  );
+
   return (
     <div className="mt-5">
       <form action={basePath} className="flex gap-2">
@@ -227,13 +240,13 @@ async function UsersDirectory({
         />
       </form>
 
-      {users.length === 0 ? (
+      {withDocs.length === 0 ? (
         <p className="mt-8 text-center text-sm text-muted">
           No members match that search.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
-          {users.map((u) => (
+          {withDocs.map((u) => (
             <li key={u.id} className="rounded-xl border border-line bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -271,6 +284,20 @@ async function UsersDirectory({
                       </span>
                     )}
                   </div>
+                  {u.documentUrl ? (
+                    <a
+                      href={u.documentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1.5 inline-block text-sm text-accent hover:underline"
+                    >
+                      View license / proof of study →
+                    </a>
+                  ) : (
+                    <p className="mt-1.5 text-sm text-muted">
+                      No document uploaded
+                    </p>
+                  )}
                 </div>
                 <form
                   action={toggleSuspensionAction.bind(

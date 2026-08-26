@@ -1305,6 +1305,16 @@ works; a non-admin's own profile is completely unaffected (still shows
 "Edit profile", no dashboard heading); and the dashboard renders correctly
 at mobile width too (tab bar scrolls horizontally instead of wrapping).
 
+**Follow-up**: the Users tab now also shows each member's uploaded license/
+proof-of-study document (`DirectoryUser.license_document_path`, signed the
+same way the Requests queue does), not just the badges — so an admin can
+re-check the actual document behind an already-approved (or rejected)
+member at any time, not only during the initial pending review. Verified
+live: uploaded a real test document for an already-*approved* member,
+confirmed the Users tab's "View license / proof of study" link renders,
+resolves to a genuine signed `verification-docs` URL, and that URL actually
+serves the file (fetched directly, `200`, correct content-type).
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
