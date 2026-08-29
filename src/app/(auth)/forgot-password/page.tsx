@@ -2,13 +2,13 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { signInAction } from "@/app/actions/auth";
+import { requestPasswordResetAction } from "@/app/actions/auth";
 import { Logo } from "@/components/logo";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
-export default function LoginPage() {
-  const [state, action] = useActionState(signInAction, undefined);
+export default function ForgotPasswordPage() {
+  const [state, action] = useActionState(requestPasswordResetAction, undefined);
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
@@ -17,7 +17,10 @@ export default function LoginPage() {
         className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
       >
         <Logo size={44} />
-        <h1 className="font-headline text-2xl text-text">Welcome back</h1>
+        <h1 className="font-headline text-2xl text-text">Reset your password</h1>
+        <p className="text-sm text-muted">
+          Enter the email on your account and we&apos;ll send a link to reset it.
+        </p>
       </Link>
 
       <form
@@ -32,34 +35,25 @@ export default function LoginPage() {
           autoComplete="email"
           required
         />
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-        <Link
-          href="/forgot-password"
-          className="-mt-2 self-end text-xs text-muted hover:text-accent"
-        >
-          Forgot password?
-        </Link>
         {state && "error" in state && (
           <p className="text-sm text-danger" role="alert">
             {state.error}
           </p>
         )}
-        <SubmitButton>Sign in</SubmitButton>
+        {state && "message" in state && (
+          <p className="text-sm text-accent" role="status">
+            {state.message}
+          </p>
+        )}
+        <SubmitButton>Send reset link</SubmitButton>
       </form>
 
       <p
         className="animate-welcome-rise text-center text-sm text-muted"
         style={{ animationDelay: "220ms" }}
       >
-        New to MEDLNK?{" "}
-        <Link href="/signup" className="text-accent hover:underline">
-          Create an account
+        <Link href="/login" className="text-accent hover:underline">
+          Back to sign in
         </Link>
       </p>
     </div>

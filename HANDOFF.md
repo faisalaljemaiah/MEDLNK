@@ -1391,6 +1391,57 @@ actually is an AI feature. Verified live across all three search bars
 (Discover, admin Users, admin Posts) and confirmed the Users search still
 filters correctly after the markup change.
 
+**Password reset**: "Forgot password?" link on `/login` →
+`/forgot-password` (email form, always shows the same generic "a reset
+link is on its way" message regardless of whether the address has an
+account, matching Supabase's own no-enumeration stance) →
+`requestPasswordResetAction` (`src/app/actions/auth.ts`) calls
+`supabase.auth.resetPasswordForEmail`, redirecting to `/reset-password` →
+`updatePasswordAction` checks for an active session and calls
+`supabase.auth.updateUser({ password })`, redirecting to `/` on success.
+
+Two real bugs surfaced while building this, both fixed:
+
+1. **`src/lib/supabase/env.ts` silently returned `undefined` client-side.**
+   It read env vars via `process.env[name]` (a dynamic bracket lookup).
+   Next.js can only inline a `NEXT_PUBLIC_*` variable into the browser
+   bundle when it sees the literal `process.env.NEXT_PUBLIC_X` property
+   access at build time — the dynamic lookup defeated that, so it worked
+   from server code (a real `process.env` exists there) but resolved to
+   `undefined` in any client component. Never caught before because
+   `/reset-password` is the first page in this codebase to ever use the
+   browser Supabase client (`src/lib/supabase/client.ts`). Fixed by using
+   literal `process.env.NEXT_PUBLIC_*` property access.
+2. **PKCE vs. implicit auth flow mismatch.** `@supabase/ssr`'s
+   `createBrowserClient` hardcodes `flowType: "pkce"`, whose automatic
+   `detectSessionInUrl` only looks for a `?code=` query param. This
+   hosted Supabase project's actual configured behavior for recovery
+   emails is the **implicit flow** — confirmed by generating a real link
+   via `admin.auth.admin.generateLink({ type: "recovery", ... })` and
+   following the redirect chain — so tokens arrive as a URL hash fragment
+   (`#access_token=...&refresh_token=...&type=recovery`), which a
+   server-side `/auth/callback` route can never see (fragments never
+   reach the server) and which the browser client's own automatic
+   detection also never picks up (it only checks for `?code=`). Fixed by
+   having `/reset-password/page.tsx` manually parse
+   `window.location.hash` and call `supabase.auth.setSession({
+   access_token, refresh_token })` directly, which works regardless of
+   the client's configured flow type; the tokens are then scrubbed from
+   the URL via `history.replaceState`.
+
+Verified against the real hosted Supabase project: a throwaway user's
+password was actually reset end-to-end via `admin.auth.admin.generateLink`
+(the same kind of link a real reset email contains) — the extracted
+hash tokens were fed through `setSession` → `updateUser` and the account's
+password genuinely changed (old password rejected, new one accepted
+afterward). The Playwright browser in this sandbox can't reliably reach
+`supabase.co` directly (a pre-existing environment limitation, not an app
+bug — see the flaky-proxy note elsewhere in this doc), so the `setSession`
+→ `updateUser` round trip was verified with a direct `supabase-js` call
+using the real anon key instead of through the browser UI; the "expired
+link" and "forgot password link visible on /login" UI states, which need
+no external network call, were verified live through the browser.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
