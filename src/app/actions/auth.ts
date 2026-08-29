@@ -70,12 +70,20 @@ export async function signOutAction() {
   redirect("/");
 }
 
-/** Same origin-detection every Vercel deploy needs — no NEXT_PUBLIC_SITE_URL
- *  exists in this project, so the redirect target is derived from the
- *  request itself rather than a hardcoded/env-configured URL that would
- *  drift from whatever preview/production domain actually served the
- *  request. */
+/**
+ * NEXT_PUBLIC_SITE_URL first, when it's set — this value ends up embedded
+ * in an email sent to whatever address the caller typed in, so it can't be
+ * trusted from request headers alone. Origin/Host/X-Forwarded-Host are all
+ * attacker-controlled on an unauthenticated POST: without this, someone
+ * could spoof one of those headers and get a password-reset link pointing
+ * at their own domain mailed to a victim's real inbox (Supabase's own
+ * Redirect URL allowlist is a backstop, but shouldn't be the only one).
+ * Falls back to header-derivation, same as before, only when the env var
+ * isn't set — e.g. a Vercel preview deploy that doesn't have it configured.
+ */
 async function requestOrigin() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl) return siteUrl;
   const h = await headers();
   const origin = h.get("origin");
   if (origin) return origin;

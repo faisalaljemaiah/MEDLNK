@@ -1510,6 +1510,19 @@ ever used in `scripts/seed.ts`, never in `src/app` or `src/components`.
    (`src/lib/uploads.ts`) that also derives the stored extension from the
    validated MIME type instead of the client-supplied filename.
 
+4. **Medium — password-reset link poisoning via header spoofing.** Found
+   during this session's public-launch security pass. `requestOrigin()`
+   (`src/app/actions/auth.ts`), used to build the `redirectTo` URL that
+   Supabase embeds in a password-reset email, trusted the incoming
+   `Origin`/`X-Forwarded-Host`/`Host` headers — all attacker-controlled on
+   an unauthenticated POST to `requestPasswordResetAction`. Someone could
+   spoof one of those headers and get a reset link pointing at their own
+   domain mailed to a victim's real inbox (Supabase's Redirect URL
+   allowlist is a backstop, but shouldn't be the only one). Fixed by
+   preferring the now-added `NEXT_PUBLIC_SITE_URL` env var as the trusted
+   source of the origin, falling back to header-derivation only when that
+   var is unset (e.g. a preview deploy without it configured).
+
 **`supabase/URGENT_SECURITY_FIX.sql`** is a standalone paste containing just
 these three fixes, for landing #1 in seconds without waiting on the full
 `APPLY_TO_HOSTED.sql`. Verified against a from-scratch local Postgres
