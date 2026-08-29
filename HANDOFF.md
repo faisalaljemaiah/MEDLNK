@@ -1583,6 +1583,18 @@ end-to-end against the real hosted project with a throwaway account: the
 profile row was gone immediately after, sign-in with the old credentials
 was rejected, and the profile page 404'd afterward.
 
+**Contact/support page (0030, `/contact`, `src/app/actions/support.ts`,
+`src/lib/support.ts`, admin dashboard's new "Support" tab)**: Apple 1.2
+requires published contact information so objectionable or identifying
+content can be reported and removed — reachable by anyone, not gated
+behind an account or the in-app report button (which needs to be signed in
+and viewing a specific case). `/contact` is a public form (name optional,
+email + reason + message required) backed by a new `support_messages`
+table, insertable by anon or signed-in alike (RLS still stops a signed-in
+caller from spoofing someone else's `reporter_id`), readable only by
+admins. Linked from Terms, Privacy, Settings, and the welcome screen.
+Verified live: the form renders and submits.
+
 ## ⚠️ Blocking manual steps
 
 **Update, this session:** the owner ran `supabase/APPLY_TO_HOSTED.sql`
@@ -1615,16 +1627,19 @@ the hosted project might be missing, ending in a checklist that should read
 only because the hosted project is applied by hand. Every statement in it is
 guarded, so running it twice is a no-op rather than an error.
 
-**Update, this session:** 0029 (`user_blocks` — the block-user feature, see
-"App store / Play store readiness" below) landed and adds two new checklist
-rows. Verified against a from-scratch local Postgres (all 9 new assertions
-pass, full suite still green), but **not applied to the hosted project** —
-that stays the owner's manual step, same as every migration before it. Until
-it's applied, blocking/unblocking fails with a plain "could not find the
-table" error surfaced in the Block button's own error text (not a crash),
-and the feed/profile-page queries that check for blocks silently see none —
-verified live against the real hosted project in its current
-pre-migration state (home feed and profile pages both render normally).
+**Update, this session:** 0029 (`user_blocks`) and 0030 (`support_messages`)
+landed — both part of "App store / Google Play readiness" above — and add
+three new checklist rows total. Verified against a from-scratch local
+Postgres (all new assertions pass, full suite still green), but **neither
+applied to the hosted project** — that stays the owner's manual step, same
+as every migration before it. Until they're applied: blocking/unblocking
+fails with a plain "could not find the table" error surfaced in the Block
+button's own error text (not a crash), the feed/profile-page queries that
+check for blocks silently see none, and the Contact form shows a "support
+isn't fully set up yet" message instead of submitting — all verified live
+against the real hosted project in its current pre-migration state (home
+feed, profile pages, and the contact form all render and degrade
+correctly, nothing crashes).
 
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single

@@ -12,6 +12,9 @@ import { getReportQueue, getModerationLog } from "@/lib/moderation";
 import { getPlatformAnalytics } from "@/lib/analytics";
 import { searchAllUsers, searchAllCases } from "@/lib/admin-directory";
 import { REPORT_REASON_LABELS, REPORT_STATUS_META } from "@/lib/report-reasons";
+import { getSupportMessages } from "@/lib/support";
+import { SUPPORT_REASON_LABELS } from "@/lib/support-reasons";
+import { resolveSupportMessageAction } from "@/app/actions/support";
 import { caseTypeMeta } from "@/lib/case-types";
 import { ReportReview } from "@/components/report-review";
 import { UnavailableNotice } from "@/components/unavailable-notice";
@@ -21,6 +24,7 @@ const TABS = [
   { key: "users", label: "Users" },
   { key: "posts", label: "Posts" },
   { key: "reports", label: "Reports" },
+  { key: "support", label: "Support" },
   { key: "log", label: "Audit log" },
   { key: "analytics", label: "Analytics" },
 ] as const;
@@ -103,6 +107,9 @@ export async function AdminDashboard({
           basePath={basePath}
           viewerHandle={viewerHandle}
         />
+      )}
+      {tab === "support" && (
+        <SupportInbox supabase={supabase} showResolved={Boolean(resolved)} basePath={basePath} />
       )}
       {tab === "log" && <AuditLog supabase={supabase} />}
       {tab === "analytics" && <PlatformAnalyticsPanel supabase={supabase} />}
@@ -407,6 +414,87 @@ async function PostsDirectory({
                   </button>
                 </form>
               </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+async function SupportInbox({
+  supabase,
+  showResolved,
+  basePath,
+}: {
+  supabase: Client;
+  showResolved: boolean;
+  basePath: string;
+}) {
+  const messages = await getSupportMessages(supabase, showResolved);
+
+  if (messages === null) {
+    return <UnavailableNotice feature="Support" />;
+  }
+
+  return (
+    <div className="mt-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted">
+          {showResolved ? "All messages" : "Open messages"}, oldest first.
+        </p>
+        <Link
+          href={
+            showResolved
+              ? `${basePath}?tab=support`
+              : `${basePath}?tab=support&resolved=1`
+          }
+          className="text-xs text-accent hover:underline"
+        >
+          {showResolved ? "Show open only" : "Show resolved too"}
+        </Link>
+      </div>
+
+      {messages.length === 0 ? (
+        <p className="mt-8 text-center text-sm text-muted">
+          No open messages — nothing needs your attention.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {messages.map((m) => (
+            <li key={m.id} className="rounded-xl border border-line bg-surface p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <p className="text-sm font-medium text-text">
+                  {SUPPORT_REASON_LABELS[m.reason] ?? m.reason}
+                </p>
+                {m.resolved && (
+                  <span className="rounded-full border border-line px-2.5 py-0.5 font-label text-xs text-muted">
+                    Resolved
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 font-label text-xs text-muted">
+                {m.name ? `${m.name} · ` : ""}
+                {m.email} ·{" "}
+                {new Date(m.created_at).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-text">{m.message}</p>
+              {!m.resolved && (
+                <form
+                  action={resolveSupportMessageAction.bind(null, m.id, basePath)}
+                  className="mt-2"
+                >
+                  <button
+                    type="submit"
+                    className="text-xs font-medium text-accent hover:underline"
+                  >
+                    Mark resolved
+                  </button>
+                </form>
+              )}
             </li>
           ))}
         </ul>

@@ -112,9 +112,12 @@ export default function PrivacyPage() {
 
         <Section title="10. Contact">
           <p>
-            Questions about this policy or your data can be sent to the
-            address listed on your MEDLNK account&apos;s support contact, or
-            via the in-app support channel once available.
+            Questions about this policy, or a request for a copy or deletion
+            of your data, can be sent through our{" "}
+            <Link href="/contact" className="text-accent hover:underline">
+              contact form
+            </Link>
+            .
           </p>
         </Section>
       </div>

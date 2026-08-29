@@ -355,6 +355,17 @@ export type UserBlock = {
   created_at: string;
 };
 
+export type SupportMessage = {
+  id: string;
+  name: string | null;
+  email: string;
+  reason: string;
+  message: string;
+  reporter_id: string | null;
+  resolved: boolean;
+  created_at: string;
+};
+
 export type AiRecap = {
   case_id: string;
   summary: string | null;
@@ -426,6 +437,16 @@ export type Database = {
         Row: UserBlock;
         Insert: Partial<UserBlock> & { blocker_id: string; blocked_id: string };
         Update: Partial<UserBlock>;
+        Relationships: [];
+      };
+      support_messages: {
+        Row: SupportMessage;
+        Insert: Partial<SupportMessage> & {
+          email: string;
+          reason: string;
+          message: string;
+        };
+        Update: Partial<SupportMessage>;
         Relationships: [];
       };
       ai_recaps: {

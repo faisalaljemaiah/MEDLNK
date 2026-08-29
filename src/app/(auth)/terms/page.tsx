@@ -113,9 +113,12 @@ export default function TermsPage() {
 
         <Section title="9. Contact">
           <p>
-            Questions about these terms can be sent to the address listed
-            on your MEDLNK account&apos;s support contact, or via the
-            in-app support channel once available.
+            Questions about these terms, or a report of patient-identifying
+            content, can be sent through our{" "}
+            <Link href="/contact" className="text-accent hover:underline">
+              contact form
+            </Link>
+            .
           </p>
         </Section>
       </div>

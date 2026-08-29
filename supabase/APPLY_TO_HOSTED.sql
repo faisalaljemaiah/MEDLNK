@@ -1705,6 +1705,38 @@ create policy "follows_insert_verified_own"
   );
 
 -- ============================================================================
+-- 0030_support_messages.sql — contact/support channel (App Store 1.2)
+-- ============================================================================
+
+create table if not exists public.support_messages (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  email text not null,
+  reason text not null check (reason in ('report_content', 'account', 'general', 'other')),
+  message text not null,
+  reporter_id uuid references public.profiles (id) on delete set null,
+  resolved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.support_messages enable row level security;
+
+drop policy if exists "support_messages_insert_anyone" on public.support_messages;
+create policy "support_messages_insert_anyone"
+  on public.support_messages for insert
+  with check (reporter_id is null or reporter_id = auth.uid());
+
+drop policy if exists "support_messages_select_admin" on public.support_messages;
+create policy "support_messages_select_admin"
+  on public.support_messages for select
+  using (public.is_admin());
+
+drop policy if exists "support_messages_update_admin" on public.support_messages;
+create policy "support_messages_update_admin"
+  on public.support_messages for update
+  using (public.is_admin());
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1877,5 +1909,8 @@ from (
      exists (select 1 from information_schema.tables
              where table_schema = 'public' and table_name = 'user_blocks')),
     ('SECURITY: blocked users cannot message/follow',
-     exists (select 1 from pg_proc where proname = 'is_blocked_pair'))
+     exists (select 1 from pg_proc where proname = 'is_blocked_pair')),
+    ('table: support_messages',
+     exists (select 1 from information_schema.tables
+             where table_schema = 'public' and table_name = 'support_messages'))
 ) as checks(item, present);

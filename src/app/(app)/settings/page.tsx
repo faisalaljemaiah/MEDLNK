@@ -70,6 +70,12 @@ export default async function SettingsPage() {
         >
           Privacy Policy →
         </Link>
+        <Link
+          href="/contact"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          Contact / report content →
+        </Link>
         <form action={signOutAction}>
           <button
             type="submit"
