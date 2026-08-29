@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { HomeIcon, CompassIcon, SendIcon, SettingsIcon } from "@/components/icons";
-import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
 
@@ -48,9 +47,8 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
     <aside className="fixed left-0 top-0 z-10 hidden max-h-dvh w-56 flex-col gap-1 overflow-y-auto border-r border-line bg-bg px-4 py-6 md:flex">
       <Link
         href="/"
-        className="mb-6 flex items-center gap-2 px-3 font-headline text-lg text-text"
+        className="mb-6 flex items-center px-3 font-headline text-lg text-text"
       >
-        <Logo size={28} />
         Asyashare
       </Link>
 

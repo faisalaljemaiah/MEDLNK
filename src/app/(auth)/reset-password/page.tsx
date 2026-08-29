@@ -4,7 +4,6 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { updatePasswordAction } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
-import { Logo } from "@/components/logo";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -66,7 +65,6 @@ export default function ResetPasswordPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
       <div className="animate-welcome-logo flex flex-col items-center gap-3 text-center">
-        <Logo size={44} />
         <h1 className="font-headline text-2xl text-text">Choose a new password</h1>
       </div>
 

@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { Logo } from "@/components/logo";
 
 export default function NotFound() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col items-center justify-center gap-6 px-6 py-12 text-center">
-      <Logo size={48} />
+      <p className="font-headline text-lg text-text">Asyashare</p>
       <div className="flex flex-col gap-2">
         <h1 className="font-headline text-2xl text-text">Page not found</h1>
         <p className="text-sm text-muted">
