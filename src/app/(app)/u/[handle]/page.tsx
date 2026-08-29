@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getProfileByHandle } from "@/lib/profile";
 import { Avatar } from "@/components/avatar";
+import { SettingsIcon } from "@/components/icons";
 import { FollowButton } from "@/components/follow-button";
 import { CaseCard } from "@/components/case-card";
 import { ProfileStats } from "@/components/profile-stats";
@@ -12,6 +13,8 @@ import { ReputationBadge } from "@/components/reputation-badge";
 import { computeReputationTier } from "@/lib/reputation";
 import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
+import { AdminDashboard } from "@/components/admin-dashboard";
+import { BlockButton } from "@/components/block-button";
 
 const TABS = [
   { key: "posts", label: "Posts" },
@@ -26,10 +29,15 @@ export default async function ProfilePage({
   searchParams,
 }: {
   params: Promise<{ handle: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    resolved?: string;
+    uq?: string;
+    cq?: string;
+  }>;
 }) {
   const { handle } = await params;
-  const { tab: rawTab } = await searchParams;
+  const { tab: rawTab, resolved, uq, cq } = await searchParams;
   const supabase = await createClient();
   const user = await getViewer();
 
@@ -45,9 +53,35 @@ export default async function ProfilePage({
     followerCount,
     followingCount,
     viewerFollows,
+    viewerHasBlocked,
     isOwnProfile,
   } = data;
   const path = `/u/${handle}`;
+
+  // An admin's own profile becomes the moderation dashboard instead of the
+  // normal social profile — the account still exists (Edit profile/Sign
+  // out live on /settings now), but this page's real estate goes to
+  // running the platform instead of a feed of their own cases.
+  if (isOwnProfile && profile.is_admin) {
+    return (
+      <AdminDashboard
+        tab={rawTab}
+        resolved={resolved === "1"}
+        userQuery={uq}
+        caseQuery={cq}
+        basePath={path}
+        viewerHandle={profile.handle}
+      />
+    );
+  }
+
+  // An admin account has no public profile at all — running the platform
+  // isn't a social presence, and an admin identity is exactly the kind of
+  // thing worth not making an easy target to find or message. Anyone who
+  // isn't that admin gets a plain 404, the same as a handle that never
+  // existed; getRecommendedPeople (src/lib/home.ts) also excludes admins so
+  // nothing ever links here in the first place.
+  if (profile.is_admin) notFound();
 
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "posts";
   const visibleCases =
@@ -61,7 +95,7 @@ export default async function ProfilePage({
 
   return (
     <div>
-      <div className="flex items-start gap-4 px-4 py-6">
+      <div className="flex flex-wrap items-start gap-4 px-4 py-6">
         <Avatar avatarUrl={profile.avatar_url} name={profile.full_name} size="lg" />
 
         <div className="min-w-0 flex-1">
@@ -91,14 +125,23 @@ export default async function ProfilePage({
         </div>
 
         {isOwnProfile ? (
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <Link
-              href="/onboarding"
-              className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
-            >
-              Edit profile
-            </Link>
-            <div className="flex items-center gap-3 text-xs text-muted">
+          <div className="flex min-w-0 flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <Link
+                href="/onboarding"
+                className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+              >
+                Edit profile
+              </Link>
+              <Link
+                href="/settings"
+                aria-label="Settings"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-text transition-transform duration-150 ease-out active:scale-90"
+              >
+                <SettingsIcon width={16} height={16} strokeWidth={2} />
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">
               <Link href="/messages" className="hover:text-text">
                 Messages
               </Link>
@@ -108,14 +151,15 @@ export default async function ProfilePage({
               <Link href="/analytics" className="hover:text-text">
                 Analytics
               </Link>
+              <Link href="/reel" className="hover:text-text">
+                Reel
+              </Link>
               <Link href="/learn" className="hover:text-text">
                 Learn
               </Link>
-              {profile.is_admin && (
-                <Link href="/admin" className="hover:text-text">
-                  Admin
-                </Link>
-              )}
+              <Link href="/notifications" className="hover:text-text">
+                Notifications
+              </Link>
               <form action={signOutAction}>
                 <button type="submit" className="hover:text-text">
                   Sign out
@@ -124,20 +168,31 @@ export default async function ProfilePage({
             </div>
           </div>
         ) : user ? (
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <FollowButton
-              followeeId={profile.id}
-              initialFollowing={viewerFollows}
+          <div className="flex min-w-0 flex-col items-end gap-2">
+            {viewerHasBlocked ? (
+              <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
+            ) : (
+              <>
+                <FollowButton
+                  followeeId={profile.id}
+                  initialFollowing={viewerFollows}
+                  path={path}
+                />
+                <form action={startConversationAction.bind(null, profile.id)}>
+                  <button
+                    type="submit"
+                    className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+                  >
+                    Message
+                  </button>
+                </form>
+              </>
+            )}
+            <BlockButton
+              blockedId={profile.id}
+              initialBlocked={viewerHasBlocked}
               path={path}
             />
-            <form action={startConversationAction.bind(null, profile.id)}>
-              <button
-                type="submit"
-                className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
-              >
-                Message
-              </button>
-            </form>
           </div>
         ) : null}
       </div>
@@ -170,7 +225,7 @@ export default async function ProfilePage({
           </p>
         ) : (
           visibleCases.map((c) => (
-            <CaseCard key={c.id} feedCase={c} path={path} />
+            <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} />
           ))
         )}
       </div>

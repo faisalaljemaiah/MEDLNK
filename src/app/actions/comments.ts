@@ -77,6 +77,17 @@ export async function addCommentAction(
           "(migration 0011).",
       };
     }
+    // 23514 = check_violation. label is already filtered to a value this
+    // build recognises (isCommentLabel above), so the only way this fires is
+    // the hosted project's constraint not yet knowing about a label this
+    // build added — currently just "other" (0023).
+    if (error.code === "23514" && error.message.includes("comments_label_check")) {
+      return {
+        error:
+          "This reply type needs a database update that hasn't been " +
+          "applied yet (migration 0023). Pick a different one for now.",
+      };
+    }
     return { error: error.message };
   }
 

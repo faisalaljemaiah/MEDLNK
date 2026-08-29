@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { acknowledgeSafetyAlertAction } from "@/app/actions/safety-alerts";
+import { AlertTriangleIcon } from "@/components/icons";
 import type { LiveSafetyAlert } from "@/lib/safety-alerts";
 
 /**
@@ -21,8 +22,9 @@ export function SafetyAlertBanner({ alerts }: { alerts: LiveSafetyAlert[] }) {
           key={a.id}
           className="rounded-xl border border-danger/40 bg-danger/5 p-3.5"
         >
-          <p className="font-label text-xs uppercase tracking-wide text-danger">
-            ⚠️ Safety alert
+          <p className="flex items-center gap-1.5 font-label text-xs uppercase tracking-wide text-danger">
+            <AlertTriangleIcon width={13} height={13} strokeWidth={2.25} />
+            Safety alert
           </p>
           <Link
             href={a.case_number ? `/case/${a.case_number}` : "#"}

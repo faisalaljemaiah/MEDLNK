@@ -28,6 +28,12 @@ export type CaseTypeMeta = {
   shortForm?: boolean;
   /** Author names two existing cases and what changes the management. */
   usesComparison?: boolean;
+  /** A photo is mandatory, not just an optional attachment. */
+  requiresImage?: boolean;
+  /** A short video, uploaded to case-videos rather than case-images. */
+  requiresVideo?: boolean;
+  /** Renders short_caption as a pulled quote instead of a plain caption. */
+  isQuote?: boolean;
 };
 
 export const CASE_TYPES: CaseTypeMeta[] = [
@@ -115,6 +121,33 @@ export const CASE_TYPES: CaseTypeMeta[] = [
     hint: "A paper or result worth other clinicians' attention.",
     badge: "Research",
     badgeClass: "border-line bg-surface-2 text-muted",
+  },
+  {
+    value: "photo_post",
+    label: "Photo",
+    hint: "A photo worth sharing — a chart, a setup, a moment on shift. Keep it de-identified.",
+    badge: "Photo",
+    badgeClass: "border-line bg-surface-2 text-muted",
+    shortForm: true,
+    requiresImage: true,
+  },
+  {
+    value: "quote_post",
+    label: "Quote",
+    hint: "Something someone said — an attending, a mentor, a patient — worth remembering.",
+    badge: "Quote",
+    badgeClass: "border-accent-2/40 bg-accent-2/10 text-accent-2",
+    shortForm: true,
+    isQuote: true,
+  },
+  {
+    value: "video_post",
+    label: "Video",
+    hint: "A short clip — up to 50MB.",
+    badge: "Video",
+    badgeClass: "border-line bg-surface-2 text-muted",
+    shortForm: true,
+    requiresVideo: true,
   },
 ];
 

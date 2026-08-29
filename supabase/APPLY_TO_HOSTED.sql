@@ -1,12 +1,21 @@
--- MEDLNK — everything the hosted project is still missing, in one paste.
+-- Asyashare — everything the hosted project is still missing, in one paste.
+--
+-- Contains three SECURITY FIXES (0018-0020) — most importantly a privilege-
+-- escalation hole that lets any signed-in member grant themselves admin,
+-- self-approve verification, or clear their own suspension. If you only run
+-- one thing before anything else, run supabase/URGENT_SECURITY_FIX.sql
+-- instead of this whole file — it's the same three fixes, standalone, so
+-- they land in seconds. This file's checklist has two rows marked SECURITY
+-- to confirm they're in either way.
 --
 -- Migrations 0005 (storage), 0007 (messaging), 0008 (interactive cases),
 -- 0009 (reports/moderation), 0010 (clinical reactions), 0011 (comment labels),
 -- 0012 (Ask a Specialist), 0013 (moderation guard), 0014 (student mode),
--- 0015 (safety alerts), 0016 (Case vs Case) and 0017 (reasoning trees +
--- Global Case Exchange) may not all be applied to the hosted Supabase
--- project — every statement below is guarded, so it is safe to paste and run
--- this whole file even if some of it already went through.
+-- 0015 (safety alerts), 0016 (Case vs Case), 0017 (reasoning trees + Global
+-- Case Exchange) and 0018-0020 (security fixes) may not all be applied to
+-- the hosted Supabase project — every statement below is guarded, so it is
+-- safe to paste and run this whole file even if some of it already went
+-- through.
 --
 -- Until they are, image upload fails with "Bucket not found",
 -- /messages shows an empty inbox, every interactive feature (What Would You
@@ -1288,6 +1297,446 @@ create policy "case_reasoning_nodes_delete_own_case"
   );
 
 -- ============================================================================
+-- 0018_profiles_privilege_guard.sql — SECURITY FIX
+-- ============================================================================
+-- profiles_update_own (0004) grants UPDATE on the *row*, with no column
+-- restriction — RLS is row-level, so any signed-in member could PATCH their
+-- own profile with is_admin/verified/verification_status/suspended_at set to
+-- whatever they liked. See supabase/URGENT_SECURITY_FIX.sql and HANDOFF.md
+-- for the full writeup; this section is identical to that file's fix,
+-- included here so a full paste of this file alone is still complete.
+
+create or replace function public.guard_profile_privilege_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if current_user in ('anon', 'authenticated') and not public.is_admin() then
+    if new.is_admin is distinct from old.is_admin then
+      raise exception 'Only an admin can change is_admin';
+    end if;
+    if new.verified is distinct from old.verified
+       or new.verification_status is distinct from old.verification_status then
+      raise exception 'Only an admin can change verification status';
+    end if;
+    if new.suspended_at is distinct from old.suspended_at
+       or new.suspended_reason is distinct from old.suspended_reason then
+      raise exception 'Only an admin can change suspension status';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_privilege_columns on public.profiles;
+create trigger profiles_guard_privilege_columns
+  before update on public.profiles
+  for each row execute function public.guard_profile_privilege_columns();
+
+-- ============================================================================
+-- 0019_specialist_answer_reassignment_guard.sql — SECURITY FIX
+-- ============================================================================
+-- A responder could move their own existing answer onto a request outside
+-- their specialty by updating request_id directly, bypassing the specialty
+-- match the insert policy enforces. No-ops if 0012 isn't applied yet.
+
+do $$
+begin
+  if to_regclass('public.specialist_answers') is not null then
+    drop policy if exists "specialist_answers_update_own" on public.specialist_answers;
+    create policy "specialist_answers_update_own"
+      on public.specialist_answers for update
+      using (auth.uid() = responder_id)
+      with check (
+        auth.uid() = responder_id
+        and exists (
+          select 1 from public.specialist_requests r
+          where r.id = request_id
+            and public.is_specialist_in(r.specialty)
+        )
+      );
+  end if;
+end $$;
+
+-- ============================================================================
+-- 0020_upload_hardening.sql — SECURITY FIX
+-- ============================================================================
+-- Neither storage bucket had a size limit or MIME-type allowlist, and the app
+-- trusted the client-supplied Content-Type — an open door to upload and
+-- publicly host arbitrary files under the project's own Supabase domain.
+-- No-ops if a bucket doesn't exist yet (0005/0006 not applied).
+
+update storage.buckets
+set file_size_limit = 8388608, -- 8 MiB
+    allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+where id in ('case-images', 'avatars');
+
+-- ============================================================================
+-- 0021_locale_preference.sql — Settings: language
+-- ============================================================================
+-- A member's own display-language choice. Same footing as student_mode
+-- (0014): a preference, not privileged, no guard needed.
+
+alter table public.profiles add column if not exists locale text not null default 'en'
+  check (locale in ('en', 'ar'));
+
+-- ============================================================================
+-- 0022_photo_quote_video_posts.sql — Photo / Quote / Video post formats
+-- ============================================================================
+-- Three lightweight formats alongside the structured clinical case. video_post
+-- is the first format whose media is a video, so it gets its own bucket —
+-- case-images stays image-only (its allowed_mime_types from 0020 doesn't
+-- change) with its own size ceiling. photo_post and quote_post reuse
+-- case-images/media_url, nothing new needed for those.
+
+alter table public.cases drop constraint if exists cases_case_type_check;
+alter table public.cases add constraint cases_case_type_check check (case_type in (
+  'clinical_case',
+  'what_would_you_do',
+  'blind_case',
+  'case_evolution',
+  'near_miss',
+  'safety_alert',
+  'saw_this_today',
+  'clinical_pearl',
+  'things_i_wish_i_knew',
+  'case_vs_case',
+  'research_finding',
+  'photo_post',
+  'quote_post',
+  'video_post'
+));
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'case-videos', 'case-videos', true,
+  52428800, -- 50 MiB
+  array['video/mp4', 'video/webm', 'video/quicktime']
+)
+on conflict (id) do nothing;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'case_videos_read_all'
+  ) then
+    create policy "case_videos_read_all"
+      on storage.objects for select
+      using (bucket_id = 'case-videos');
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'case_videos_insert_verified_own_folder'
+  ) then
+    create policy "case_videos_insert_verified_own_folder"
+      on storage.objects for insert
+      with check (
+        bucket_id = 'case-videos'
+        and public.is_verified()
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'case_videos_delete_own_folder'
+  ) then
+    create policy "case_videos_delete_own_folder"
+      on storage.objects for delete
+      using (
+        bucket_id = 'case-videos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+end $$;
+
+-- ============================================================================
+-- 0023_comment_label_other.sql — "Other" reply label
+-- ============================================================================
+-- 0011 was deliberately five reply labels; "Other" is the deliberate
+-- exception so a reply that's genuinely none of the five isn't forced into
+-- the closest-fitting one.
+
+alter table public.comments drop constraint if exists comments_label_check;
+alter table public.comments add constraint comments_label_check
+  check (label is null or label in (
+    'agree',
+    'differ',
+    'question',
+    'teaching',
+    'evidence',
+    'other'
+  ));
+
+-- ============================================================================
+-- 0024_case_followers_public_select.sql — public case-follower visibility
+-- ============================================================================
+-- Case-follower counts and "people you follow also follow this case" both
+-- need every viewer to read case_followers rows, not just the follower
+-- themselves — same public-read shape `follows` already has.
+
+drop policy if exists "case_followers_select_own" on public.case_followers;
+drop policy if exists "case_followers_select_all" on public.case_followers;
+
+create policy "case_followers_select_all"
+  on public.case_followers for select
+  using (true);
+
+-- ============================================================================
+-- 0025_case_media_placement.sql — inline media placement within a case
+-- ============================================================================
+-- Lets an author attach a video (or photo) to a full-write-up case and
+-- choose where it renders — inline under a specific section instead of
+-- always at the top. Null/'top' preserves existing behaviour.
+
+alter table public.cases add column if not exists media_placement text;
+
+alter table public.cases drop constraint if exists cases_media_placement_check;
+alter table public.cases add constraint cases_media_placement_check
+  check (media_placement is null or media_placement in (
+    'top',
+    'presentation',
+    'tricky',
+    'actions',
+    'lesson'
+  ));
+
+-- ============================================================================
+-- 0026_profile_country.sql — a clinician's own country
+-- ============================================================================
+-- The authoritative source for which country a case is tagged with in the
+-- Global Case Exchange — set once on the profile, not picked per post, so
+-- nobody can tag a case as originating somewhere they don't practice.
+
+alter table public.profiles add column if not exists country_code text;
+
+alter table public.profiles drop constraint if exists profiles_country_code_check;
+alter table public.profiles add constraint profiles_country_code_check
+  check (country_code is null or country_code ~ '^[A-Z]{2}$');
+
+-- ============================================================================
+-- 0027_verification_documents.sql — license/proof-of-study uploads
+-- ============================================================================
+-- Private storage bucket for the document a clinician uploads during
+-- onboarding, reviewed by an admin before approving verification.
+
+alter table public.profiles add column if not exists license_document_path text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'verification-docs', 'verification-docs', false,
+  8388608,
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+)
+on conflict (id) do nothing;
+
+drop policy if exists "verification_docs_select_own_or_admin" on storage.objects;
+create policy "verification_docs_select_own_or_admin"
+  on storage.objects for select
+  using (
+    bucket_id = 'verification-docs'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or public.is_admin()
+    )
+  );
+
+drop policy if exists "verification_docs_insert_own_folder" on storage.objects;
+create policy "verification_docs_insert_own_folder"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'verification-docs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "verification_docs_update_own_folder" on storage.objects;
+create policy "verification_docs_update_own_folder"
+  on storage.objects for update
+  using (
+    bucket_id = 'verification-docs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "verification_docs_delete_own_folder" on storage.objects;
+create policy "verification_docs_delete_own_folder"
+  on storage.objects for delete
+  using (
+    bucket_id = 'verification-docs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ============================================================================
+-- 0028_verification_resubmission.sql — a rejected member can resubmit
+-- ============================================================================
+-- Widens the profile privilege guards by exactly one self-driven
+-- transition — verification_status rejected -> pending, never touching
+-- `verified` — so fixing a license number or re-uploading a document
+-- actually gets a rejected member back into the admin's queue.
+
+create or replace function public.guard_profile_privilege_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if current_user in ('anon', 'authenticated') and not public.is_admin() then
+    if new.is_admin is distinct from old.is_admin then
+      raise exception 'Only an admin can change is_admin';
+    end if;
+    if new.verified is distinct from old.verified then
+      raise exception 'Only an admin can change verification status';
+    end if;
+    if new.verification_status is distinct from old.verification_status then
+      if not (old.verification_status = 'rejected' and new.verification_status = 'pending') then
+        raise exception 'Only an admin can change verification status';
+      end if;
+    end if;
+    if new.suspended_at is distinct from old.suspended_at
+       or new.suspended_reason is distinct from old.suspended_reason then
+      raise exception 'Only an admin can change suspension status';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.guard_profile_privilege_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null
+    and not exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)
+  then
+    if new.verified is distinct from old.verified then
+      new.verified := old.verified;
+    end if;
+    if new.is_admin is distinct from old.is_admin then
+      new.is_admin := old.is_admin;
+    end if;
+    if new.verification_status is distinct from old.verification_status
+       and not (old.verification_status = 'rejected' and new.verification_status = 'pending') then
+      new.verification_status := old.verification_status;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ============================================================================
+-- 0029_user_blocks.sql — blocking (App Store/Play UGC requirement)
+-- ============================================================================
+
+create table if not exists public.user_blocks (
+  blocker_id uuid not null references public.profiles (id) on delete cascade,
+  blocked_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+
+alter table public.user_blocks enable row level security;
+
+drop policy if exists "user_blocks_select_participant" on public.user_blocks;
+create policy "user_blocks_select_participant"
+  on public.user_blocks for select
+  using (auth.uid() = blocker_id or auth.uid() = blocked_id);
+
+drop policy if exists "user_blocks_insert_own" on public.user_blocks;
+create policy "user_blocks_insert_own"
+  on public.user_blocks for insert
+  with check (auth.uid() = blocker_id);
+
+drop policy if exists "user_blocks_delete_own" on public.user_blocks;
+create policy "user_blocks_delete_own"
+  on public.user_blocks for delete
+  using (auth.uid() = blocker_id);
+
+create or replace function public.is_blocked_pair(a uuid, b uuid)
+returns boolean
+language sql
+stable
+as $$
+  select exists (
+    select 1 from public.user_blocks
+    where (blocker_id = a and blocked_id = b)
+       or (blocker_id = b and blocked_id = a)
+  );
+$$;
+
+drop policy if exists "conversations_insert_verified_participant" on public.conversations;
+create policy "conversations_insert_verified_participant"
+  on public.conversations for insert
+  with check (
+    (auth.uid() = user_a or auth.uid() = user_b)
+    and public.is_verified()
+    and not public.is_blocked_pair(user_a, user_b)
+  );
+
+drop policy if exists "messages_insert_verified_participant" on public.messages;
+create policy "messages_insert_verified_participant"
+  on public.messages for insert
+  with check (
+    auth.uid() = sender_id
+    and public.is_verified()
+    and exists (
+      select 1 from public.conversations c
+      where c.id = conversation_id
+        and (c.user_a = auth.uid() or c.user_b = auth.uid())
+        and not public.is_blocked_pair(c.user_a, c.user_b)
+    )
+  );
+
+drop policy if exists "follows_insert_verified_own" on public.follows;
+create policy "follows_insert_verified_own"
+  on public.follows for insert
+  with check (
+    auth.uid() = follower_id
+    and public.is_verified()
+    and not public.is_blocked_pair(follower_id, followee_id)
+  );
+
+-- ============================================================================
+-- 0030_support_messages.sql — contact/support channel (App Store 1.2)
+-- ============================================================================
+
+create table if not exists public.support_messages (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  email text not null,
+  reason text not null check (reason in ('report_content', 'account', 'general', 'other')),
+  message text not null,
+  reporter_id uuid references public.profiles (id) on delete set null,
+  resolved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.support_messages enable row level security;
+
+drop policy if exists "support_messages_insert_anyone" on public.support_messages;
+create policy "support_messages_insert_anyone"
+  on public.support_messages for insert
+  with check (reporter_id is null or reporter_id = auth.uid());
+
+drop policy if exists "support_messages_select_admin" on public.support_messages;
+create policy "support_messages_select_admin"
+  on public.support_messages for select
+  using (public.is_admin());
+
+drop policy if exists "support_messages_update_admin" on public.support_messages;
+create policy "support_messages_update_admin"
+  on public.support_messages for update
+  using (public.is_admin());
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1408,5 +1857,60 @@ from (
              where table_schema = 'public' and table_name = 'cases'
                and column_name = 'country_code')),
     ('table: case_reasoning_nodes',
-     to_regclass('public.case_reasoning_nodes') is not null)
+     to_regclass('public.case_reasoning_nodes') is not null),
+    ('SECURITY: profiles_guard_privilege_columns trigger',
+     (select count(*) from pg_trigger
+      where tgname = 'profiles_guard_privilege_columns' and not tgisinternal) = 1),
+    ('SECURITY: storage upload limits set',
+     coalesce((select file_size_limit from storage.buckets where id = 'case-images') = 8388608, true)
+     and coalesce((select file_size_limit from storage.buckets where id = 'avatars') = 8388608, true)),
+    ('column: profiles.locale',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'locale')),
+    ('cases.case_type allows photo_post/quote_post/video_post',
+     exists (
+       select 1 from pg_constraint
+       where conrelid = 'public.cases'::regclass and conname = 'cases_case_type_check'
+         and pg_get_constraintdef(oid) like '%video_post%'
+     )),
+    ('bucket: case-videos',
+     exists (select 1 from storage.buckets where id = 'case-videos')),
+    ('comments.label allows other',
+     exists (
+       select 1 from pg_constraint
+       where conrelid = 'public.comments'::regclass and conname = 'comments_label_check'
+         and pg_get_constraintdef(oid) like '%other%'
+     )),
+    ('SECURITY: case_followers select is public',
+     exists (
+       select 1 from pg_policies
+       where schemaname = 'public' and tablename = 'case_followers'
+         and policyname = 'case_followers_select_all'
+     )),
+    ('column: cases.media_placement',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'cases'
+               and column_name = 'media_placement')),
+    ('column: profiles.country_code',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'country_code')),
+    ('column: profiles.license_document_path',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'license_document_path')),
+    ('bucket: verification-docs (private)',
+     exists (select 1 from storage.buckets where id = 'verification-docs' and public = false)),
+    ('SECURITY: rejected members can resubmit to pending',
+     coalesce((select prosrc like '%rejected%'
+               from pg_proc where proname = 'guard_profile_privilege_columns'), false)),
+    ('table: user_blocks',
+     exists (select 1 from information_schema.tables
+             where table_schema = 'public' and table_name = 'user_blocks')),
+    ('SECURITY: blocked users cannot message/follow',
+     exists (select 1 from pg_proc where proname = 'is_blocked_pair')),
+    ('table: support_messages',
+     exists (select 1 from information_schema.tables
+             where table_schema = 'public' and table_name = 'support_messages'))
 ) as checks(item, present);

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Case, Profile, ReactionType } from "@/lib/database.types";
+import { getBlockedPairIds } from "@/lib/blocks";
 
 export type FeedAuthor = Pick<
   Profile,
@@ -87,7 +88,16 @@ export async function getFeedCases(
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as unknown as FeedRow[];
-  return rows.map((row) => toFeedCase(row, viewerId));
+
+  // A block hides both sides from each other everywhere the feed is
+  // derived from this function (Home, profiles, search, exchange) — not
+  // just messaging/following, which the RLS layer already stops outright.
+  const blocked = viewerId ? await getBlockedPairIds(supabase, viewerId) : null;
+  const visible = blocked?.size
+    ? rows.filter((row) => !row.author_id || !blocked.has(row.author_id))
+    : rows;
+
+  return visible.map((row) => toFeedCase(row, viewerId));
 }
 
 /**
@@ -140,6 +150,135 @@ export async function getFeedCasesByCountry(
 ): Promise<FeedCase[]> {
   const all = await getFeedCases(supabase, viewerId);
   return all.filter((c) => c.country_code === countryCode);
+}
+
+function caseEngagementScore(c: FeedCase): number {
+  return (
+    c.counts.interesting +
+    c.counts.changed_thinking * 2 +
+    c.counts.patient_safety * 2 +
+    c.counts.comments +
+    c.counts.repost
+  );
+}
+
+/**
+ * Posts by people the viewer follows (the `follows` table — person-to-person,
+ * same one FollowButton/profile pages use), most recent first.
+ *
+ * Deliberately distinct from getFollowedCases, which is about *cases* someone
+ * explicitly clicked Follow on (case_followers, the Case Evolution feature).
+ * A social "Following" feed and "cases I'm tracking for updates" are two
+ * different things a reader can want, and conflating them would silently
+ * change what the existing Follow Case button means.
+ */
+export async function getCasesByFollowedPeople(
+  supabase: Client,
+  viewerId: string,
+): Promise<FeedCase[] | null> {
+  const { data: rows, error } = await supabase
+    .from("follows")
+    .select("followee_id")
+    .eq("follower_id", viewerId);
+
+  if (error) return null;
+  if (!rows || rows.length === 0) return [];
+
+  const followeeIds = new Set(rows.map((r) => r.followee_id));
+  const all = await getFeedCases(supabase, viewerId);
+  return all.filter((c) => followeeIds.has(c.author_id));
+}
+
+/**
+ * What's getting the most clinical-value engagement recently — not a
+ * platform-wide all-time leaderboard, which would just be whoever posted
+ * first. Falls back to all-time if nothing from the last 7 days has any
+ * engagement yet, so a quiet week doesn't render an empty tab.
+ */
+export async function getTrendingCases(
+  supabase: Client,
+  viewerId: string | null,
+): Promise<FeedCase[]> {
+  const all = await getFeedCases(supabase, viewerId);
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  const recent = all.filter((c) => new Date(c.created_at).getTime() >= weekAgo);
+  const scored = recent.filter((c) => caseEngagementScore(c) > 0);
+  const pool = scored.length > 0 ? scored : all;
+
+  return [...pool].sort(
+    (a, b) => caseEngagementScore(b) - caseEngagementScore(a),
+  );
+}
+
+/**
+ * The most-discussed cases right now — real comment activity, not a
+ * fabricated "events" calendar. Feeds the Home page's right rail.
+ */
+export async function getActiveDiscussions(
+  supabase: Client,
+  viewerId: string | null,
+  limit = 4,
+): Promise<FeedCase[]> {
+  const all = await getFeedCases(supabase, viewerId);
+  return [...all]
+    .filter((c) => c.counts.comments > 0)
+    .sort((a, b) => b.counts.comments - a.counts.comments)
+    .slice(0, limit);
+}
+
+/** IDs of the people the viewer follows — cheap enough for a ranking input. */
+export async function getFollowedAuthorIds(
+  supabase: Client,
+  viewerId: string,
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("follows")
+    .select("followee_id")
+    .eq("follower_id", viewerId);
+
+  if (error || !data) return new Set();
+  return new Set(data.map((r) => r.followee_id));
+}
+
+/**
+ * "For You" personalization: a pharmacist should see more pharmacy cases
+ * without the feed becoming *only* pharmacy cases. Specialty match and
+ * following are the two real signals a profile carries; recency and
+ * engagement stay in the mix (heavily damped) so the ranking degrades to
+ * roughly chronological for a viewer with neither signal, rather than a
+ * cliff-edge "personalized or not" toggle.
+ *
+ * A no-op (returns `cases` unchanged) when the viewer has no specialty and
+ * follows nobody — nothing here to rank by, and re-sorting by recency/
+ * engagement alone would just be a worse version of the plain chronological
+ * feed it replaced.
+ */
+export function rankForYou(
+  cases: FeedCase[],
+  viewerSpecialty: string | null,
+  followedAuthorIds: Set<string>,
+): FeedCase[] {
+  if (!viewerSpecialty && followedAuthorIds.size === 0) return cases;
+
+  const specialty = viewerSpecialty?.trim().toLowerCase() || null;
+
+  function score(c: FeedCase): number {
+    let s = 0;
+    if (specialty && c.specialty?.trim().toLowerCase() === specialty) s += 6;
+    if (followedAuthorIds.has(c.author_id)) s += 4;
+
+    // Recency: full weight for a brand-new post, decayed to ~0 after a week,
+    // so a strong specialty match from today still outranks one from a month
+    // ago, but doesn't bury today's off-specialty news under old matches.
+    const ageHours = (Date.now() - new Date(c.created_at).getTime()) / 3_600_000;
+    s += Math.max(0, 3 - ageHours / 48);
+
+    s += caseEngagementScore(c) * 0.2;
+    return s;
+  }
+
+  return [...cases].sort((a, b) => score(b) - score(a));
 }
 
 /**

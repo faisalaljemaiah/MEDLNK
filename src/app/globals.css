@@ -54,6 +54,309 @@ body {
   animation: medlnk-fade-in 180ms ease-out both;
 }
 
+/*
+ * The welcome/auth screens are a one-time (or rare) moment, not a routine
+ * navigation, so these run longer than animate-enter above — that one is
+ * deliberately kept short "so it never reads as lag" on every page change;
+ * a welcome screen can afford a beat of flourish precisely because it isn't
+ * on that path. Logo gets a slight scale-in; everything else rises in below
+ * it, staggered via the animation-delay utilities used alongside these.
+ */
+@keyframes medlnk-welcome-logo {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes medlnk-welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-welcome-logo {
+  animation: medlnk-welcome-logo 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-welcome-rise {
+  animation: medlnk-welcome-rise 550ms ease-out both;
+}
+
+/*
+ * The AI "thinking" glow — a rotating conic-gradient rim around an
+ * AI-touched control (the compose form's spelling-check button, wrapped by
+ * <AIButton>), same family of effect as Gemini's shifting-hue indicator,
+ * built from Asyashare's own five-stop --ai-hue-* sweep rather than borrowed
+ * brand colors.
+ *
+ * Deliberately NOT a blurred halo: filter: blur() has no containment of its
+ * own, so any blur wide enough to read as a "glow" spills well past the
+ * button into whatever sits next to it (this shipped once and had to be
+ * fixed — see git history). Instead, .ai-glow clips a spinning gradient to
+ * its own rounded-rect via overflow: hidden and shows only a thin
+ * padding-width rim of it — the button's own opaque content covers the
+ * center — so the effect never escapes the control's footprint no matter
+ * how "glowy" the gradient itself looks.
+ *
+ * Idle state spins slowly (--motion-ambient) as a standing "AI-powered" cue;
+ * .ai-glow-active (while a request is actually in flight) speeds it up and
+ * thickens the rim, same relationship Gemini's glow has to its own loading
+ * state; :hover speeds it up more gently, as an invitation rather than a
+ * loading cue. inset: -50% on the spinning layer keeps it big enough to
+ * cover the rim at every rotation angle (a square twice the container's
+ * size always covers a rotation of the container's diagonal).
+ *
+ * .ai-glow-round swaps the corner radius for controls that are circles
+ * (the bottom nav's compose button) rather than the default rounded-lg.
+ *
+ * The spinning layer is sized off width alone (aspect-ratio: 1) and
+ * centered with a translate rather than inset: -50% on all four sides —
+ * inset: -50% scales each axis by the *container's own* dimension, so on
+ * a wide, short control (the search bar) it produces a squashed ellipse
+ * whose hue barely shifts along the long edges and reads as static. A
+ * true square rotates evenly no matter how elongated the control is.
+ */
+@keyframes medlnk-ai-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.ai-glow {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--ai-glow-radius, var(--radius-lg, 0.5rem));
+  padding: 1.5px;
+}
+
+.ai-glow-round {
+  --ai-glow-radius: 9999px;
+}
+
+.ai-glow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%;
+  aspect-ratio: 1 / 1;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    var(--ai-hue-1),
+    var(--ai-hue-2),
+    var(--ai-hue-3),
+    var(--ai-hue-4),
+    var(--ai-hue-5),
+    var(--ai-hue-1)
+  );
+  transform: translate(-50%, -50%);
+  animation: medlnk-ai-spin var(--motion-ambient) linear infinite;
+}
+
+.ai-glow:hover::before {
+  animation-duration: 3s;
+}
+
+.ai-glow-active {
+  padding: 2.5px;
+}
+
+.ai-glow-active::before {
+  animation-duration: 1.6s;
+}
+
+/*
+ * Brand-only variant for the Create button specifically (bottom nav +
+ * desktop sidebar) — Create is a plain compose action, not an AI feature,
+ * so it gets Asyashare's own Caribbean green plus white instead of the
+ * AI-hue sweep the rest of .ai-glow's usages (the AI button, the search
+ * bar) keep. Same rim-only mechanic as .ai-glow — this only overrides the
+ * spinning layer's color, stacked alongside the base class:
+ * `ai-glow ai-glow-round ai-glow-brand`.
+ */
+.ai-glow-brand::before {
+  background: conic-gradient(from 0deg, var(--accent), white, var(--accent));
+}
+
+/*
+ * Asyashare ambient pulse — three overlapping wavy lines in the AI hues,
+ * drifting past each other behind the dashboard greeting (see
+ * <MedLnkPulse>). Low opacity and slow deliberately: texture, not a thing
+ * anyone consciously notices animating. Each keyframe's translateX distance
+ * is exactly one period of its path (see medlnk-pulse.tsx), so the loop has
+ * no visible seam.
+ */
+@keyframes medlnk-wave-drift-a {
+  to {
+    transform: translateX(-240px);
+  }
+}
+@keyframes medlnk-wave-drift-b {
+  to {
+    transform: translateX(-200px);
+  }
+}
+@keyframes medlnk-wave-drift-c {
+  to {
+    transform: translateX(280px);
+  }
+}
+
+.medlnk-wave-path-a {
+  animation: medlnk-wave-drift-a 14s linear infinite;
+}
+.medlnk-wave-path-b {
+  animation: medlnk-wave-drift-b 10s linear infinite;
+}
+.medlnk-wave-path-c {
+  animation: medlnk-wave-drift-c 18s linear infinite;
+}
+
+/*
+ * TrendingStrip's marquee (src/components/home/trending-strip.tsx) — the
+ * pill list is rendered twice in the DOM and this translates the whole row
+ * by exactly -50% (one full copy's width), so the loop has no visible seam.
+ * Paused on hover/focus so a reader can actually tap a pill without chasing
+ * it; prefers-reduced-motion freezes it for free via the blanket override
+ * below, same as every other ambient animation in this file.
+ */
+@keyframes medlnk-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.medlnk-marquee-track {
+  animation: medlnk-marquee 28s linear infinite;
+}
+
+.medlnk-marquee-track:hover,
+.medlnk-marquee-track:focus-within {
+  animation-play-state: paused;
+}
+
+/*
+ * TrendingStrip's ECG trace (src/components/home/trending-strip.tsx) — the
+ * same heartbeat-blip polyline as the app's logo mark, drawn twice back to
+ * back at rendered width 32px and looped by translating exactly one copy's
+ * width (16px, half of 32) so it reads as one continuous scrolling trace
+ * rather than a dot pulsing in place. Brisk on purpose — a heart-monitor
+ * pace, not the slow ambient drift the rest of this file uses.
+ */
+@keyframes medlnk-ecg-scroll {
+  to {
+    transform: translateX(-16px);
+  }
+}
+
+.medlnk-ecg-scroll {
+  animation: medlnk-ecg-scroll 1.4s linear infinite;
+}
+
+/* See GlowBlobs (src/components/ui/glow-blobs.tsx) for the rationale. */
+.glow-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+}
+
+.glow-blob-1 {
+  top: -15%;
+  left: -20%;
+  width: 65vw;
+  height: 65vw;
+  max-width: 420px;
+  max-height: 420px;
+  background: radial-gradient(circle, var(--ai-hue-1), transparent 70%);
+  opacity: 0.35;
+}
+
+.glow-blob-2 {
+  bottom: -10%;
+  right: -25%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 460px;
+  max-height: 460px;
+  background: radial-gradient(circle, var(--ai-hue-4), transparent 70%);
+  opacity: 0.3;
+}
+
+.glow-blob-3 {
+  top: 35%;
+  right: -15%;
+  width: 45vw;
+  height: 45vw;
+  max-width: 300px;
+  max-height: 300px;
+  background: radial-gradient(circle, var(--ai-hue-5), transparent 70%);
+  opacity: 0.25;
+}
+
+/*
+ * Staggered dashboard entrance — pair with .animate-enter. Declared after it
+ * so the animation-delay here wins over .animate-enter's implicit 0s on
+ * elements carrying both classes.
+ */
+.stagger-1 {
+  animation-delay: 60ms;
+}
+.stagger-2 {
+  animation-delay: 120ms;
+}
+.stagger-3 {
+  animation-delay: 180ms;
+}
+.stagger-4 {
+  animation-delay: 240ms;
+}
+.stagger-5 {
+  animation-delay: 300ms;
+}
+.stagger-6 {
+  animation-delay: 360ms;
+}
+
+/*
+ * Case card hover — lift, deepen the shadow, and reveal a thin AI-hue
+ * top-edge line, all keyed off .group so the same hover also drives the
+ * "Let's dive deep" arrow (a plain group-hover:translate-x-* in
+ * case-card.tsx, no CSS needed here for that part).
+ */
+.case-card-hover {
+  transition:
+    transform var(--motion-normal) var(--motion-ease),
+    box-shadow var(--motion-normal) var(--motion-ease);
+}
+
+.case-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -16px rgba(16, 32, 58, 0.18);
+}
+
+/* A brief, one-shot pulse for a bolt/lightning icon on hover. */
+@keyframes medlnk-bolt-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

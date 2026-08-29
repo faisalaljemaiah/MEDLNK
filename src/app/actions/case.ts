@@ -2,11 +2,21 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
+import { isMissingColumnError } from "@/lib/supabase/errors";
+import { scanForIdentifiersAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
 import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
-import type { CaseType, NearMiss } from "@/lib/database.types";
+import { validateImageUpload, validateVideoUpload } from "@/lib/uploads";
+import type { CaseType, MediaPlacement, NearMiss } from "@/lib/database.types";
+
+const MEDIA_PLACEMENTS: MediaPlacement[] = [
+  "top",
+  "presentation",
+  "tricky",
+  "actions",
+  "lesson",
+];
 
 export type ComposeFormState =
   | { error: string }
@@ -50,9 +60,26 @@ export async function createCaseAction(
   const lesson = String(formData.get("lesson") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
   const tags = parseTags(String(formData.get("tags") ?? ""));
-  const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
-  const country_code = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
+
+  // A case's Global Case Exchange country comes only from the author's own
+  // profile (0026) — never a per-post choice, so nobody can tag a case as
+  // posted from a country they don't actually practice in. The client
+  // can't spoof this: there's no country_code form field to read here at
+  // all, and the value is looked up fresh, not trusted from anything the
+  // form could have sent.
+  const { data: authorProfile } = await supabase
+    .from("profiles")
+    .select("country_code")
+    .eq("id", user.id)
+    .maybeSingle();
+  const country_code = authorProfile?.country_code ?? null;
   const image = formData.get("image");
+  const video = formData.get("video");
+  // Only meaningful for full-write-up formats — every other format still
+  // decides its media entirely from typeMeta (requiresImage/requiresVideo),
+  // exactly as before this existed.
+  const mediaKind = String(formData.get("media_kind") ?? "none");
+  const rawPlacement = String(formData.get("media_placement") ?? "top");
   const acknowledgeWarning = formData.get("acknowledge_warning") === "true";
 
   // Post type decides which fields are required and which payloads are built.
@@ -67,8 +94,11 @@ export async function createCaseAction(
     const entries = NEAR_MISS_PROMPTS.map(
       (p) => [p.name, String(formData.get(`near_miss_${p.name}`) ?? "").trim()] as const,
     );
-    if (entries.some(([, value]) => !value)) {
-      return { error: "Every patient-safety prompt needs an answer." };
+    // Every prompt used to be mandatory; now the author picks which ones
+    // apply (compose-form.tsx's toggle chips), so only at least one filled
+    // is required — the rest store as "", same NearMiss shape either way.
+    if (entries.every(([, value]) => !value)) {
+      return { error: "Answer at least one patient-safety prompt." };
     }
     near_miss = Object.fromEntries(entries) as unknown as NearMiss;
   }
@@ -98,6 +128,16 @@ export async function createCaseAction(
   // a four-part write-up would defeat the point of them.
   if (!title || !short_caption) {
     return { error: "A title and a short caption are required." };
+  }
+
+  // The full write-up formats (clinical case, near miss, safety alert, case
+  // vs case, etc.) need specialty + tags so the case is actually findable —
+  // the whole point of Global Case Exchange and search. The quick formats
+  // (Photo, Quote, "I saw this today"...) stay optional, same as their body.
+  if (!typeMeta.shortForm && (!specialty || tags.length === 0)) {
+    return {
+      error: "Specialty and at least one tag are required for this format.",
+    };
   }
 
   // Case vs Case names two existing cases by their case number and says what
@@ -134,14 +174,19 @@ export async function createCaseAction(
     comparison = { left: left!, right: right!, discriminator };
   }
 
+  // These four used to be all-or-nothing; now the author picks which
+  // sections apply (compose-form.tsx's toggle chips), so only at least one
+  // filled is required.
   const needsFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
   if (
     needsFullBody &&
-    (!presentation || !tricky || actions.length === 0 || !lesson)
+    !presentation &&
+    !tricky &&
+    actions.length === 0 &&
+    !lesson
   ) {
     return {
-      error:
-        "Presentation, what was tricky, at least one action, and the lesson are all required for this format.",
+      error: "Add at least one section (presentation, what was tricky, what you did, or the lesson) for this format.",
     };
   }
 
@@ -175,9 +220,59 @@ export async function createCaseAction(
   }
 
   let media_url: string | null = null;
-  if (image instanceof File && image.size > 0) {
-    const ext = image.name.split(".").pop() ?? "jpg";
-    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+  if (typeMeta.requiresVideo) {
+    if (!(video instanceof File) || video.size === 0) {
+      return { error: "A video is required for this format." };
+    }
+    const validated = validateVideoUpload(video);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("case-videos")
+      .upload(path, video, { contentType: video.type });
+
+    if (uploadError) {
+      return { error: `Video upload failed: ${uploadError.message}` };
+    }
+    const { data: publicUrl } = supabase.storage
+      .from("case-videos")
+      .getPublicUrl(path);
+    media_url = publicUrl.publicUrl;
+  } else if (typeMeta.requiresImage && !(image instanceof File && image.size > 0)) {
+    return { error: "A photo is required for this format." };
+  } else if (needsFullBody && mediaKind === "video") {
+    // The one case where a full-write-up format gets a video too — every
+    // other format's media is entirely decided by typeMeta above, this is
+    // additive to that, not a replacement.
+    if (!(video instanceof File) || video.size === 0) {
+      return {
+        error: 'Choose a video file, or switch the attachment back to "None".',
+      };
+    }
+    const validated = validateVideoUpload(video);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("case-videos")
+      .upload(path, video, { contentType: video.type });
+
+    if (uploadError) {
+      return { error: `Video upload failed: ${uploadError.message}` };
+    }
+    const { data: publicUrl } = supabase.storage
+      .from("case-videos")
+      .getPublicUrl(path);
+    media_url = publicUrl.publicUrl;
+  } else if (image instanceof File && image.size > 0) {
+    const validated = validateImageUpload(image);
+    if (!validated.ok) {
+      return { error: validated.error };
+    }
+    const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
     const { error: uploadError } = await supabase.storage
       .from("case-images")
       .upload(path, image, { contentType: image.type });
@@ -190,6 +285,17 @@ export async function createCaseAction(
       .getPublicUrl(path);
     media_url = publicUrl.publicUrl;
   }
+
+  // Placement only means anything on a full-write-up case with media
+  // attached — everywhere else it stays null, which the case page already
+  // treats the same as "top" (the only place media has ever rendered
+  // before this existed).
+  const media_placement: MediaPlacement | null =
+    media_url && needsFullBody
+      ? MEDIA_PLACEMENTS.includes(rawPlacement as MediaPlacement)
+        ? (rawPlacement as MediaPlacement)
+        : "top"
+      : null;
 
   const baseRow = {
     author_id: user.id,
@@ -212,16 +318,26 @@ export async function createCaseAction(
 
   let { data: inserted, error } = await supabase
     .from("cases")
-    .insert({ ...interactiveRow, country_code })
+    .insert({ ...interactiveRow, country_code, media_placement })
     .select("id")
     .single();
 
-  // 42703 = undefined_column. Two migrations added columns here (0008, then
-  // 0017's country_code) and either, both, or neither may be applied to this
-  // project, so retry in stages rather than dropping straight to the
-  // lowest-common-denominator row — a project with 0008 but not yet 0017
-  // should still get case_type recorded.
-  if (error?.code === "42703") {
+  // Three migrations added columns here (0008, 0017's country_code, 0025's
+  // media_placement) and any subset may be applied to this project, so
+  // retry in stages — newest column dropped first — rather than falling
+  // straight to the lowest-common-denominator row. A project with 0008 and
+  // 0017 but not yet 0025 should still get case_type and country_code
+  // recorded; the video just renders at the top of the case instead of
+  // inline until 0025 is applied.
+  if (isMissingColumnError(error)) {
+    ({ data: inserted, error } = await supabase
+      .from("cases")
+      .insert({ ...interactiveRow, country_code })
+      .select("id")
+      .single());
+  }
+
+  if (isMissingColumnError(error)) {
     ({ data: inserted, error } = await supabase
       .from("cases")
       .insert(interactiveRow)
@@ -229,7 +345,7 @@ export async function createCaseAction(
       .single());
   }
 
-  if (error?.code === "42703") {
+  if (isMissingColumnError(error)) {
     ({ data: inserted, error } = await supabase
       .from("cases")
       .insert(baseRow)
@@ -310,8 +426,6 @@ export async function createCaseAction(
       };
     }
   }
-
-  await triggerRecapAction(inserted.id);
 
   // A safety alert is the one post type that goes out to the platform rather
   // than waiting its turn in the feed. Best-effort, after the insert: the alert

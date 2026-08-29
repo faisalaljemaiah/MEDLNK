@@ -5,8 +5,12 @@ import type { CommentLabel } from "@/lib/database.types";
  * picker from this and the thread builds its badges from it. Adding one means
  * adding an entry here plus its value in the comments label check constraint.
  *
- * Deliberately five. The point is that a reader can tell replies apart at a
- * glance, and a picker long enough to need thought stops being used.
+ * Was deliberately five, on the theory that a picker long enough to need
+ * thought stops being used — "Other" is the deliberate exception: a reply
+ * that's genuinely none of the five shouldn't be forced into the
+ * closest-fitting one just because there's no honest option, and it's the
+ * kind of pressure-release valve that keeps the other five meaningful rather
+ * than becoming catch-alls themselves.
  */
 export type CommentLabelMeta = {
   value: CommentLabel;
@@ -47,6 +51,12 @@ export const COMMENT_LABELS: CommentLabelMeta[] = [
     value: "evidence",
     label: "Evidence",
     hint: "A guideline, trial or reference that bears on this",
+    badgeClass: "border-line bg-surface-2 text-muted",
+  },
+  {
+    value: "other",
+    label: "Other",
+    hint: "Doesn't fit the rest — say what it is",
     badgeClass: "border-line bg-surface-2 text-muted",
   },
 ];

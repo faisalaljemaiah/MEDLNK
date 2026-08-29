@@ -10,7 +10,15 @@ const DECISIONS = [
   { value: "reviewed", label: "No action", className: "border-line text-muted" },
 ] as const;
 
-export function ReportReview({ reportId }: { reportId: string }) {
+export function ReportReview({
+  reportId,
+  viewerHandle,
+}: {
+  reportId: string;
+  /** So the action can also revalidate `/u/[handle]` when it's rendering
+   *  the admin dashboard for the caller's own profile. */
+  viewerHandle?: string | null;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -18,6 +26,7 @@ export function ReportReview({ reportId }: { reportId: string }) {
     setError(null);
     const formData = new FormData(form);
     formData.set("decision", decision);
+    if (viewerHandle) formData.set("viewerHandle", viewerHandle);
     startTransition(async () => {
       const result = await resolveReportAction(reportId, formData);
       if ("error" in result) setError(result.error);

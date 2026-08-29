@@ -24,6 +24,13 @@ export function FeedFilterBar({
             key={f.key}
             href={feedFilterHref(f.key)}
             aria-current={active === f.key ? "page" : undefined}
+            // These labels aren't translated yet (see i18n.ts), so on an RTL
+            // page the Unicode bidi algorithm reorders trailing punctuation —
+            // "What would you do?" renders as "؟What would you do". Forcing
+            // ltr on the untranslated English text avoids that without
+            // touching the row's own RTL ordering, which comes from the
+            // ancestor's dir and should stay.
+            dir="ltr"
             className={clsx(
               "shrink-0 rounded-full border px-3.5 py-1.5 font-label text-xs transition-[color,background-color,transform] duration-150 ease-out active:scale-95",
               active === f.key

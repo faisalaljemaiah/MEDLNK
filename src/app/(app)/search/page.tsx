@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
+import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
+import { CompassIcon, ReelIcon } from "@/components/icons";
 
 type SearchParams = {
   q?: string;
@@ -71,19 +73,53 @@ export default async function SearchPage({
     Boolean,
   ).length;
 
+  // Preserves every other active filter, only ever touches ?specialty= —
+  // clicking the already-active pill clears it instead of re-submitting it.
+  const specialtyHref = (value: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (value) params.set("specialty", value);
+    if (typeFilter) params.set("type", typeFilter);
+    if (tagFilter) params.set("tag", tagFilter);
+    const qs = params.toString();
+    return qs ? `/search?${qs}` : "/search";
+  };
+
   return (
     <div>
+      {/* This is the bottom nav's Discover slot (see bottom-nav.tsx) — same
+          route as before (/search), so every existing internal link
+          (trending pills, specialty pills, filter chips) keeps working
+          unchanged. Only the on-screen framing changed. */}
+      <div className="flex items-center justify-between px-4 pt-4">
+        <h1 className="font-headline text-xl text-text">Discover</h1>
+        <Link
+          href="/reel"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-accent"
+        >
+          <ReelIcon width={14} height={14} strokeWidth={2} />
+          Reel
+        </Link>
+      </div>
+
       {/* A GET form, so every search is a shareable URL and the results stay
           server-rendered. */}
       <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Search cases, tags, specialties…"
-          autoFocus
-          className="w-full rounded-full border border-line bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        />
+        {/* Same rim mechanic as <AIButton>/the compose nav button
+            (.ai-glow, globals.css), but in Asyashare's own Caribbean green
+            and white (.ai-glow-brand) rather than the AI-hue sweep —
+            search isn't an AI feature, and every search bar in the app
+            (this one, the admin dashboard's) now shares this same look. */}
+        <div className="ai-glow ai-glow-round ai-glow-brand w-full">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Search cases, tags, specialties…"
+            autoFocus
+            className="w-full rounded-full bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:outline-none"
+          />
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <select
@@ -132,12 +168,39 @@ export default async function SearchPage({
         </div>
       </form>
 
+      {/* Curated discipline shortcuts — separate from the <select> above,
+          which only ever lists specialties that already have posts behind
+          them. These jump straight to a discipline even before anyone has
+          posted in it yet (see src/lib/specialties.ts). */}
+      <div className="px-4 pb-3">
+        <div className="flex flex-wrap gap-2">
+          {SPECIALTIES.map((s) => {
+            const active = specialtyFilter === s;
+            return (
+              <Link
+                key={s}
+                href={specialtyHref(active ? "" : s)}
+                aria-pressed={active}
+                className={
+                  active
+                    ? "whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
+                    : "whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
+                }
+              >
+                {s}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="px-4 pb-3">
         <Link
           href="/exchange"
-          className="text-xs font-medium text-accent hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
         >
-          🌍 Browse the Global Case Exchange →
+          <CompassIcon width={13} height={13} strokeWidth={2.25} />
+          Browse the Global Case Exchange →
         </Link>
       </div>
 
@@ -169,7 +232,9 @@ export default async function SearchPage({
           Nothing matches those filters.
         </p>
       ) : (
-        results.map((c) => <CaseCard key={c.id} feedCase={c} path="/search" />)
+        results.map((c) => (
+          <CaseCard key={c.id} feedCase={c} path="/search" viewerId={user?.id ?? null} />
+        ))
       )}
     </div>
   );

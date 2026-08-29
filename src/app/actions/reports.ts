@@ -162,6 +162,8 @@ export async function resolveReportAction(
 
   if (error) return { error: error.message };
 
+  const viewerHandle = String(formData.get("viewerHandle") ?? "").trim();
+
   await supabase.from("moderation_events").insert({
     actor_id: userId,
     action: `report_${decision}`,
@@ -171,6 +173,7 @@ export async function resolveReportAction(
   });
 
   revalidatePath("/admin");
+  if (viewerHandle) revalidatePath(`/u/${viewerHandle}`);
   return { ok: true };
 }
 
@@ -178,6 +181,9 @@ export async function setSuspensionAction(
   profileId: string,
   suspend: boolean,
   reason?: string,
+  /** The dashboard also renders at `/u/[handle]` for the admin's own
+   *  profile, so that route needs revalidating too, not just `/admin`. */
+  viewerHandle?: string | null,
 ): Promise<ReportResult> {
   const admin = await requireAdmin();
   if (!admin) return { error: "Admins only." };
@@ -202,5 +208,6 @@ export async function setSuspensionAction(
   });
 
   revalidatePath("/admin");
+  if (viewerHandle) revalidatePath(`/u/${viewerHandle}`);
   return { ok: true };
 }

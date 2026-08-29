@@ -10,7 +10,7 @@ import type { CaseQuestionView } from "@/lib/cases";
 import type { AnswerDistribution, ViewerAttempt } from "@/lib/interactive";
 
 /**
- * The core MEDLNK loop: commit to an answer, see what everyone else thought,
+ * The core Asyashare loop: commit to an answer, see what everyone else thought,
  * then get the author's reasoning.
  *
  * Nothing here decides what is correct. The component is only ever told the

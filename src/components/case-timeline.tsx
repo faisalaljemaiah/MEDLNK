@@ -42,7 +42,7 @@ export function CaseTimeline({
   if (updates.length === 0 && !isAuthor) return null;
 
   return (
-    <section className="mt-6 border-t border-line pt-4">
+    <section id="case-timeline" className="mt-6 border-t border-line pt-4">
       <p className="font-label text-xs uppercase tracking-wide text-muted">
         How this case unfolded
       </p>

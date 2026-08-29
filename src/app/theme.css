@@ -1,5 +1,5 @@
 /*
- * MEDLNK design tokens — the ONLY place color and font decisions should live.
+ * Asyashare design tokens — the ONLY place color and font decisions should live.
  * Swap the values below to re-skin the whole app. Every component should
  * reference the Tailwind utilities generated from these tokens (bg-bg,
  * text-text, border-line, bg-accent, etc.) — never a raw hex/color name.
@@ -16,17 +16,63 @@
    * clear 4.5:1 in both directions at once. Lightening them breaks the
    * buttons; re-check both if you tune them.
    */
-  --bg: #f6f8fc; /* app background */
+  --bg: #f6f8fc; /* app background — very light cool gray/off-white */
   --surface: #ffffff; /* cards, sheets, composer */
   --surface-2: #eaf0fa; /* raised elements on top of surface */
   --line: #d9e3f2; /* borders/dividers */
   --text: #10203a; /* primary text — deep navy ink, softer than pure black */
   --muted: #56657f; /* secondary text, labels, timestamps */
-  --accent: #2563eb; /* primary brand accent (links, active states, logo) */
+  /*
+   * Caribbean green / turquoise-green, not LinkedIn blue — deliberately
+   * darker than the brand-swatch version of this color: at the lighter,
+   * more "turquoise" end (e.g. #0d9488) white button text clears only
+   * ~3.7:1, under the 4.5:1 AA floor. #0f766e keeps the same hue family
+   * while passing 4.5:1 in both directions (white-on-accent for buttons,
+   * accent-on-bg for links/active states) — re-check both if this is tuned.
+   * Distinct from --positive on purpose: --positive is a leaf green
+   * (~148° hue) for verified/success signals, this is a bluer teal
+   * (~176° hue) for interactive elements, so the two don't read as the same
+   * color doing two different jobs.
+   */
+  --accent: #0f766e; /* primary brand accent (links, active states, logo) */
+  /* A light mint tint of --accent, for backgrounds/chips/icon wells that want
+     "green, but as a wash rather than a foreground color" — distinct from
+     --surface-2, which is a blue-gray, not a green, tint. */
+  --accent-soft: #e1f3ef;
   --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
   --positive: #0b7c44; /* verified badges, success states */
   --warning: #b45309; /* privacy/identifier warnings */
   --danger: #cf2231; /* destructive actions, errors */
+
+  /*
+   * Decorative-only hues for the AI "thinking" glow (see .ai-glow in
+   * globals.css) and the wider "AI gradient" motif (MedLnkPulse, the compose
+   * form's connecting line, the case-card hover rim) — never used as
+   * text/background color, so exempt from the 4.5:1 contrast rule above.
+   * Deliberately no green here (even though --accent is Asyashare's brand
+   * green): the point of this sweep is to read as "AI", a distinct visual
+   * language from the rest of the app's teal, so it stays in its own
+   * cyan → blue → indigo → violet → pink lane. --ai-hue-4 reuses --accent-2,
+   * already reserved above for "gradients, AI features" — this is that
+   * reservation actually being spent.
+   */
+  --ai-hue-1: #22d3ee;
+  --ai-hue-2: #38bdf8;
+  --ai-hue-3: #6366f1;
+  --ai-hue-4: var(--accent-2);
+  --ai-hue-5: #fb7185;
+
+  /*
+   * Motion system — see HANDOFF.md's "Motion design" section for the full
+   * rationale. Every animation/transition duration in the app should come
+   * from one of these rather than a one-off number, so the whole interface
+   * moves at a consistent, deliberate pace.
+   */
+  --motion-micro: 180ms; /* hover/tap feedback on a single control */
+  --motion-normal: 260ms; /* a card or section responding to interaction */
+  --motion-page: 220ms; /* content swapping in after a navigation */
+  --motion-ambient: 6s; /* slow standing cues — AI glow, pulse lines */
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* --- Font tokens (single clean sans-serif, Instagram-style) --- */
   --font-headline: var(--font-inter, system-ui, sans-serif);
@@ -42,6 +88,7 @@
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-accent-2: var(--accent-2);
   --color-positive: var(--positive);
   --color-warning: var(--warning);

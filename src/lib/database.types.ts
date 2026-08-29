@@ -7,6 +7,9 @@
 // An `interface` here silently breaks insert()/update() typing (Row: never).
 
 export type VerificationStatus = "pending" | "approved" | "rejected";
+
+/** Mirrors the locale check constraint in 0021_locale_preference.sql. */
+export type Locale = "en" | "ar";
 /**
  * The clinical-value reactions from 0010. These replaced the bare "like": on a
  * clinical network the useful question is *why* a case mattered, and these are
@@ -20,7 +23,10 @@ export type ClinicalReactionType =
 /** repost and save are distribution/bookmarking, not a judgement on the case. */
 export type ReactionType = ClinicalReactionType | "repost" | "save";
 
-/** Mirrors the case_type check constraint in 0008_interactive_cases.sql. */
+/**
+ * Mirrors the case_type check constraint in 0008_interactive_cases.sql,
+ * widened in 0022_photo_quote_video_posts.sql.
+ */
 export type CaseType =
   | "clinical_case"
   | "what_would_you_do"
@@ -32,9 +38,25 @@ export type CaseType =
   | "clinical_pearl"
   | "things_i_wish_i_knew"
   | "case_vs_case"
-  | "research_finding";
+  | "research_finding"
+  | "photo_post"
+  | "quote_post"
+  | "video_post";
 
 export type RevealMode = "none" | "staged";
+
+/**
+ * Where cases.media_url renders on a full-write-up case (0025) — "top" (or
+ * null, for every case posted before this existed) keeps it above the
+ * write-up, same as always; anything else moves it inline under that
+ * section instead.
+ */
+export type MediaPlacement =
+  | "top"
+  | "presentation"
+  | "tricky"
+  | "actions"
+  | "lesson";
 
 export type ModerationStatus = "visible" | "removed";
 
@@ -78,13 +100,27 @@ export type Profile = {
   role: string | null;
   city: string | null;
   specialty: string | null;
+  /**
+   * The clinician's own country (0026) — the only source a case's
+   * country_code is ever set from at post time; never picked per case, so
+   * nobody can tag a case as posted from a country they don't practice in.
+   */
+  country_code: string | null;
   avatar_url: string | null;
   verified: boolean;
   verification_status: VerificationStatus;
   license_number: string | null;
+  /**
+   * Path within the private `verification-docs` bucket (0027) — never a
+   * public URL, since a license/student-ID photo is identifying. Read via a
+   * short-lived signed URL generated server-side for the owner or an admin.
+   */
+  license_document_path: string | null;
   is_admin: boolean;
   /** Student Mode (0014) — a preference, not a role. Leads with Learn. */
   student_mode: boolean;
+  /** Display language (0021) — a preference, same footing as student_mode. */
+  locale: Locale;
   /** Set by an admin. Makes is_verified() false, which blocks every write. */
   suspended_at: string | null;
   suspended_reason: string | null;
@@ -99,6 +135,7 @@ export type Case = {
   full_body: CaseBody;
   tags: string[];
   media_url: string | null;
+  media_placement: MediaPlacement | null;
   specialty: string | null;
   case_number: string | null;
   case_type: CaseType;
@@ -183,13 +220,17 @@ export type Reaction = {
   created_at: string;
 };
 
-/** Mirrors the label check constraint in 0011_comment_labels.sql. */
+/**
+ * Mirrors the label check constraint in 0011_comment_labels.sql, widened in
+ * 0023_comment_label_other.sql.
+ */
 export type CommentLabel =
   | "agree"
   | "differ"
   | "question"
   | "teaching"
-  | "evidence";
+  | "evidence"
+  | "other";
 
 export type Comment = {
   id: string;
@@ -308,6 +349,23 @@ export type Follow = {
   created_at: string;
 };
 
+export type UserBlock = {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+};
+
+export type SupportMessage = {
+  id: string;
+  name: string | null;
+  email: string;
+  reason: string;
+  message: string;
+  reporter_id: string | null;
+  resolved: boolean;
+  created_at: string;
+};
+
 export type AiRecap = {
   case_id: string;
   summary: string | null;
@@ -373,6 +431,22 @@ export type Database = {
         Row: Follow;
         Insert: Partial<Follow> & { follower_id: string; followee_id: string };
         Update: Partial<Follow>;
+        Relationships: [];
+      };
+      user_blocks: {
+        Row: UserBlock;
+        Insert: Partial<UserBlock> & { blocker_id: string; blocked_id: string };
+        Update: Partial<UserBlock>;
+        Relationships: [];
+      };
+      support_messages: {
+        Row: SupportMessage;
+        Insert: Partial<SupportMessage> & {
+          email: string;
+          reason: string;
+          message: string;
+        };
+        Update: Partial<SupportMessage>;
         Relationships: [];
       };
       ai_recaps: {

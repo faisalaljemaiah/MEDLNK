@@ -42,7 +42,7 @@ interface SeedAuthor {
 
 const authors: SeedAuthor[] = [
   {
-    email: "seed.amina@medlnk.dev",
+    email: "seed.amina@asyashare.dev",
     full_name: "Amina Al-Rashid, PharmD",
     handle: "amina_rx",
     role: "Clinical Pharmacist",
@@ -51,7 +51,7 @@ const authors: SeedAuthor[] = [
     license_number: "SA-PH-10245",
   },
   {
-    email: "seed.marcus@medlnk.dev",
+    email: "seed.marcus@asyashare.dev",
     full_name: "Marcus Ferreira, PharmD",
     handle: "marcus_ferreira",
     role: "Hospital Pharmacist",
@@ -60,7 +60,7 @@ const authors: SeedAuthor[] = [
     license_number: "PT-PH-88213",
   },
   {
-    email: "seed.priya@medlnk.dev",
+    email: "seed.priya@asyashare.dev",
     full_name: "Priya Nair, PharmD",
     handle: "priya_nair",
     role: "Pediatric Pharmacist",
@@ -69,7 +69,7 @@ const authors: SeedAuthor[] = [
     license_number: "ON-PH-55210",
   },
   {
-    email: "seed.tom@medlnk.dev",
+    email: "seed.tom@asyashare.dev",
     full_name: "Tom Whitfield, PharmD",
     handle: "tom_whitfield",
     role: "Oncology Pharmacist",
@@ -78,7 +78,7 @@ const authors: SeedAuthor[] = [
     license_number: "UK-PH-33871",
   },
   {
-    email: "seed.layla@medlnk.dev",
+    email: "seed.layla@asyashare.dev",
     full_name: "Layla Haddad, PharmD",
     handle: "layla_haddad",
     role: "ICU Pharmacist",
@@ -87,7 +87,7 @@ const authors: SeedAuthor[] = [
     license_number: "JO-PH-12094",
   },
   {
-    email: "seed.diego@medlnk.dev",
+    email: "seed.diego@asyashare.dev",
     full_name: "Diego Morales, PharmD",
     handle: "diego_morales",
     role: "Community Pharmacist",
@@ -108,7 +108,7 @@ interface SeedCase {
 
 const cases: SeedCase[] = [
   {
-    authorEmail: "seed.amina@medlnk.dev",
+    authorEmail: "seed.amina@asyashare.dev",
     title: "Hydralazine, meet hydroxyzine",
     short_caption:
       "A LASA pair almost turned a blood pressure order into an antihistamine dose — caught at final verification.",
@@ -129,7 +129,7 @@ const cases: SeedCase[] = [
     specialty: "Internal Medicine",
   },
   {
-    authorEmail: "seed.marcus@medlnk.dev",
+    authorEmail: "seed.marcus@asyashare.dev",
     title: "The INR that wouldn't stay put",
     short_caption:
       "A 'routine' antibiotic course sent a stable warfarin patient's INR to 6.8 within a week.",
@@ -150,7 +150,7 @@ const cases: SeedCase[] = [
     specialty: "Cardiology",
   },
   {
-    authorEmail: "seed.priya@medlnk.dev",
+    authorEmail: "seed.priya@asyashare.dev",
     title: "One decimal point from a 10x overdose",
     short_caption:
       "A weight-based pediatric dose was transcribed without the decimal point — and almost dispensed that way.",
@@ -171,7 +171,7 @@ const cases: SeedCase[] = [
     specialty: "Pediatrics",
   },
   {
-    authorEmail: "seed.tom@medlnk.dev",
+    authorEmail: "seed.tom@asyashare.dev",
     title: "Daily methotrexate, weekly consequences",
     short_caption:
       "A rheumatology patient's methotrexate was re-prescribed as a daily dose after a hospital admission — caught at the counter.",
@@ -192,7 +192,7 @@ const cases: SeedCase[] = [
     specialty: "Oncology",
   },
   {
-    authorEmail: "seed.layla@medlnk.dev",
+    authorEmail: "seed.layla@asyashare.dev",
     title: "Potassium chloride almost went in as a push",
     short_caption:
       "A verbal order in a code situation was nearly executed as an IV push instead of a diluted infusion.",
@@ -213,7 +213,7 @@ const cases: SeedCase[] = [
     specialty: "Critical Care",
   },
   {
-    authorEmail: "seed.diego@medlnk.dev",
+    authorEmail: "seed.diego@asyashare.dev",
     title: "Two prescribers, two ACE inhibitors",
     short_caption:
       "A patient was on both lisinopril and enalapril simultaneously after seeing two different specialists.",
