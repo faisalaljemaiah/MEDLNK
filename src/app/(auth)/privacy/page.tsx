@@ -88,10 +88,10 @@ export default function PrivacyPage() {
         <Section title="7. Your choices">
           <p>
             You can edit your profile and delete your own posts at any time.
-            You can delete your account from Settings, which removes your
-            profile from public view; contact support if you need your
-            underlying data fully erased. You can request a copy of your
-            data by contacting us.
+            &quot;Delete account&quot; in Settings permanently deletes your
+            account and everything tied to it — profile, posts, comments,
+            messages, and reactions — immediately, with no undo. You can
+            request a copy of your data by contacting us before deleting.
           </p>
         </Section>
 

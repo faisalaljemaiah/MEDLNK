@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBlockedByViewer } from "@/lib/blocks";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { UnblockButton } from "@/components/block-button";
+import { DeleteAccount } from "@/components/delete-account";
 import { signOutAction } from "@/app/actions/auth";
 import { t } from "@/lib/i18n";
 
@@ -77,6 +78,10 @@ export default async function SettingsPage() {
             Sign out
           </button>
         </form>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-line bg-surface p-4">
+        <DeleteAccount />
       </section>
     </div>
   );

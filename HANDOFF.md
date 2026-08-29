@@ -1552,6 +1552,37 @@ against the result. `APPLY_TO_HOSTED.sql` has the identical fix folded in too
   adding an auth gate before they are, so an anonymous caller can't run up
   Anthropic API cost by invoking the Server Action directly.
 
+## App Store / Google Play readiness
+
+Wrapping the web app in Capacitor for real iOS/Android submissions. Ongoing
+— items land here as they're built.
+
+**Block-user feature (0029, `src/lib/blocks.ts`, `src/app/actions/blocks.ts`,
+`src/components/block-button.tsx`)**: Apple guideline 1.2 and Google Play's
+equivalent both require an app with user-to-user interaction to let someone
+block an abusive user, not just report them (reporting already existed,
+0009). A block is enforced at the RLS layer — `is_blocked_pair()` denies new
+conversations, messages, and follows between a blocked pair outright, not
+just hidden client-side — and `getFeedCases` filters mutually-blocked
+authors out of every feed/profile/search view built on it. See "Update,
+this session" under Blocking manual steps below for hosted-DB status.
+
+**In-app account deletion (`src/app/actions/account.ts`,
+`src/components/delete-account.tsx`)**: Apple 5.1.1(v) and Google Play both
+require self-service deletion reachable from inside the app. Settings has a
+"Delete account" control gated behind typing "DELETE" to confirm, calling a
+new `createAdminClient()` (`src/lib/supabase/admin.ts`) — the one legitimate
+server-side use of the service-role key in `src/`, used only for
+`auth.admin.deleteUser(user.id)` after the regular session-bound client's
+own `getUser()` has already confirmed the caller's identity, never a
+client-supplied ID. `profiles.id references auth.users(id) on delete
+cascade`, and every other table cascades from `profiles(id)` in turn, so
+this is a genuine, complete deletion — not a soft deactivation (the schema's
+cascade chain isn't new, just newly reachable from the app) — verified live
+end-to-end against the real hosted project with a throwaway account: the
+profile row was gone immediately after, sign-in with the old credentials
+was rejected, and the profile page 404'd afterward.
+
 ## ⚠️ Blocking manual steps
 
 **Update, this session:** the owner ran `supabase/APPLY_TO_HOSTED.sql`
