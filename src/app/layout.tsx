@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { getViewerProfile } from "@/lib/auth";
 import { localeDir } from "@/lib/i18n";
+import { NativeBootstrap } from "@/components/native-bootstrap";
 
 // Single clean sans-serif for the whole app — see theme.css for how this
 // maps to --font-headline / --font-body / --font-label.
@@ -24,6 +25,13 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // "cover" lets the page draw under the iPhone notch/Dynamic Island and
+  // the home-indicator area instead of a native browser reserving a strip
+  // for its own chrome there — required once this is wrapped in Capacitor,
+  // where there is no browser chrome to reserve that space at all. Content
+  // then has to inset itself with env(safe-area-inset-*) (globals.css) or
+  // it sits under the notch/home indicator.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -41,6 +49,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${bodyFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg text-text">
+        <NativeBootstrap />
         {children}
       </body>
     </html>

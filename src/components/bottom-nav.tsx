@@ -27,7 +27,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
     : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
 
   return (
-    <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-4">
+    <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full border border-line/60 bg-surface/75 px-3 py-2 shadow-lg shadow-slate-900/10 backdrop-blur-2xl backdrop-saturate-150">
         <NavLink href="/" active={pathname === "/"}>
           <HomeIcon filled={pathname === "/"} />

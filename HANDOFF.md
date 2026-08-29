@@ -1595,6 +1595,87 @@ caller from spoofing someone else's `reporter_id`), readable only by
 admins. Linked from Terms, Privacy, Settings, and the welcome screen.
 Verified live: the form renders and submits.
 
+**Capacitor scaffold (`capacitor.config.ts`, `android/`, `ios/`,
+`src/components/native-bootstrap.tsx`)**: MEDLNK is full Next.js SSR —
+Server Actions, Server Components doing a per-request Supabase read,
+cookie-based auth via `src/proxy.ts` — none of which has a static-export
+equivalent, so this isn't a bundled-assets Capacitor app. `server.url` in
+`capacitor.config.ts` points the native WebView straight at the real
+deployed site (`NEXT_PUBLIC_SITE_URL`, falling back to `localhost:3000`
+for a debug build against `next dev`); `webDir` is a harmless placeholder
+(`public/capacitor-www/index.html`) Capacitor requires to exist but never
+actually serves. `npx cap add ios`/`android` generated the real native
+project trees, both committed. `NativeBootstrap`
+(mounted once in the root layout) is a no-op in every ordinary browser
+(`Capacitor.isNativePlatform()` is false there — verified live, no console
+errors) and only inside the wrapped app: hides the native splash screen,
+sets the status bar to dark text (matching MEDLNK's light theme), and
+makes Android's hardware/gesture back button call the Next.js router's
+`back()` instead of the OS default of unwinding the WebView's own history,
+which doesn't know about client-side routing. `viewport.viewportFit:
+"cover"` (`src/app/layout.tsx`) plus new `env(safe-area-inset-*)` padding
+on the bottom nav and top header (`bottom-nav.tsx`, `top-header.tsx`) keep
+content clear of the iPhone notch/Dynamic Island and home-indicator area,
+which a bare browser normally reserves space for on its own but a
+WebView with `viewport-fit=cover` does not.
+
+A bare WebView wrapper like this is exactly what Apple's guideline 4.2
+(minimum functionality) rejects on its own — the native-feeling pieces
+above (splash, status bar, back-button, safe-area) plus the account
+features already built this session (block, delete-account, contact) are
+what make the review case that this is a real app rather than a "web
+clipping," not decoration.
+
+`ios/App/App/PrivacyInfo.xcprivacy` is a baseline Apple privacy manifest,
+honest about the current feature set (email/password auth, profile
+fields, case/comment/message content, verification documents) and
+declaring no tracking and no ad SDKs. **It is not yet wired into the Xcode
+project** — dropping the file on disk isn't enough, it has to be dragged
+into the App target's "Copy Bundle Resources" build phase in Xcode itself
+(Target Membership checkbox), which needs a real Mac + Xcode session, not
+something this Linux sandbox can do. Whoever does that should also re-run
+Apple's privacy manifest checker once any further native plugin (camera,
+photo library, push) is added — each carries its own required-reason API
+and collected-data entries this baseline doesn't anticipate.
+
+`npm install` added `@capacitor/core`, `@capacitor/android`,
+`@capacitor/ios`, `@capacitor/app`, `@capacitor/status-bar`,
+`@capacitor/splash-screen`, and `@capacitor/cli` (dev). `npm audit` came
+back with 4 vulnerabilities pulled in transitively by `@capacitor/cli`'s
+own iOS tooling (nanoid, uuid via `xcode`) — all dev-only build tooling,
+never shipped in the app itself — resolved to 0 via `npm audit fix` +
+`npm audit fix --force` (pinned `@capacitor/cli` to the stable 8.4.2
+release rather than the nightly build npm had initially resolved).
+
+**What's left is store-console work no amount of code can finish** —
+distinct from every other item in this section, which was buildable and
+verifiable from here:
+- An Apple Developer Program enrollment ($99/yr) and a Google Play
+  Console account ($25 one-time), both under whatever entity/name will
+  own the published listing.
+- A Mac with Xcode to open `ios/App/App.xcworkspace` (after `pod install`
+  — CocoaPods isn't available in this sandbox either), assign a signing
+  team, wire in `PrivacyInfo.xcprivacy` as above, and archive/upload a
+  build via Xcode or `xcodebuild` — none of which can be done from Linux.
+- Android Studio (or a configured Android SDK + a release signing
+  keystore) to open `android/`, generate a signed AAB, and upload it —
+  this sandbox has a JDK but no Android SDK/emulator installed.
+- App Store Connect: create the app record with `com.medlnk.app` (or
+  whatever bundle ID is actually registered — change it in
+  `capacitor.config.ts` and both native projects first if this placeholder
+  isn't the final choice), fill in the Privacy Nutrition Label (the
+  content in `PrivacyInfo.xcprivacy` above is the honest starting answer
+  key for that questionnaire), pick an age rating (medical/clinical
+  content with potentially graphic case descriptions likely lands 17+),
+  and supply screenshots at each required device size.
+- Google Play Console: create the app, fill in the Data Safety form (same
+  honest answer key), set the same age rating via Play's own
+  questionnaire, and supply the same kind of store listing assets.
+- Set `NEXT_PUBLIC_SITE_URL` to the real production domain once one
+  exists (already needed for the sitemap/robots and the password-reset
+  origin fix, both above) — `capacitor.config.ts` reads the same variable,
+  so this one env var change points every one of those at production.
+
 ## ⚠️ Blocking manual steps
 
 **Update, this session:** the owner ran `supabase/APPLY_TO_HOSTED.sql`
