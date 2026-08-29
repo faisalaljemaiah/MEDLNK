@@ -49,7 +49,7 @@ export default async function CasePage({
   const isAuthor = user?.id === feedCase.author_id;
 
   const [
-    { recapSummary, similar },
+    { similar },
     interactive,
     reveal,
     comments,
@@ -196,15 +196,6 @@ export default async function CasePage({
         </section>
       ) : (
         <>
-          <section className="mt-5 rounded-xl border border-accent-2/30 bg-accent-2/10 p-4">
-            <p className="font-label text-xs uppercase tracking-wide text-accent-2">
-              AI recap
-            </p>
-            <p className="mt-1 text-sm text-text">
-              {recapSummary ?? "No AI recap yet for this case."}
-            </p>
-          </section>
-
           <div className="mt-5 flex flex-col gap-5">
             {feedCase.full_body.presentation && (
               <CaseBlock

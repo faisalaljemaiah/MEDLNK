@@ -9,7 +9,6 @@ export type SimilarCase = {
 };
 
 export type DiveDeepData = {
-  recapSummary: string | null;
   similar: SimilarCase[];
 };
 
@@ -23,21 +22,14 @@ export async function getDiveDeepDataAction(
 ): Promise<DiveDeepData> {
   const supabase = await createClient();
 
-  const [{ data: recap }, { data: current }] = await Promise.all([
-    supabase
-      .from("ai_recaps")
-      .select("summary")
-      .eq("case_id", caseId)
-      .maybeSingle(),
-    supabase
-      .from("cases")
-      .select("tags, specialty")
-      .eq("id", caseId)
-      .single(),
-  ]);
+  const { data: current } = await supabase
+    .from("cases")
+    .select("tags, specialty")
+    .eq("id", caseId)
+    .single();
 
   if (!current) {
-    return { recapSummary: recap?.summary ?? null, similar: [] };
+    return { similar: [] };
   }
 
   const { data: candidates } = await supabase
@@ -58,5 +50,5 @@ export async function getDiveDeepDataAction(
     .slice(0, 3)
     .map(({ id, title, case_number }) => ({ id, title, case_number }));
 
-  return { recapSummary: recap?.summary ?? null, similar };
+  return { similar };
 }

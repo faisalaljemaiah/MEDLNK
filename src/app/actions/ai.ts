@@ -105,19 +105,3 @@ export async function polishDraftAction(
     };
   }
 }
-
-/**
- * Fires the `generate-recap` Edge Function after a case is inserted. Best
- * effort and cached (the function writes to ai_recaps once) — never blocks
- * or fails case creation if AI is down.
- */
-export async function triggerRecapAction(caseId: string): Promise<void> {
-  try {
-    const supabase = await createClient();
-    await supabase.functions.invoke("generate-recap", {
-      body: { case_id: caseId },
-    });
-  } catch {
-    // Non-critical — the recap can be (re)generated later.
-  }
-}

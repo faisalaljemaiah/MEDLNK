@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isMissingColumnError } from "@/lib/supabase/errors";
-import { scanForIdentifiersAction, triggerRecapAction } from "@/app/actions/ai";
+import { scanForIdentifiersAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
 import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
@@ -426,8 +426,6 @@ export async function createCaseAction(
       };
     }
   }
-
-  await triggerRecapAction(inserted.id);
 
   // A safety alert is the one post type that goes out to the platform rather
   // than waiting its turn in the feed. Best-effort, after the insert: the alert
