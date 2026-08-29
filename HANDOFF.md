@@ -1442,6 +1442,33 @@ using the real anon key instead of through the browser UI; the "expired
 link" and "forgot password link visible on /login" UI states, which need
 no external network call, were verified live through the browser.
 
+**Public-launch readiness pass**: Terms of Service (`/terms`) and Privacy
+Policy (`/privacy`) pages, written to describe what this codebase actually
+collects and enforces (de-identification requirement, verification-document
+handling, admin profile privacy) rather than generic boilerplate — legal
+counsel should still review before relying on this beyond an initial public
+launch. Signup now requires checking an "I agree to the Terms of Service and
+Privacy Policy" box before the submit button enables (`src/app/(auth)/
+signup/page.tsx`), client-enforced only, matching the existing convention
+set by the compose form's identical accountability checkbox
+(`src/components/compose-form.tsx`). Settings and the welcome screen both
+link to `/terms`/`/privacy` so they stay reachable from inside the app, not
+just at signup.
+
+Also added: a branded `not-found.tsx` and `error.tsx` at the app root
+(previously a bare framework default for a broken link or an unhandled
+render error), and `robots.ts`/`sitemap.ts` — the sitemap includes the
+static public pages plus up to 1,000 of the most recent cases (case pages
+are public, same as the signed-out home feed), the robots file disallows
+crawling signed-in-only routes (`/admin`, `/settings`, `/messages`, etc.).
+Both need an absolute domain, which this project has never had an env var
+for (Server Actions instead derive their redirect origin per-request, see
+`requestOrigin()` in `src/app/actions/auth.ts` — not usable here since a
+sitemap has no request to read headers from); added `NEXT_PUBLIC_SITE_URL`
+to `.env.example`, falling back to `http://localhost:3000` when unset.
+**This must be set to the real production domain once one exists**, or the
+sitemap/robots will keep pointing at localhost.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signUpAction } from "@/app/actions/auth";
 import { Logo } from "@/components/logo";
@@ -9,6 +9,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 
 export default function SignUpPage() {
   const [state, action] = useActionState(signUpAction, undefined);
+  const [agreed, setAgreed] = useState(false);
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
@@ -53,7 +54,28 @@ export default function SignUpPage() {
             {state.message}
           </p>
         )}
-        <SubmitButton>Create account</SubmitButton>
+        <label className="flex items-start gap-2.5 text-xs leading-relaxed text-muted">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            required
+            className="mt-0.5 size-3.5 shrink-0 accent-[var(--accent)]"
+          />
+          <span>
+            I agree to MEDLNK&apos;s{" "}
+            <Link href="/terms" className="text-accent hover:underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-accent hover:underline">
+              Privacy Policy
+            </Link>
+            , including the requirement that everything I post is fully
+            de-identified.
+          </span>
+        </label>
+        <SubmitButton disabled={!agreed}>Create account</SubmitButton>
       </form>
 
       <p

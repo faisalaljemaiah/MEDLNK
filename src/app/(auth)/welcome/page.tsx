@@ -50,6 +50,19 @@ export default function WelcomePage() {
           Browse without an account →
         </Link>
       </div>
+
+      <p
+        className="animate-welcome-rise text-xs text-muted"
+        style={{ animationDelay: "400ms" }}
+      >
+        <Link href="/terms" className="hover:text-text">
+          Terms
+        </Link>{" "}
+        ·{" "}
+        <Link href="/privacy" className="hover:text-text">
+          Privacy
+        </Link>
+      </p>
     </div>
   );
 }

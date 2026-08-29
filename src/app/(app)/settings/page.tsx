@@ -36,6 +36,18 @@ export default async function SettingsPage() {
         >
           Edit profile →
         </Link>
+        <Link
+          href="/terms"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          Terms of Service →
+        </Link>
+        <Link
+          href="/privacy"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          Privacy Policy →
+        </Link>
         <form action={signOutAction}>
           <button
             type="submit"
