@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Logo } from "@/components/logo";
 
 export const metadata = { title: "Privacy Policy — Asyashare" };
 
@@ -13,8 +12,11 @@ export const metadata = { title: "Privacy Policy — Asyashare" };
 export default function PrivacyPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-8 px-6 py-12">
-      <Link href="/welcome" className="flex flex-col items-center gap-3 text-center">
-        <Logo size={40} />
+      <Link
+        href="/welcome"
+        className="text-center font-headline text-lg text-text"
+      >
+        Asyashare
       </Link>
 
       <div className="flex flex-col gap-6 rounded-2xl border border-line bg-bg p-6 text-sm leading-relaxed text-text sm:p-8">

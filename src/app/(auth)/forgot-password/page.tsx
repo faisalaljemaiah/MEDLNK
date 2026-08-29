@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { requestPasswordResetAction } from "@/app/actions/auth";
-import { Logo } from "@/components/logo";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -16,7 +15,6 @@ export default function ForgotPasswordPage() {
         href="/welcome"
         className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
       >
-        <Logo size={44} />
         <h1 className="font-headline text-2xl text-text">Reset your password</h1>
         <p className="text-sm text-muted">
           Enter the email on your account and we&apos;ll send a link to reset it.

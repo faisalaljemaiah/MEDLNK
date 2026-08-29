@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Logo } from "@/components/logo";
 import { OnboardingForm } from "@/components/onboarding-form";
 
 export default async function OnboardingPage() {
@@ -32,7 +31,6 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
       <div className="flex flex-col items-center gap-3 text-center">
-        <Logo size={44} />
         <h1 className="font-headline text-2xl text-text">
           {isEdit ? "Edit your profile" : "Set up your profile"}
         </h1>

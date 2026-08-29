@@ -4,7 +4,6 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { submitSupportMessageAction } from "@/app/actions/support";
 import { SUPPORT_REASONS } from "@/lib/support-reasons";
-import { Logo } from "@/components/logo";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -20,7 +19,6 @@ export default function ContactPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
       <Link href="/welcome" className="flex flex-col items-center gap-3 text-center">
-        <Logo size={44} />
         <h1 className="font-headline text-2xl text-text">Contact Asyashare</h1>
         <p className="text-sm text-muted">
           Reporting identifying patient content, a problem with your
