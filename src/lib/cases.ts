@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Case, Profile, ReactionType } from "@/lib/database.types";
+import { getBlockedPairIds } from "@/lib/blocks";
 
 export type FeedAuthor = Pick<
   Profile,
@@ -87,7 +88,16 @@ export async function getFeedCases(
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as unknown as FeedRow[];
-  return rows.map((row) => toFeedCase(row, viewerId));
+
+  // A block hides both sides from each other everywhere the feed is
+  // derived from this function (Home, profiles, search, exchange) — not
+  // just messaging/following, which the RLS layer already stops outright.
+  const blocked = viewerId ? await getBlockedPairIds(supabase, viewerId) : null;
+  const visible = blocked?.size
+    ? rows.filter((row) => !row.author_id || !blocked.has(row.author_id))
+    : rows;
+
+  return visible.map((row) => toFeedCase(row, viewerId));
 }
 
 /**

@@ -1584,6 +1584,17 @@ the hosted project might be missing, ending in a checklist that should read
 only because the hosted project is applied by hand. Every statement in it is
 guarded, so running it twice is a no-op rather than an error.
 
+**Update, this session:** 0029 (`user_blocks` — the block-user feature, see
+"App store / Play store readiness" below) landed and adds two new checklist
+rows. Verified against a from-scratch local Postgres (all 9 new assertions
+pass, full suite still green), but **not applied to the hosted project** —
+that stays the owner's manual step, same as every migration before it. Until
+it's applied, blocking/unblocking fails with a plain "could not find the
+table" error surfaced in the Block button's own error text (not a crash),
+and the feed/profile-page queries that check for blocks silently see none —
+verified live against the real hosted project in its current
+pre-migration state (home feed and profile pages both render normally).
+
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single
 insert — they exist only to survive a partially-migrated project.

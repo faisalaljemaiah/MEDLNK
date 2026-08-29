@@ -14,6 +14,7 @@ import { computeReputationTier } from "@/lib/reputation";
 import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
 import { AdminDashboard } from "@/components/admin-dashboard";
+import { BlockButton } from "@/components/block-button";
 
 const TABS = [
   { key: "posts", label: "Posts" },
@@ -52,6 +53,7 @@ export default async function ProfilePage({
     followerCount,
     followingCount,
     viewerFollows,
+    viewerHasBlocked,
     isOwnProfile,
   } = data;
   const path = `/u/${handle}`;
@@ -167,19 +169,30 @@ export default async function ProfilePage({
           </div>
         ) : user ? (
           <div className="flex min-w-0 flex-col items-end gap-2">
-            <FollowButton
-              followeeId={profile.id}
-              initialFollowing={viewerFollows}
+            {viewerHasBlocked ? (
+              <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
+            ) : (
+              <>
+                <FollowButton
+                  followeeId={profile.id}
+                  initialFollowing={viewerFollows}
+                  path={path}
+                />
+                <form action={startConversationAction.bind(null, profile.id)}>
+                  <button
+                    type="submit"
+                    className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+                  >
+                    Message
+                  </button>
+                </form>
+              </>
+            )}
+            <BlockButton
+              blockedId={profile.id}
+              initialBlocked={viewerHasBlocked}
               path={path}
             />
-            <form action={startConversationAction.bind(null, profile.id)}>
-              <button
-                type="submit"
-                className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
-              >
-                Message
-              </button>
-            </form>
           </div>
         ) : null}
       </div>

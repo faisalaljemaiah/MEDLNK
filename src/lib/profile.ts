@@ -40,6 +40,7 @@ export type ProfilePageData = {
   followerCount: number;
   followingCount: number;
   viewerFollows: boolean;
+  viewerHasBlocked: boolean;
   isOwnProfile: boolean;
 };
 
@@ -63,6 +64,7 @@ export async function getProfileByHandle(
     { count: followerCount },
     { count: followingCount },
     viewerFollowRow,
+    viewerBlockRow,
     allCases,
     replyCountRes,
   ] = await Promise.all([
@@ -80,6 +82,14 @@ export async function getProfileByHandle(
           .select("follower_id")
           .eq("follower_id", viewerId)
           .eq("followee_id", profile.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    viewerId && viewerId !== profile.id
+      ? supabase
+          .from("user_blocks")
+          .select("blocker_id")
+          .eq("blocker_id", viewerId)
+          .eq("blocked_id", profile.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
     getFeedCases(supabase, viewerId),
@@ -138,6 +148,7 @@ export async function getProfileByHandle(
     followerCount: followerCount ?? 0,
     followingCount: followingCount ?? 0,
     viewerFollows: Boolean(viewerFollowRow.data),
+    viewerHasBlocked: Boolean(viewerBlockRow.data),
     isOwnProfile,
   };
 }

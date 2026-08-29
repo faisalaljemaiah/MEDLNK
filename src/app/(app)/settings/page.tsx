@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getViewer, getViewerProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { getBlockedByViewer } from "@/lib/blocks";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { UnblockButton } from "@/components/block-button";
 import { signOutAction } from "@/app/actions/auth";
 import { t } from "@/lib/i18n";
 
@@ -11,6 +14,8 @@ export default async function SettingsPage() {
 
   const profile = await getViewerProfile();
   const locale = profile?.locale ?? "en";
+  const supabase = await createClient();
+  const blockedAccounts = await getBlockedByViewer(supabase, user.id);
 
   return (
     <div className="px-4 py-6">
@@ -19,6 +24,22 @@ export default async function SettingsPage() {
       <section className="mt-6 rounded-2xl border border-line bg-surface p-4">
         <LanguageSwitcher current={locale} />
       </section>
+
+      {blockedAccounts.length > 0 && (
+        <section className="mt-4 rounded-2xl border border-line bg-surface p-4">
+          <h2 className="text-sm font-medium text-text">Blocked accounts</h2>
+          <div className="mt-3 flex flex-col gap-3">
+            {blockedAccounts.map((account) => (
+              <div key={account.id} className="flex items-center justify-between gap-3">
+                <span className="truncate text-sm text-text">
+                  {account.full_name || `@${account.handle}`}
+                </span>
+                <UnblockButton blockedId={account.id} path="/settings" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
         <Link

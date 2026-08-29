@@ -1632,6 +1632,79 @@ end;
 $$;
 
 -- ============================================================================
+-- 0029_user_blocks.sql — blocking (App Store/Play UGC requirement)
+-- ============================================================================
+
+create table if not exists public.user_blocks (
+  blocker_id uuid not null references public.profiles (id) on delete cascade,
+  blocked_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+
+alter table public.user_blocks enable row level security;
+
+drop policy if exists "user_blocks_select_participant" on public.user_blocks;
+create policy "user_blocks_select_participant"
+  on public.user_blocks for select
+  using (auth.uid() = blocker_id or auth.uid() = blocked_id);
+
+drop policy if exists "user_blocks_insert_own" on public.user_blocks;
+create policy "user_blocks_insert_own"
+  on public.user_blocks for insert
+  with check (auth.uid() = blocker_id);
+
+drop policy if exists "user_blocks_delete_own" on public.user_blocks;
+create policy "user_blocks_delete_own"
+  on public.user_blocks for delete
+  using (auth.uid() = blocker_id);
+
+create or replace function public.is_blocked_pair(a uuid, b uuid)
+returns boolean
+language sql
+stable
+as $$
+  select exists (
+    select 1 from public.user_blocks
+    where (blocker_id = a and blocked_id = b)
+       or (blocker_id = b and blocked_id = a)
+  );
+$$;
+
+drop policy if exists "conversations_insert_verified_participant" on public.conversations;
+create policy "conversations_insert_verified_participant"
+  on public.conversations for insert
+  with check (
+    (auth.uid() = user_a or auth.uid() = user_b)
+    and public.is_verified()
+    and not public.is_blocked_pair(user_a, user_b)
+  );
+
+drop policy if exists "messages_insert_verified_participant" on public.messages;
+create policy "messages_insert_verified_participant"
+  on public.messages for insert
+  with check (
+    auth.uid() = sender_id
+    and public.is_verified()
+    and exists (
+      select 1 from public.conversations c
+      where c.id = conversation_id
+        and (c.user_a = auth.uid() or c.user_b = auth.uid())
+        and not public.is_blocked_pair(c.user_a, c.user_b)
+    )
+  );
+
+drop policy if exists "follows_insert_verified_own" on public.follows;
+create policy "follows_insert_verified_own"
+  on public.follows for insert
+  with check (
+    auth.uid() = follower_id
+    and public.is_verified()
+    and not public.is_blocked_pair(follower_id, followee_id)
+  );
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1799,5 +1872,10 @@ from (
      exists (select 1 from storage.buckets where id = 'verification-docs' and public = false)),
     ('SECURITY: rejected members can resubmit to pending',
      coalesce((select prosrc like '%rejected%'
-               from pg_proc where proname = 'guard_profile_privilege_columns'), false))
+               from pg_proc where proname = 'guard_profile_privilege_columns'), false)),
+    ('table: user_blocks',
+     exists (select 1 from information_schema.tables
+             where table_schema = 'public' and table_name = 'user_blocks')),
+    ('SECURITY: blocked users cannot message/follow',
+     exists (select 1 from pg_proc where proname = 'is_blocked_pair'))
 ) as checks(item, present);

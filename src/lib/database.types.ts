@@ -349,6 +349,12 @@ export type Follow = {
   created_at: string;
 };
 
+export type UserBlock = {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+};
+
 export type AiRecap = {
   case_id: string;
   summary: string | null;
@@ -414,6 +420,12 @@ export type Database = {
         Row: Follow;
         Insert: Partial<Follow> & { follower_id: string; followee_id: string };
         Update: Partial<Follow>;
+        Relationships: [];
+      };
+      user_blocks: {
+        Row: UserBlock;
+        Insert: Partial<UserBlock> & { blocker_id: string; blocked_id: string };
+        Update: Partial<UserBlock>;
         Relationships: [];
       };
       ai_recaps: {

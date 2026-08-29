@@ -26,3 +26,16 @@ export function isMissingColumnError(error: { code?: string } | null): boolean {
 export function isMissingBucketError(error: { message?: string } | null): boolean {
   return Boolean(error?.message?.toLowerCase().includes("bucket not found"));
 }
+
+/**
+ * A table that hasn't been created yet (e.g. user_blocks, 0029, on a
+ * project that hasn't run the migration) — 42P01 (undefined_table) if it
+ * somehow reaches Postgres directly, or PostgREST's own PGRST205 ("Could
+ * not find the table ... in the schema cache") beforehand. Same purpose as
+ * isMissingColumnError: let a read/write degrade gracefully instead of
+ * taking down an unrelated feature (the whole home feed, in this table's
+ * case) over one not-yet-migrated piece of infrastructure.
+ */
+export function isMissingTableError(error: { code?: string } | null): boolean {
+  return error?.code === "42P01" || error?.code === "PGRST205";
+}
