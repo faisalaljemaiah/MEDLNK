@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 
-export const metadata = { title: "Privacy Policy — MEDLNK" };
+export const metadata = { title: "Privacy Policy — Asyashare" };
 
 /**
  * Describes what this codebase actually collects and stores (see
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
 
         <Section title="8. Children's privacy">
           <p>
-            MEDLNK is for medical professionals and students and is not
+            Asyashare is for medical professionals and students and is not
             directed at children. We don&apos;t knowingly collect data from
             anyone under 16.
           </p>
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
 
         <Section title="9. Changes to this policy">
           <p>
-            We may update this policy as MEDLNK evolves. Material changes
+            We may update this policy as Asyashare evolves. Material changes
             will be noted on this page with an updated date above.
           </p>
         </Section>

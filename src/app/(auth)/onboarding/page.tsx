@@ -39,7 +39,7 @@ export default async function OnboardingPage() {
         <p className="text-sm text-muted">
           {isEdit
             ? "Update your picture, details, and specialty."
-            : "We manually review every license before you can post a case. You can browse MEDLNK while you wait."}
+            : "We manually review every license before you can post a case. You can browse Asyashare while you wait."}
         </p>
       </div>
 

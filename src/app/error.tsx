@@ -38,7 +38,7 @@ export default function ErrorBoundary({
           href="/"
           className="rounded-full border border-line px-5 py-2.5 text-sm font-medium text-text transition-[border-color,color] duration-150 ease-out hover:border-accent hover:text-accent active:scale-95"
         >
-          Back to MEDLNK
+          Back to Asyashare
         </Link>
       </div>
     </div>

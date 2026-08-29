@@ -96,7 +96,7 @@ body {
  * The AI "thinking" glow — a rotating conic-gradient rim around an
  * AI-touched control (the compose form's spelling-check button, wrapped by
  * <AIButton>), same family of effect as Gemini's shifting-hue indicator,
- * built from MEDLNK's own five-stop --ai-hue-* sweep rather than borrowed
+ * built from Asyashare's own five-stop --ai-hue-* sweep rather than borrowed
  * brand colors.
  *
  * Deliberately NOT a blurred halo: filter: blur() has no containment of its
@@ -180,7 +180,7 @@ body {
 /*
  * Brand-only variant for the Create button specifically (bottom nav +
  * desktop sidebar) — Create is a plain compose action, not an AI feature,
- * so it gets MEDLNK's own Caribbean green plus white instead of the
+ * so it gets Asyashare's own Caribbean green plus white instead of the
  * AI-hue sweep the rest of .ai-glow's usages (the AI button, the search
  * bar) keep. Same rim-only mechanic as .ai-glow — this only overrides the
  * spinning layer's color, stacked alongside the base class:
@@ -191,7 +191,7 @@ body {
 }
 
 /*
- * MEDLNK ambient pulse — three overlapping wavy lines in the AI hues,
+ * Asyashare ambient pulse — three overlapping wavy lines in the AI hues,
  * drifting past each other behind the dashboard greeting (see
  * <MedLnkPulse>). Low opacity and slow deliberately: texture, not a thing
  * anyone consciously notices animating. Each keyframe's translateX distance

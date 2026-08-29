@@ -1,4 +1,4 @@
-# MEDLNK — handoff
+# Asyashare — handoff
 
 State of the project as of the last session. Read this plus `PLAN.md` before
 picking work up.
@@ -60,7 +60,7 @@ saves the rest of the profile, it just can't save the country itself yet
 (same missing-column retry pattern), and the composer shows "Not set"
 regardless of what's actually on the profile. No error, no crash.
 
-## What MEDLNK is
+## What Asyashare is
 
 A clinical knowledge network for verified healthcare professionals and
 students. Verified clinicians post cases, near misses and lessons; others
@@ -166,7 +166,7 @@ untouched, real data only. What that produced:
   `getActiveDiscussions`) compute everything from existing tables. Nothing new
   in the database.
 - **Deliberately not built**, because building them would have meant either
-  fabricating data or a fake destination: a "MEDLNK Pro" upsell (no paid tier
+  fabricating data or a fake destination: a "Asyashare Pro" upsell (no paid tier
   exists — this would have been a card promoting a product that isn't real),
   fake "Shortcuts" (Job Board, Research Hub, etc. — none exist; the composer's
   quick-create panel is the honest version of this idea), and an "Upcoming
@@ -189,7 +189,7 @@ untouched, real data only. What that produced:
   browser, not just eyeballed. Fixed by letting that row wrap
   (`src/app/(app)/u/[handle]/page.tsx`).
 - Verified against the real hosted project, signed in as a seeded user, via
-  a temporary `MEDLNK_LOCAL_VIEWER` env-var stub in `getViewer()` — added,
+  a temporary `Asyashare_LOCAL_VIEWER` env-var stub in `getViewer()` — added,
   used to screenshot every new section with real data, then fully reverted
   before committing (`git diff src/lib/auth.ts` is empty). Same pattern a
   prior session used and documented; do the same if you need to visually
@@ -238,7 +238,7 @@ Owner's ask: remove the header notification bell, add a Settings page, and
   wanted back, the natural place is probably a dot on the gear or on the
   profile avatar, not reintroducing the bell.
 - Verified the same way as the Home redesign: a temporary
-  `MEDLNK_LOCAL_LOCALE_OVERRIDE` env var (alongside `MEDLNK_LOCAL_VIEWER`) in
+  `Asyashare_LOCAL_LOCALE_OVERRIDE` env var (alongside `Asyashare_LOCAL_VIEWER`) in
   `layout.tsx`/`page.tsx`/`settings/page.tsx`, screenshotted in Arabic
   against real hosted-project data, then fully reverted — same
   `git diff`-is-empty discipline as always. The hosted project doesn't have
@@ -472,7 +472,7 @@ every other format (What Would You Do?, Near Miss, etc.) — no new table.
 Requested by name ("like the one on Gemini") — a rotating, blurred
 multi-hue halo behind an AI-touched control, scoped to the one AI feature
 in the app (the compose form's "Check spelling & clarity" button) rather
-than as general chrome, and built from MEDLNK's own colors rather than
+than as general chrome, and built from Asyashare's own colors rather than
 Gemini's actual blue/red/yellow/green: Caribbean green (`--accent`), a
 clean blue, and orange — three new `--ai-hue-*` tokens in `theme.css`,
 explicitly called out as decorative-only and exempt from the 4.5:1
@@ -552,7 +552,7 @@ list where a real one was warranted:
 - `PageTransition` — a one-line named wrapper over React 19's native
   `<ViewTransition>`, which this app already uses (Home's feed-tab
   crossfade, the tab underline) — not a second, competing transition
-  system. Exists so future call sites read as "a MEDLNK page transition"
+  system. Exists so future call sites read as "a Asyashare page transition"
   rather than a bare, unexplained `<ViewTransition>`; not yet adopted at
   any new call site since the existing two usages already do the job.
 - `AnimatedCard`/`NetworkPulse`/`AIGradient`/`AnimatedNavigation` from the
@@ -739,7 +739,7 @@ Two spec details didn't map onto real fields in this schema, so they're
 adapted rather than faked, same convention as everywhere else this
 project touches AI/data:
 
-- **"Site" in the card meta line** doesn't exist — MEDLNK deliberately
+- **"Site" in the card meta line** doesn't exist — Asyashare deliberately
   never collects a clinician's hospital/unit. The meta line reads
   `role · specialty · time` instead (all real fields), with a new
   `timeAgo()` helper (`src/lib/time.ts`) for the relative timestamp —
@@ -756,7 +756,7 @@ project touches AI/data:
   case/comment/reaction, walking back from today, not a fabricated
   number. A brand-new account correctly shows "0-day streak" —
   confirmed, not assumed.
-- **"Poll" badge**: not a real MEDLNK format. Reused the existing
+- **"Poll" badge**: not a real Asyashare format. Reused the existing
   `typeMeta.badge` system as-is (What would you do? / Near miss / Photo /
   Quote / Video / etc.) — the generic content-type badge this need
   already had.
@@ -1469,6 +1469,28 @@ to `.env.example`, falling back to `http://localhost:3000` when unset.
 **This must be set to the real production domain once one exists**, or the
 sitemap/robots will keep pointing at localhost.
 
+**Rebrand: MEDLNK → Asyashare.** Every user-facing string (wordmark, page
+titles/metadata, welcome/login/signup/terms/privacy/contact copy, Settings)
+and the app-level identifiers that follow it: `package.json`'s name,
+`capacitor.config.ts`'s `appId`/`appName` (`com.medlnk.app` →
+`com.asyashare.app`), the Android package (`build.gradle`, `strings.xml`,
+and `MainActivity.java` moved from `com/medlnk/app` to `com/asyashare/app`
+with its package declaration updated), iOS's `PRODUCT_BUNDLE_IDENTIFIER`
+(both build configs in `project.pbxproj`) and `CFBundleDisplayName`
+(`Info.plist`), and `.env.example`'s domain placeholder. `npx cap sync`
+regenerated the native projects' own `capacitor.config.json` copies with
+the new values (those are gitignored, not committed). Deliberately **not**
+renamed: the lowercase `medlnk-*` CSS keyframe/class names throughout
+`globals.css` (marquee, ECG scroll, pulse lines, entrance animations) and
+the handful of components that reference them in comments — pure internal
+naming with no user-visible effect, and touching them buys nothing. Also
+left alone: the local Postgres test scripts' `medlnk`-named scratch
+database/work directory (`supabase/tests/*.sh`) — internal tooling, not
+part of the product. `scripts/seed.ts`'s fixture email domain became
+`@asyashare.dev` for consistency (fake addresses either way, no functional
+effect). Verified live: page titles, the welcome screen wordmark, and a
+full `tsc`/`lint`/`build` all reflect the new name.
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
@@ -1485,7 +1507,7 @@ ever used in `scripts/seed.ts`, never in `src/app` or `src/components`.
    is row-level only. Any signed-in member could self-set `is_admin`,
    `verified`/`verification_status`, or clear `suspended_at` via a direct
    PostgREST PATCH — full admin access or bypassing license verification
-   entirely, MEDLNK's core trust mechanism. Same bug class 0013 already fixed
+   entirely, Asyashare's core trust mechanism. Same bug class 0013 already fixed
    for `moderation_status`, just never applied to `profiles`. Fixed with the
    same pattern: a `before update` trigger (`guard_profile_privilege_columns`)
    that blocks a change to any of the five privileged columns unless the
@@ -1596,7 +1618,7 @@ admins. Linked from Terms, Privacy, Settings, and the welcome screen.
 Verified live: the form renders and submits.
 
 **Capacitor scaffold (`capacitor.config.ts`, `android/`, `ios/`,
-`src/components/native-bootstrap.tsx`)**: MEDLNK is full Next.js SSR —
+`src/components/native-bootstrap.tsx`)**: Asyashare is full Next.js SSR —
 Server Actions, Server Components doing a per-request Supabase read,
 cookie-based auth via `src/proxy.ts` — none of which has a static-export
 equivalent, so this isn't a bundled-assets Capacitor app. `server.url` in
@@ -1609,7 +1631,7 @@ project trees, both committed. `NativeBootstrap`
 (mounted once in the root layout) is a no-op in every ordinary browser
 (`Capacitor.isNativePlatform()` is false there — verified live, no console
 errors) and only inside the wrapped app: hides the native splash screen,
-sets the status bar to dark text (matching MEDLNK's light theme), and
+sets the status bar to dark text (matching Asyashare's light theme), and
 makes Android's hardware/gesture back button call the Next.js router's
 `back()` instead of the OS default of unwinding the WebView's own history,
 which doesn't know about client-side routing. `viewport.viewportFit:

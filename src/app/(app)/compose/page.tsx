@@ -32,7 +32,7 @@ export default async function ComposePage({
     <div className="px-4 py-6">
       <h1 className="mb-1 font-headline text-xl text-text">Share a case</h1>
       <p className="mb-6 text-sm text-muted">
-        Cases are public to every verified clinician on MEDLNK.
+        Cases are public to every verified clinician on Asyashare.
       </p>
       <ComposeForm initialType={type} viewerCountryCode={profile.country_code} />
     </div>

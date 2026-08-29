@@ -14,7 +14,7 @@ export function UnavailableNotice({ feature }: { feature: string }) {
         {feature} isn&apos;t switched on yet.
       </p>
       <p className="mt-1 text-sm text-muted">
-        This part of MEDLNK is still being set up — check back shortly.
+        This part of Asyashare is still being set up — check back shortly.
       </p>
     </div>
   );

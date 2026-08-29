@@ -23,7 +23,7 @@ const QUICK_ACTIONS = [
  * Three compact entry points onto /compose?type=<case_type> — replaces the
  * single ComposerRow pill (IA redesign, this session). "Start a Discussion"
  * and "Post an Update" from the spec don't map to a distinct real case
- * type, so both fold into "Quick Update" → saw_this_today, MEDLNK's
+ * type, so both fold into "Quick Update" → saw_this_today, Asyashare's
  * existing lightweight post format, rather than inventing new ones. Every
  * other format stays reachable from the full post-type picker on /compose
  * itself — this is just three extra one-tap shortcuts into it, not a new

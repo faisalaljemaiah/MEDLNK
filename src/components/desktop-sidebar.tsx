@@ -51,7 +51,7 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
         className="mb-6 flex items-center gap-2 px-3 font-headline text-lg text-text"
       >
         <Logo size={28} />
-        MEDLNK
+        Asyashare
       </Link>
 
       <SidebarLink href="/" label="Home" active={pathname === "/"}>

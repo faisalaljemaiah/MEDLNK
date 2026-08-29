@@ -10,7 +10,7 @@ export function localeDir(locale: Locale): "ltr" | "rtl" {
 }
 
 /**
- * A bounded translation of MEDLNK's most visible chrome — Home, the settings
+ * A bounded translation of Asyashare's most visible chrome — Home, the settings
  * page itself, primary navigation — not the whole app. Case bodies, comments,
  * admin tooling and the rest stay English regardless of locale; translating
  * user-generated clinical content is a different, much larger project than
@@ -64,7 +64,7 @@ const en = {
 
   "settings.title": "Settings",
   "settings.language": "Language",
-  "settings.languageHint": "Changes what you see across MEDLNK. Case write-ups, comments and other member-written content stay in whatever language they were written in.",
+  "settings.languageHint": "Changes what you see across Asyashare. Case write-ups, comments and other member-written content stay in whatever language they were written in.",
   "settings.save": "Save",
   "settings.saved": "Saved.",
 } as const;
@@ -112,7 +112,7 @@ const ar: Partial<Record<TranslationKey, string>> = {
 
   "settings.title": "الإعدادات",
   "settings.language": "اللغة",
-  "settings.languageHint": "يغيّر هذا ما تراه في MEDLNK. تبقى الحالات والتعليقات ومحتوى الأعضاء الآخر بلغته الأصلية.",
+  "settings.languageHint": "يغيّر هذا ما تراه في Asyashare. تبقى الحالات والتعليقات ومحتوى الأعضاء الآخر بلغته الأصلية.",
   "settings.save": "حفظ",
   "settings.saved": "تم الحفظ.",
 };

@@ -57,7 +57,7 @@ export default function LoginPage() {
         className="animate-welcome-rise text-center text-sm text-muted"
         style={{ animationDelay: "220ms" }}
       >
-        New to MEDLNK?{" "}
+        New to Asyashare?{" "}
         <Link href="/signup" className="text-accent hover:underline">
           Create an account
         </Link>

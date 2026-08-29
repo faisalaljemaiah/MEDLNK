@@ -36,7 +36,7 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
       {/* max-w-sm keeps the card portrait on desktop; on a phone the viewport
           is already narrower than that, so it just fills the gutters.
           No photo: a plain light card, same surface/border/text as the rest
-          of the app — MEDLNK is light-mode only, no colour-block or dark
+          of the app — Asyashare is light-mode only, no colour-block or dark
           "poster" treatment standing in for a missing image. */}
       <div
         className={clsx(

@@ -6,7 +6,7 @@ import { ViewTransition } from "react";
  * (src/app/(app)/page.tsx) and their sliding underline
  * (src/components/home/feed-tabs.tsx). This isn't a second, competing
  * transition system; it's that same mechanism given one name so every call
- * site reads as "this is a MEDLNK page transition" rather than a bare,
+ * site reads as "this is a Asyashare page transition" rather than a bare,
  * unexplained `<ViewTransition>`. Degrades to an instant swap wherever the
  * browser has no View Transitions support, and is skipped automatically
  * under prefers-reduced-motion (handled globally in globals.css).

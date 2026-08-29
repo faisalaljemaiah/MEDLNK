@@ -6,7 +6,7 @@ import { CommentIcon } from "@/components/icons";
 
 /**
  * Real, currently-discussed cases — not a fabricated events calendar.
- * MEDLNK has no events feature; this fills the same "what's happening right
+ * Asyashare has no events feature; this fills the same "what's happening right
  * now" role in the right rail with data that actually exists. Reply counts
  * stay English for the same plural-form reason noted in
  * trending-communities.tsx.

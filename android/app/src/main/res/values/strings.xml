@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MEDLNK</string>
-    <string name="title_activity_main">MEDLNK</string>
-    <string name="package_name">com.medlnk.app</string>
-    <string name="custom_url_scheme">com.medlnk.app</string>
+    <string name="app_name">Asyashare</string>
+    <string name="title_activity_main">Asyashare</string>
+    <string name="package_name">com.asyashare.app</string>
+    <string name="custom_url_scheme">com.asyashare.app</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.medlnk.app;
+package com.asyashare.app;
 
 import com.getcapacitor.BridgeActivity;
 

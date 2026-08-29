@@ -81,7 +81,7 @@ export function ReportButton({
       <div>
         <p className="text-sm font-medium text-text">Report this {noun}</p>
         <p className="mt-0.5 text-xs text-muted">
-          Goes to MEDLNK moderators. The author isn&apos;t told who reported it.
+          Goes to Asyashare moderators. The author isn&apos;t told who reported it.
         </p>
       </div>
 

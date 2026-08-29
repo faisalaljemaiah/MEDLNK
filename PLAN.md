@@ -1,4 +1,4 @@
-# MEDLNK upgrade — technical implementation plan
+# Asyashare upgrade — technical implementation plan
 
 Written after inspecting the existing codebase. Nothing here proposes a
 rewrite: every feature below hangs off the current architecture, schema and

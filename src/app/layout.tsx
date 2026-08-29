@@ -13,7 +13,7 @@ const bodyFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MEDLNK",
+  title: "Asyashare",
   description:
     "A clinical knowledge network for verified medical professionals.",
 };

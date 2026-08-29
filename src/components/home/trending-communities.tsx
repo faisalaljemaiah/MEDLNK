@@ -5,7 +5,7 @@ import type { Locale } from "@/lib/database.types";
 import { GlobeIcon } from "@/components/icons";
 
 /**
- * MEDLNK has no dedicated communities table — each "community" here is a
+ * Asyashare has no dedicated communities table — each "community" here is a
  * specialty with real recent case activity (see getTrendingCommunities),
  * linked into the existing /search?specialty= filter rather than a new page.
  *

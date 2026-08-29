@@ -1,4 +1,4 @@
--- Core schema for MEDLNK v1 (text + image cases only).
+-- Core schema for Asyashare v1 (text + image cases only).
 -- Video/live fields are intentionally NOT included yet — when that lands later,
 -- add a nullable `media_type` / separate `media` table rather than overloading
 -- `media_url`, so existing rows keep working unmodified.

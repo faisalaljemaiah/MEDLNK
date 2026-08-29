@@ -49,7 +49,7 @@ export function computeReputationTier(stats: ContributionStats): ReputationTier 
     return {
       label: "Core contributor",
       description:
-        "A sustained record of teaching and patient-safety contributions on MEDLNK.",
+        "A sustained record of teaching and patient-safety contributions on Asyashare.",
     };
   }
   if (score >= 45) {
@@ -62,7 +62,7 @@ export function computeReputationTier(stats: ContributionStats): ReputationTier 
   if (score >= 12) {
     return {
       label: "Active contributor",
-      description: "A growing contribution history on MEDLNK.",
+      description: "A growing contribution history on Asyashare.",
     };
   }
   return {

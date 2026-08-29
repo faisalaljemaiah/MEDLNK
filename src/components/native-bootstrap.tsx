@@ -12,7 +12,7 @@ import { Capacitor } from "@capacitor/core";
  * Handles the three things a bare WebView doesn't get for free, all of
  * which App Store/Play reviewers actually look for on a web-wrapped app:
  * hiding the native splash screen once the real page has painted, matching
- * the status bar's text color to MEDLNK's light theme, and making
+ * the status bar's text color to Asyashare's light theme, and making
  * Android's hardware/gesture back button behave like a back button (go
  * back in-app, only exit at the true root) instead of the OS default of
  * closing the WebView's own history, which doesn't know about Next.js's

@@ -13,7 +13,7 @@
 --
 -- via a plain authenticated REST call to Supabase — the anon key is public by
 -- design, so this needs no special access, just a signed-up account. This
--- undermines MEDLNK's entire premise ("verified healthcare professionals
+-- undermines Asyashare's entire premise ("verified healthcare professionals
 -- only") and gives full admin access to anyone who tries. Fixed by a trigger
 -- (RLS's WITH CHECK can't see the old row, which "this may not change except
 -- by an admin" needs). Full writeup in HANDOFF.md and

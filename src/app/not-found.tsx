@@ -15,7 +15,7 @@ export default function NotFound() {
         href="/"
         className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-transform duration-150 ease-out active:scale-95"
       >
-        Back to MEDLNK
+        Back to Asyashare
       </Link>
     </div>
   );

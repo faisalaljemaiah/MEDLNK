@@ -31,7 +31,7 @@ export type HomeStats = {
   connectionsThisWeek: number;
   casesShared: number;
   casesThisWeek: number;
-  /** Distinct specialties represented in the feed right now — MEDLNK's unit
+  /** Distinct specialties represented in the feed right now — Asyashare's unit
    *  of "community" is a specialty, not a dedicated communities table. */
   communities: number;
   activity: {
@@ -227,7 +227,7 @@ export type TrendingTopic = {
 /**
  * Tags with the most recent activity — same derivation as
  * getTrendingCommunities, just grouped by tag instead of specialty, since
- * MEDLNK has no dedicated topics table either. momentum is a real signal
+ * Asyashare has no dedicated topics table either. momentum is a real signal
  * (more of this tag in the last 3 days than the 3 before that), not a
  * fabricated one.
  */
@@ -272,7 +272,7 @@ export type TrendingCommunity = {
 
 /**
  * Specialties with the most recent activity — real, derived from the same
- * `specialty` field cases already carry. MEDLNK has no dedicated communities
+ * `specialty` field cases already carry. Asyashare has no dedicated communities
  * table; this is the honest stand-in rather than a fabricated one.
  */
 export async function getTrendingCommunities(

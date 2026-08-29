@@ -106,7 +106,7 @@ export default async function SearchPage({
           server-rendered. */}
       <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
         {/* Same rim mechanic as <AIButton>/the compose nav button
-            (.ai-glow, globals.css), but in MEDLNK's own Caribbean green
+            (.ai-glow, globals.css), but in Asyashare's own Caribbean green
             and white (.ai-glow-brand) rather than the AI-hue sweep —
             search isn't an AI feature, and every search bar in the app
             (this one, the admin dashboard's) now shares this same look. */}

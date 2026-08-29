@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
  * This wraps the real, live Next.js site — it does not bundle a copy of
- * it. MEDLNK is full Next.js SSR (Server Actions, Server Components doing
+ * it. Asyashare is full Next.js SSR (Server Actions, Server Components doing
  * a per-request Supabase read, cookie-based auth via src/proxy.ts) — none
  * of that has a static-export equivalent (`output: 'export'` supports
  * none of it), so `webDir` below is a harmless placeholder Capacitor
@@ -18,8 +18,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const serverUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 const config: CapacitorConfig = {
-  appId: "com.medlnk.app",
-  appName: "MEDLNK",
+  appId: "com.asyashare.app",
+  appName: "Asyashare",
   webDir: "public/capacitor-www",
   server: {
     url: serverUrl,

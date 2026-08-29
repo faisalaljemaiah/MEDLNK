@@ -1,5 +1,5 @@
 /*
- * MEDLNK design tokens — the ONLY place color and font decisions should live.
+ * Asyashare design tokens — the ONLY place color and font decisions should live.
  * Swap the values below to re-skin the whole app. Every component should
  * reference the Tailwind utilities generated from these tokens (bg-bg,
  * text-text, border-line, bg-accent, etc.) — never a raw hex/color name.
@@ -49,7 +49,7 @@
    * globals.css) and the wider "AI gradient" motif (MedLnkPulse, the compose
    * form's connecting line, the case-card hover rim) — never used as
    * text/background color, so exempt from the 4.5:1 contrast rule above.
-   * Deliberately no green here (even though --accent is MEDLNK's brand
+   * Deliberately no green here (even though --accent is Asyashare's brand
    * green): the point of this sweep is to read as "AI", a distinct visual
    * language from the rest of the app's teal, so it stays in its own
    * cyan → blue → indigo → violet → pink lane. --ai-hue-4 reuses --accent-2,

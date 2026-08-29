@@ -9,7 +9,7 @@ import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
 /**
- * Reachable with no account and no sign-in — this is MEDLNK's published
+ * Reachable with no account and no sign-in — this is Asyashare's published
  * contact channel for reporting objectionable or identifying content and
  * for general support, not gated behind the in-app report button (which
  * requires being signed in and viewing the specific case/comment/profile).
@@ -21,7 +21,7 @@ export default function ContactPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
       <Link href="/welcome" className="flex flex-col items-center gap-3 text-center">
         <Logo size={44} />
-        <h1 className="font-headline text-2xl text-text">Contact MEDLNK</h1>
+        <h1 className="font-headline text-2xl text-text">Contact Asyashare</h1>
         <p className="text-sm text-muted">
           Reporting identifying patient content, a problem with your
           account, or anything else — we read every message.

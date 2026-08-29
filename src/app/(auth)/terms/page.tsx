@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 
-export const metadata = { title: "Terms of Service — MEDLNK" };
+export const metadata = { title: "Terms of Service — Asyashare" };
 
 /**
- * Baseline terms for launch — written to match how MEDLNK actually works
+ * Baseline terms for launch — written to match how Asyashare actually works
  * (verified-professional membership, de-identification requirement, the
  * permanent-block consequence already stated on the compose form) rather
  * than generic boilerplate. Legal counsel should review before this is
@@ -23,12 +23,12 @@ export default function TermsPage() {
           <p className="mt-1 text-xs text-muted">Last updated August 29, 2026</p>
         </div>
 
-        <Section title="1. What MEDLNK is">
+        <Section title="1. What Asyashare is">
           <p>
-            MEDLNK is a clinical knowledge network for verified medical
+            Asyashare is a clinical knowledge network for verified medical
             professionals and students to share de-identified clinical
             cases, near misses, and questions for discussion and learning.
-            It is not a medical device, and nothing on MEDLNK is medical
+            It is not a medical device, and nothing on Asyashare is medical
             advice for the treatment of any specific patient.
           </p>
         </Section>
@@ -56,7 +56,7 @@ export default function TermsPage() {
           </p>
           <p className="mt-2 font-medium">
             If patient-identifiable information is found in anything you
-            posted, your account will be permanently blocked from MEDLNK and
+            posted, your account will be permanently blocked from Asyashare and
             you will not be able to sign up again. We may also be required
             to remove the content and, where applicable, report the
             exposure.
@@ -65,7 +65,7 @@ export default function TermsPage() {
 
         <Section title="4. Acceptable use">
           <p>
-            Don&apos;t use MEDLNK to harass another user, misrepresent your
+            Don&apos;t use Asyashare to harass another user, misrepresent your
             credentials or role, upload malicious files, scrape or bulk-copy
             content, or use the platform for any unlawful purpose. We may
             remove content or suspend accounts that violate these terms or
@@ -76,7 +76,7 @@ export default function TermsPage() {
         <Section title="5. Your content">
           <p>
             You keep ownership of what you post. By posting, you grant
-            MEDLNK a non-exclusive, worldwide, royalty-free license to host,
+            Asyashare a non-exclusive, worldwide, royalty-free license to host,
             display, and distribute that content within the platform so
             other users can view and discuss it. You&apos;re responsible for
             having the right to post whatever you share.
@@ -85,10 +85,10 @@ export default function TermsPage() {
 
         <Section title="6. No medical advice, no liability for clinical decisions">
           <p>
-            Content on MEDLNK reflects individual clinicians&apos; accounts
-            and opinions, not verified clinical guidance. Nothing on MEDLNK
+            Content on Asyashare reflects individual clinicians&apos; accounts
+            and opinions, not verified clinical guidance. Nothing on Asyashare
             should be used as the basis for a treatment decision for an
-            actual patient. MEDLNK is provided &quot;as is&quot; without
+            actual patient. Asyashare is provided &quot;as is&quot; without
             warranties of any kind, and to the fullest extent permitted by
             law we are not liable for decisions made based on content found
             here.
@@ -106,7 +106,7 @@ export default function TermsPage() {
 
         <Section title="8. Changes to these terms">
           <p>
-            We may update these terms as MEDLNK evolves. Material changes
+            We may update these terms as Asyashare evolves. Material changes
             will be noted on this page with an updated date above.
           </p>
         </Section>

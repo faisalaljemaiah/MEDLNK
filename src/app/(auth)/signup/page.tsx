@@ -18,7 +18,7 @@ export default function SignUpPage() {
         className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
       >
         <Logo size={44} />
-        <h1 className="font-headline text-2xl text-text">Join MEDLNK</h1>
+        <h1 className="font-headline text-2xl text-text">Join Asyashare</h1>
         <p className="text-sm text-muted">
           A clinical knowledge network for verified medical professionals.
         </p>
@@ -63,7 +63,7 @@ export default function SignUpPage() {
             className="mt-0.5 size-3.5 shrink-0 accent-[var(--accent)]"
           />
           <span>
-            I agree to MEDLNK&apos;s{" "}
+            I agree to Asyashare&apos;s{" "}
             <Link href="/terms" className="text-accent hover:underline">
               Terms of Service
             </Link>{" "}

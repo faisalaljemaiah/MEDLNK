@@ -1,4 +1,4 @@
-# MEDLNK
+# Asyashare
 
 A mobile-first clinical knowledge network for verified medical professionals
 (pharmacists first). Verified clinicians post short cases, near-misses, and

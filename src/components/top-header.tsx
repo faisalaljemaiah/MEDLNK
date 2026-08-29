@@ -12,7 +12,7 @@ export function TopHeader({ loggedIn }: { loggedIn: boolean }) {
         className="mx-auto flex items-center gap-1.5 font-headline text-lg text-text"
       >
         <Logo size={24} />
-        MEDLNK
+        Asyashare
       </Link>
       <div className="flex w-18 shrink-0 items-center justify-end">
         <Link

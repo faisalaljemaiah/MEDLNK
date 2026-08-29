@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { SparkleIcon } from "@/components/icons";
 
 /**
- * A button wired into MEDLNK's AI visual language: a slow, fully-contained
+ * A button wired into Asyashare's AI visual language: a slow, fully-contained
  * shifting-hue rim (.ai-glow, globals.css) idles as a standing
  * "AI-powered" cue, speeds up while `pending` is true, and — on the
  * pending→false transition — holds a brief checkmark before settling back.

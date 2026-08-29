@@ -414,7 +414,7 @@ export function ComposeForm({
                 The two cases
               </p>
               <p className="mb-3 text-xs text-muted">
-                Reference cases already on MEDLNK by their number, so readers can
+                Reference cases already on Asyashare by their number, so readers can
                 open each one in full. Yours or anyone else&apos;s.
               </p>
               <div className="flex flex-col gap-4">
@@ -819,7 +819,7 @@ export function ComposeForm({
           the best of my knowledge. I understand I am solely responsible for
           what I post, and that if patient-identifiable information — in
           text or in any photo or video — is found, my account will be{" "}
-          <span className="font-medium">permanently blocked from MEDLNK</span>{" "}
+          <span className="font-medium">permanently blocked from Asyashare</span>{" "}
           — I will not be able to sign up again.
         </span>
       </label>
