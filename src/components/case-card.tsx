@@ -31,13 +31,14 @@ export function CaseCard({
       id={`case-${feedCase.id}`}
       className="case-card-hover group relative mx-4 my-3 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]"
     >
-      {/* A thin AI-hue line along the top edge, hidden until hover — the
-          same "this is alive" language as .medlnk-pulse-line, but static
-          rather than continuously sweeping since it's a hover response, not
-          an ambient cue. */}
+      {/* A thin brand-colored line along the top edge, hidden until hover —
+          the same "this is alive" language as .medlnk-pulse-line, but
+          static rather than continuously sweeping since it's a hover
+          response, not an ambient cue. Green/silver, not the AI-hue sweep —
+          this card isn't an AI feature. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-4 top-0 h-0.5 rounded-full bg-gradient-to-r from-[var(--ai-hue-1)] via-[var(--ai-hue-3)] to-[var(--ai-hue-4)] opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-70"
+        className="pointer-events-none absolute inset-x-4 top-0 h-0.5 rounded-full bg-gradient-to-r from-accent via-[#c0c8ce] to-accent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-70"
       />
       <div className="flex items-center gap-2">
         <Link href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}>
