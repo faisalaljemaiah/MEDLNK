@@ -1,10 +1,10 @@
 /**
  * Soft, blurred ambient glow blobs — the auth screens' background treatment,
  * borrowed from a reference mockup (dark background, glowing corner blobs)
- * but built from Asyashare's own AI-hue palette instead of a dark theme: the
- * app stays light-mode only, this just gives the welcome/login/signup
- * screens a bit of the same premium "glow" the dashboard's AI features
- * already use, rather than the flat accent-soft wash that was there before.
+ * but built from Asyashare's own accent/silver palette instead of a dark
+ * theme or the AI-hue sweep: the app stays light-mode only, this just gives
+ * the welcome/login/signup screens a bit of premium depth, rather than the
+ * flat accent-soft wash that was there before.
  *
  * Pure CSS radial gradients, no images — cheap, and scales with the
  * viewport instead of pixelating. Static (no drift animation): the blobs

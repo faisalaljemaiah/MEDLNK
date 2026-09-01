@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signUpAction } from "@/app/actions/auth";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { AnalyticsPageView } from "@/components/analytics-page-view";
 
 export default function SignUpPage() {
   const [state, action] = useActionState(signUpAction, undefined);
@@ -12,6 +13,7 @@ export default function SignUpPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
+      <AnalyticsPageView event="signup_viewed" />
       <Link
         href="/welcome"
         className="animate-welcome-logo flex flex-col items-center gap-3 text-center"

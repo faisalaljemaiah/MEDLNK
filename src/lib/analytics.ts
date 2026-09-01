@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { getFeedCases, type FeedCase } from "@/lib/cases";
+import {
+  FEATURE_USAGE_EVENTS,
+  ONBOARDING_FUNNEL_STEPS,
+} from "@/lib/analytics-events";
 
 type Client = SupabaseClient<Database>;
 
@@ -125,5 +129,67 @@ export async function getPlatformAnalytics(
     // project is a reasonable tradeoff against a null-checking dance for a
     // count that's advisory even when the table exists.
     openReports: reportsRes.count ?? 0,
+  };
+}
+
+export type FeatureUsage = { event_type: string; count: number }[];
+
+/**
+ * Raw counts per tracked feature-usage event (0032_analytics_events.sql) —
+ * "what are users clicking on." Returns null, not zeroes, on a failed read
+ * (unmigrated project), same convention getPlatformAnalytics uses.
+ */
+export async function getFeatureUsage(supabase: Client): Promise<FeatureUsage | null> {
+  const { data, error } = await supabase
+    .from("analytics_events")
+    .select("event_type")
+    .in("event_type", [...FEATURE_USAGE_EVENTS]);
+
+  if (error) return null;
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    counts.set(row.event_type, (counts.get(row.event_type) ?? 0) + 1);
+  }
+
+  // Every tracked event type appears even at zero, so the admin sees "not
+  // used yet" rather than a feature silently missing from the list.
+  return FEATURE_USAGE_EVENTS.map((event_type) => ({
+    event_type,
+    count: counts.get(event_type) ?? 0,
+  }));
+}
+
+export type OnboardingFunnelStep = { event_type: string; count: number };
+export type OnboardingFunnel = {
+  steps: OnboardingFunnelStep[];
+  loginScreenReached: number;
+};
+
+/**
+ * "How far in the onboarding process do users get" — raw event counts per
+ * step, in the order a new visitor actually hits them. Not distinct-user
+ * counts: a page view is a page view, and the funnel already includes
+ * signed-out visitors (welcome/signup/login) who have no user_id yet.
+ */
+export async function getOnboardingFunnel(supabase: Client): Promise<OnboardingFunnel | null> {
+  const { data, error } = await supabase
+    .from("analytics_events")
+    .select("event_type")
+    .in("event_type", [...ONBOARDING_FUNNEL_STEPS, "login_viewed"]);
+
+  if (error) return null;
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    counts.set(row.event_type, (counts.get(row.event_type) ?? 0) + 1);
+  }
+
+  return {
+    steps: ONBOARDING_FUNNEL_STEPS.map((event_type) => ({
+      event_type,
+      count: counts.get(event_type) ?? 0,
+    })),
+    loginScreenReached: counts.get("login_viewed") ?? 0,
   };
 }

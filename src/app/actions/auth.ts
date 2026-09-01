@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { trackEventAction } from "@/app/actions/analytics";
 
 export type AuthFormState =
   | { error: string }
@@ -29,6 +30,8 @@ export async function signUpAction(
   if (error) {
     return { error: error.message };
   }
+
+  await trackEventAction("signup_completed");
 
   if (!data.session) {
     return {

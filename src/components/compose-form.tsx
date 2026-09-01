@@ -106,7 +106,7 @@ function FormSection({
   return (
     <div className="relative pl-10">
       <div className="relative z-[1] mb-3 flex items-center gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-surface font-label text-xs font-semibold text-accent shadow-sm shadow-slate-900/[0.05]">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-surface font-label text-xs font-semibold text-accent shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.08)]">
           {number}
         </span>
         <p className="font-label text-xs uppercase tracking-wide text-muted">{title}</p>
@@ -262,11 +262,12 @@ export function ComposeForm({
           order the AI features and the profile page already imply: the raw
           case becomes something searchable and shareable in stages. The line
           is one absolutely-positioned element behind all four circles rather
-          than one per section, so it reads as a single thread. */}
+          than one per section, so it reads as a single thread. Plain accent,
+          not the AI-hue sweep — composing a case isn't an AI feature. */}
       <div className="relative flex flex-col gap-8">
         <span
           aria-hidden
-          className="absolute left-[13px] top-3.5 bottom-3.5 w-px bg-gradient-to-b from-[var(--ai-hue-1)] via-[var(--ai-hue-3)] to-[var(--ai-hue-4)] opacity-30"
+          className="absolute left-[13px] top-3.5 bottom-3.5 w-px bg-accent opacity-30"
         />
 
         <FormSection number="01" title="The Case">

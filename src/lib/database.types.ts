@@ -355,6 +355,37 @@ export type UserBlock = {
   created_at: string;
 };
 
+/** Mirrors the scope check constraint in 0031_communities.sql. */
+export type CommunityScope = "global" | "country";
+/** Mirrors the status check constraint on community_members in 0031_communities.sql. */
+export type CommunityMemberStatus = "joined" | "saved";
+
+export type Community = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  scope: CommunityScope;
+  country_code: string | null;
+  creator_id: string | null;
+  created_at: string;
+};
+
+export type CommunityMember = {
+  community_id: string;
+  user_id: string;
+  status: CommunityMemberStatus;
+  created_at: string;
+};
+
+export type AnalyticsEvent = {
+  id: string;
+  event_type: string;
+  user_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 export type SupportMessage = {
   id: string;
   name: string | null;
@@ -437,6 +468,28 @@ export type Database = {
         Row: UserBlock;
         Insert: Partial<UserBlock> & { blocker_id: string; blocked_id: string };
         Update: Partial<UserBlock>;
+        Relationships: [];
+      };
+      communities: {
+        Row: Community;
+        Insert: Partial<Community> & { name: string; slug: string; scope: CommunityScope };
+        Update: Partial<Community>;
+        Relationships: [];
+      };
+      community_members: {
+        Row: CommunityMember;
+        Insert: Partial<CommunityMember> & {
+          community_id: string;
+          user_id: string;
+          status: CommunityMemberStatus;
+        };
+        Update: Partial<CommunityMember>;
+        Relationships: [];
+      };
+      analytics_events: {
+        Row: AnalyticsEvent;
+        Insert: Partial<AnalyticsEvent> & { event_type: string };
+        Update: Partial<AnalyticsEvent>;
         Relationships: [];
       };
       support_messages: {

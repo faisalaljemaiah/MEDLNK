@@ -151,9 +151,6 @@ export default async function ProfilePage({
               <Link href="/analytics" className="hover:text-text">
                 Analytics
               </Link>
-              <Link href="/reel" className="hover:text-text">
-                Reel
-              </Link>
               <Link href="/learn" className="hover:text-text">
                 Learn
               </Link>
@@ -181,7 +178,7 @@ export default async function ProfilePage({
                 <form action={startConversationAction.bind(null, profile.id)}>
                   <button
                     type="submit"
-                    className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+                    className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[border-color,transform] duration-150 ease-out active:scale-95"
                   >
                     Message
                   </button>

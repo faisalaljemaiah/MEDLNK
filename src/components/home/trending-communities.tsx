@@ -24,7 +24,7 @@ export function TrendingCommunities({
   if (communities.length === 0) return null;
 
   return (
-    <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]">
+    <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]">
       <div className="flex items-center gap-2">
         <span
           aria-hidden

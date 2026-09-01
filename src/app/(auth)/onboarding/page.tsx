@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingForm } from "@/components/onboarding-form";
+import { AnalyticsPageView } from "@/components/analytics-page-view";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -30,6 +31,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
+      {!isEdit && <AnalyticsPageView event="onboarding_viewed" />}
       <div className="flex flex-col items-center gap-3 text-center">
         <h1 className="font-headline text-2xl text-text">
           {isEdit ? "Edit your profile" : "Set up your profile"}

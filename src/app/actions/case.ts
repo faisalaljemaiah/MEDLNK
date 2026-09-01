@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isMissingColumnError } from "@/lib/supabase/errors";
 import { scanForIdentifiersAction } from "@/app/actions/ai";
 import { broadcastSafetyAlertAction } from "@/app/actions/safety-alerts";
+import { trackEventAction } from "@/app/actions/analytics";
 import { resolveCaseNumbers } from "@/lib/comparisons";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
 import { validateImageUpload, validateVideoUpload } from "@/lib/uploads";
@@ -433,6 +434,8 @@ export async function createCaseAction(
   if (case_type === "safety_alert") {
     await broadcastSafetyAlertAction(inserted.id);
   }
+
+  await trackEventAction("case_created", { case_type });
 
   redirect(`/?posted=${inserted.id}`);
 }

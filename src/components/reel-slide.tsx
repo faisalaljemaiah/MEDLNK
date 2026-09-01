@@ -30,18 +30,17 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
   }
 
   return (
-    // The section is just the snap target; the card inside it carries the
-    // surface, so the page background shows through the gutters between posts.
-    <section className="flex h-[calc(100dvh-145px)] w-full shrink-0 snap-start items-stretch px-3 py-2">
-      {/* max-w-sm keeps the card portrait on desktop; on a phone the viewport
-          is already narrower than that, so it just fills the gutters.
-          No photo: a plain light card, same surface/border/text as the rest
-          of the app — Asyashare is light-mode only, no colour-block or dark
-          "poster" treatment standing in for a missing image. */}
+    // Spool is a circle, not a card in a list — the section just centers it;
+    // ReelView positions and rotates this whole element during a drag.
+    <section className="flex h-full w-full shrink-0 items-center justify-center">
+      {/* A perfect circle, capped so it never outgrows the viewport in either
+          dimension. No photo: still dark (the backdrop behind it is always
+          black now), a frosted glass fill rather than the rest of the app's
+          light surface — Spool is the one deliberately dark, immersive view. */}
       <div
         className={clsx(
-          "relative mx-auto flex h-full w-full max-w-sm flex-col justify-center overflow-hidden rounded-3xl border px-5 py-10 shadow-lg shadow-slate-900/10",
-          hasMedia ? "border-transparent" : "border-line bg-surface",
+          "relative flex aspect-square h-[min(78dvh,78vw,460px)] flex-col justify-center overflow-hidden rounded-full ring-1 ring-white/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6)]",
+          !hasMedia && "bg-white/[0.07] backdrop-blur-md",
         )}
       >
         {hasMedia && (
@@ -90,82 +89,52 @@ export function ReelSlide({ feedCase, path }: { feedCase: FeedCase; path: string
           </div>
         )}
 
-        <div className="relative z-[1] mx-auto w-full">
+        {/* Constrained to the circle's inscribed square, not the full width —
+            content that reaches toward the rim would clip against the curve. */}
+        <div className="relative z-[1] mx-auto w-[72%]">
           <div className="pointer-events-none flex w-full flex-col items-center text-center">
-            <p
-              className={clsx(
-                "font-label text-xs uppercase tracking-wide",
-                hasMedia ? "text-white/80" : "text-muted",
-              )}
-            >
+            <p className="font-label text-[11px] uppercase tracking-wide text-white/70">
               {feedCase.case_number}
               {feedCase.specialty ? ` · ${feedCase.specialty}` : ""}
             </p>
-            <h2
-              className={clsx(
-                "mt-3 font-headline text-2xl",
-                hasMedia ? "text-white" : "text-text",
-              )}
-            >
+            <h2 className="mt-1.5 line-clamp-2 font-headline text-lg text-white">
               {feedCase.title}
             </h2>
-            <p
-              className={clsx(
-                "mt-3 text-base leading-relaxed",
-                hasMedia ? "text-white/80" : "text-muted",
-              )}
-            >
+            <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/75">
               {feedCase.short_caption}
             </p>
             <Link
               href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}
-              className={clsx(
-                "pointer-events-auto mt-4 flex items-center gap-2 text-sm",
-                hasMedia
-                  ? "text-white/85 hover:text-white"
-                  : "text-text hover:text-accent",
-              )}
+              className="pointer-events-auto mt-2.5 flex items-center gap-1.5 text-xs text-white/85 hover:text-white"
             >
               <Avatar
                 avatarUrl={feedCase.author?.avatar_url}
                 name={feedCase.author?.full_name}
               />
-              <span>
+              <span className="truncate">
                 {feedCase.author?.full_name ?? "Unknown clinician"}
                 {feedCase.author?.verified && (
-                  <span
-                    className={clsx(
-                      "ml-1",
-                      hasMedia ? "text-white" : "text-positive",
-                    )}
-                  >
-                    ✓
-                  </span>
+                  <span className="ml-1 text-white">✓</span>
                 )}
               </span>
             </Link>
 
             <Link
               href={caseHref}
-              className={clsx(
-                "pointer-events-auto mt-5 rounded-full px-4 py-2 text-sm font-medium backdrop-blur",
-                hasMedia
-                  ? "bg-white/20 text-white"
-                  : "bg-accent-soft text-accent",
-              )}
+              className="pointer-events-auto mt-3 rounded-full bg-white/20 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur"
             >
               Let&apos;s dive deep →
             </Link>
           </div>
 
-          <div className="pointer-events-auto mt-6 flex w-full justify-center">
+          <div className="pointer-events-auto mt-3 flex w-full justify-center">
             <ReactionBar
               ref={reactionBarRef}
               caseId={feedCase.id}
               counts={feedCase.counts}
               viewerReactions={feedCase.viewerReactions}
               path={path}
-              tone={hasMedia ? "dark" : "light"}
+              tone="dark"
               center
             />
           </div>

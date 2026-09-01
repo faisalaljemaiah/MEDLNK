@@ -9,7 +9,8 @@ import {
   toggleSuspensionAction,
 } from "@/app/actions/admin";
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
-import { getPlatformAnalytics } from "@/lib/analytics";
+import { getPlatformAnalytics, getFeatureUsage, getOnboardingFunnel } from "@/lib/analytics";
+import { FEATURE_USAGE_LABELS, FUNNEL_STEP_LABELS } from "@/lib/analytics-events";
 import { searchAllUsers, searchAllCases } from "@/lib/admin-directory";
 import { REPORT_REASON_LABELS, REPORT_STATUS_META } from "@/lib/report-reasons";
 import { getSupportMessages } from "@/lib/support";
@@ -666,7 +667,11 @@ async function AuditLog({ supabase }: { supabase: Client }) {
 }
 
 async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
-  const data = await getPlatformAnalytics(supabase);
+  const [data, featureUsage, funnel] = await Promise.all([
+    getPlatformAnalytics(supabase),
+    getFeatureUsage(supabase),
+    getOnboardingFunnel(supabase),
+  ]);
 
   if (data === null) return <UnavailableNotice feature="Analytics" />;
 
@@ -695,6 +700,68 @@ async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
           ))}
         </ul>
       </div>
+
+      {/* How far a new visitor gets before dropping off (0032_analytics_events).
+          Bar width is relative to the first step, not each step's own
+          predecessor — that's what makes overall drop-off readable at a
+          glance instead of exaggerating small stage-to-stage swings. */}
+      {funnel && (
+        <div>
+          <p className="font-label text-xs uppercase tracking-wide text-muted">
+            Onboarding funnel
+          </p>
+          <ul className="mt-2 flex flex-col gap-2.5">
+            {funnel.steps.map((step) => {
+              const top = funnel.steps[0].count || 1;
+              const pct = Math.min(100, Math.round((step.count / top) * 100));
+              return (
+                <li key={step.event_type}>
+                  <div className="flex items-center justify-between text-sm text-text">
+                    <span>
+                      {FUNNEL_STEP_LABELS[
+                        step.event_type as keyof typeof FUNNEL_STEP_LABELS
+                      ] ?? step.event_type}
+                    </span>
+                    <span className="tabular-nums text-muted">{step.count}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full rounded-full bg-accent"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2.5 text-xs text-muted">
+            Reached the login screen: {funnel.loginScreenReached}
+          </p>
+        </div>
+      )}
+
+      {featureUsage && (
+        <div>
+          <p className="font-label text-xs uppercase tracking-wide text-muted">
+            Feature usage
+          </p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {featureUsage.map(({ event_type, count }) => (
+              <li
+                key={event_type}
+                className="flex items-center justify-between text-sm text-text"
+              >
+                <span>
+                  {FEATURE_USAGE_LABELS[
+                    event_type as keyof typeof FEATURE_USAGE_LABELS
+                  ] ?? event_type}
+                </span>
+                <span className="tabular-nums text-muted">{count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

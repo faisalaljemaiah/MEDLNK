@@ -29,7 +29,7 @@ export function CaseCard({
   return (
     <article
       id={`case-${feedCase.id}`}
-      className="case-card-hover group relative mx-4 my-3 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]"
+      className="case-card-hover group relative mx-4 my-3 rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]"
     >
       {/* A thin brand-colored line along the top edge, hidden until hover —
           the same "this is alive" language as .medlnk-pulse-line, but
@@ -38,7 +38,7 @@ export function CaseCard({
           this card isn't an AI feature. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-4 top-0 h-0.5 rounded-full bg-gradient-to-r from-accent via-[#c0c8ce] to-accent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-70"
+        className="pointer-events-none absolute inset-x-4 top-0 h-0.5 rounded-full bg-gradient-to-r from-accent via-silver to-accent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-70"
       />
       <div className="flex items-center gap-2">
         <Link href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}>

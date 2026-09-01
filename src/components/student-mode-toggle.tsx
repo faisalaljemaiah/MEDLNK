@@ -10,7 +10,7 @@ export function StudentModeToggle({ enabled }: { enabled: boolean }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-text">Student mode</p>
         <p className="mt-0.5 text-xs text-muted">
-          Puts Learn in the nav in place of Reel, so the app opens on what to
+          Puts Learn in the nav in place of Spool, so the app opens on what to
           practise rather than what&apos;s new. Everything else stays the same —
           you can still post, reply and follow.
         </p>
