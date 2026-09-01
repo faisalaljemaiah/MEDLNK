@@ -34,7 +34,7 @@ export function RecommendedPeople({
         {people.map((p) => (
           <div
             key={p.id}
-            className="flex w-40 shrink-0 flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-3.5 text-center shadow-sm shadow-slate-900/[0.03] transition-transform duration-150 ease-out hover:-translate-y-0.5"
+            className="flex w-40 shrink-0 flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-3.5 text-center shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
           >
             <Link href={`/u/${p.handle}`}>
               <Avatar avatarUrl={p.avatar_url} name={p.full_name} size="lg" />

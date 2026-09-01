@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { HomeIcon, CompassIcon, SendIcon, SettingsIcon } from "@/components/icons";
+import { HomeIcon, CompassIcon, ReelIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
 
@@ -28,7 +28,7 @@ type NavProfile = {
  * instead, independent of how the content column is centered; the content
  * column reserves the sidebar's width with `md:pl-56` so nothing sits
  * underneath it. Height is intrinsic to its own content, not the viewport —
- * five nav items don't come close to filling a typical screen, and forcing
+ * four nav items don't come close to filling a typical screen, and forcing
  * full height (stretching the profile row down via `mt-auto`) just left a
  * large dead gap above it.
  */
@@ -65,15 +65,11 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
         </span>
       </div>
 
-      <SidebarLink
-        href="/messages"
-        label="Messages"
-        active={pathname.startsWith("/messages")}
-      >
-        <SendIcon />
-      </SidebarLink>
-      <SidebarLink href="/settings" label="Settings" active={pathname === "/settings"}>
-        <SettingsIcon />
+      {/* Spool (the reel/story browsing mode) took this slot over Messages
+          and Settings — both stay one tap away via the top header's icons
+          and the profile's action-links row. */}
+      <SidebarLink href="/spool" label="Spool" active={pathname === "/spool"}>
+        <ReelIcon />
       </SidebarLink>
 
       <div className="mt-2 border-t border-line pt-2">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ViewTransition } from "react";
 import { clsx } from "clsx";
-import { HomeIcon, CompassIcon, SendIcon } from "@/components/icons";
+import { HomeIcon, CompassIcon, ReelIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
 
@@ -28,27 +28,32 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
 
   return (
     <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full border border-line/60 bg-surface/75 px-3 py-2 shadow-lg shadow-slate-900/10 backdrop-blur-2xl backdrop-saturate-150">
+      {/* border-t-white/70 over the general border color — a bright top
+          edge is how light catches a floating translucent material, the
+          same detail Apple's own toolbars use. */}
+      <div className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full border border-line/60 border-t-white/70 bg-surface/75 px-3 py-2 shadow-[0_8px_24px_-8px_rgb(var(--shadow-tint)/0.18)] backdrop-blur-2xl backdrop-saturate-150">
         <NavLink href="/" active={pathname === "/"}>
           <HomeIcon filled={pathname === "/"} />
         </NavLink>
         {/* Discover absorbs Search — same route (/search), the page's own
             heading and content now read "Discover" (see search/page.tsx).
-            Reel and, for Student Mode, Learn both lost their nav slot to
-            make room for this and Messages below; both stay one tap away
-            from the Discover page and the profile's action-links row. */}
+            Learn (Student Mode) has no nav slot of its own; it stays one tap
+            away from the Discover page and the profile's action-links row. */}
         <NavLink href="/search" active={pathname === "/search"}>
           <CompassIcon />
         </NavLink>
         {/* The one nav item that creates rather than navigates gets a
-            standing, subtle AI-hue ring — same visual language as the AI
-            button, just idling permanently rather than reacting to a
-            request in flight, since there's no "processing" state here. */}
+            standing green/silver ring (.ai-glow-brand) — Create isn't an AI
+            feature, so unlike the actual AI button this ring is static, not
+            a spinning "thinking" cue seen every time someone opens the app. */}
         <span className="ai-glow ai-glow-round ai-glow-brand inline-flex">
           <CreateMenu active={pathname === "/compose"} />
         </span>
-        <NavLink href="/messages" active={pathname.startsWith("/messages")}>
-          <SendIcon />
+        {/* Spool (the reel/story browsing mode) took this slot back over
+            Messages — Messages stays one tap away via the top header's send
+            icon and the profile's action-links row, same as Settings. */}
+        <NavLink href="/spool" active={pathname === "/spool"}>
+          <ReelIcon />
         </NavLink>
         <Link
           href={profileHref}

@@ -1744,6 +1744,33 @@ against the real hosted project in its current pre-migration state (home
 feed, profile pages, and the contact form all render and degrade
 correctly, nothing crashes).
 
+**Update, this session:** 0031 (`communities` + `community_members` —
+join/save communities, browse them as bubbles on Discover, a follower-gated
+"Create a community" flow) landed and adds three new checklist rows
+(two tables, the `has_min_followers` function). Verified locally
+(`supabase/tests/run.sh` and `apply-file.sh`, both green, including the
+double-apply check) but **not applied to the hosted project** — same manual
+step as every migration before it. Until it's applied: the Discover page's
+Communities bubble section and the Messages "Communities" tab both silently
+show zero communities (the queries return an empty array rather than
+erroring — verified live against the real hosted project's current
+pre-migration state, nothing crashes) and the follower-eligibility check
+for creating one still works today, since it only reads the pre-existing
+`follows` table.
+
+**Update, this session:** 0032 (`analytics_events` — product analytics: what
+features get clicked, and how far a new visitor gets through onboarding
+before dropping off, both surfaced on the admin dashboard's existing
+"Analytics" tab) landed and adds one checklist row. Verified locally
+(`supabase/tests/run.sh` and `apply-file.sh`, both green) but **not applied
+to the hosted project** — same manual step as every migration before it.
+Tracking calls are fire-and-forget (`trackEventAction`,
+`src/app/actions/analytics.ts`) and never surface an error to the feature
+they're instrumenting, so until this is applied the admin's Analytics tab
+just shows every feature-usage and funnel-step count as 0 rather than
+failing — verified live against the real hosted project's current
+pre-migration state.
+
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single
 insert — they exist only to survive a partially-migrated project.

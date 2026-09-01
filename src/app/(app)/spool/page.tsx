@@ -9,5 +9,5 @@ export default async function ReelPage() {
 
   const cases = await getFeedCases(supabase, user?.id ?? null);
 
-  return <ReelView cases={cases} path="/reel" />;
+  return <ReelView cases={cases} path="/spool" />;
 }

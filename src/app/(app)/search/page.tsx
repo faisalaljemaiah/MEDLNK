@@ -2,9 +2,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
+import { getDiscoverCommunities } from "@/lib/communities";
 import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
 import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
+import { CommunityBubbles } from "@/components/community-bubbles";
 import { CompassIcon, ReelIcon } from "@/components/icons";
 
 type SearchParams = {
@@ -43,7 +45,10 @@ export default async function SearchPage({
   const supabase = await createClient();
   const user = await getViewer();
 
-  const allCases = await getFeedCases(supabase, user?.id ?? null);
+  const [allCases, communities] = await Promise.all([
+    getFeedCases(supabase, user?.id ?? null),
+    getDiscoverCommunities(supabase, user?.id ?? null),
+  ]);
 
   // Built from what's actually posted rather than a hardcoded list, so the
   // dropdown can't offer a specialty with nothing behind it.
@@ -94,13 +99,15 @@ export default async function SearchPage({
       <div className="flex items-center justify-between px-4 pt-4">
         <h1 className="font-headline text-xl text-text">Discover</h1>
         <Link
-          href="/reel"
+          href="/spool"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-accent"
         >
           <ReelIcon width={14} height={14} strokeWidth={2} />
-          Reel
+          Spool
         </Link>
       </div>
+
+      <CommunityBubbles communities={communities} path="/search" />
 
       {/* A GET form, so every search is a shareable URL and the results stay
           server-rendered. */}

@@ -10,6 +10,7 @@ import {
   BoltIcon,
   PlusSquareIcon,
 } from "@/components/icons";
+import { trackEventAction } from "@/app/actions/analytics";
 
 const CREATE_OPTIONS = [
   {
@@ -74,7 +75,10 @@ export function CreateMenu({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          trackEventAction("create_menu_opened");
+        }}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Create"
@@ -112,9 +116,9 @@ export function CreateMenu({
             type="button"
             aria-label="Close"
             onClick={() => setOpen(false)}
-            className="animate-enter absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="animate-enter absolute inset-0 bg-[rgb(var(--shadow-tint)/0.4)] backdrop-blur-sm"
           />
-          <div className="animate-enter relative w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-4 pb-8 shadow-lg shadow-slate-900/20">
+          <div className="animate-enter relative w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-4 pb-8 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line" aria-hidden="true" />
             <p className="mb-2 px-1 font-label text-xs uppercase tracking-wide text-muted">
               Create

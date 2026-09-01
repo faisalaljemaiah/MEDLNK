@@ -43,6 +43,24 @@
   --positive: #0b7c44; /* verified badges, success states */
   --warning: #b45309; /* privacy/identifier warnings */
   --danger: #cf2231; /* destructive actions, errors */
+  /* A cool neutral used alongside --accent wherever a second, non-brand tone
+     reads better than white or a flat border color — the case-card hover
+     line's outer stops, the auth-screen glow blobs. Named rather than an
+     inline arbitrary hex so it's one value to tune. */
+  --silver: #c0c8ce;
+
+  /* RGB triplet of --text (#10203a), space-separated for the modern
+     `rgb(var(--shadow-tint) / alpha)` syntax — every shadow in the app
+     should tint to this ink rather than pure black, which reads as heavier
+     and less "printed on paper" than a true-neutral shadow at the same
+     opacity would. */
+  --shadow-tint: 16 32 58;
+
+  /* Backs .ai-glow's radius fallback chain (see globals.css) for the one
+     .ai-glow user that isn't also .ai-glow-round (the AI button) — matches
+     Tailwind's own rounded-lg so the glow's clip and the button's visible
+     corner agree. */
+  --radius-lg: 0.5rem;
 
   /*
    * Decorative-only hues for the AI "thinking" glow (see .ai-glow in
@@ -73,6 +91,12 @@
   --motion-page: 220ms; /* content swapping in after a navigation */
   --motion-ambient: 6s; /* slow standing cues — AI glow, pulse lines */
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Two purpose-specific curves alongside --motion-ease above: entrances/
+     exits read as more responsive on a stronger ease-out than the general
+     curve gives them, and on-screen movement (not entering/exiting) wants
+     symmetric acceleration in and out rather than ease-out's fast start. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   /* --- Font tokens (single clean sans-serif, Instagram-style) --- */
   --font-headline: var(--font-inter, system-ui, sans-serif);
@@ -93,16 +117,31 @@
   --color-positive: var(--positive);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-silver: var(--silver);
 
   --font-headline: var(--font-headline);
   --font-body: var(--font-body);
   --font-label: var(--font-label);
 }
 
+/*
+ * Optical sizing discipline (Apple's "The Details of UI Typography," WWDC
+ * 2020, translated to the web): tracking and leading are size-specific, not
+ * one flat value everywhere. .font-headline is only ever used at 2xl-3xl
+ * sizes, where letters read too far apart at a neutral tracking — tighten
+ * it. .font-label is only ever used at text-xs, where the opposite is true
+ * — small text wants slightly *positive* tracking for legibility. Body
+ * text carries no wrapper class and stays at Tailwind's own near-zero
+ * tracking/relaxed leading, which is already the correct default apple
+ * describes for running copy.
+ */
 .font-headline {
   font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .font-label {
   font-weight: 500;
+  letter-spacing: 0.01em;
 }

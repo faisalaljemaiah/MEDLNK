@@ -235,6 +235,74 @@ const cases: SeedCase[] = [
   },
 ];
 
+interface SeedCommunity {
+  name: string;
+  slug: string;
+  description: string;
+  scope: "global" | "country";
+  country_code: string | null;
+  creatorEmail: string;
+  /** Author emails to join (beyond the creator, who always joins their own). */
+  memberEmails: string[];
+}
+
+const communities: SeedCommunity[] = [
+  {
+    name: "Cardiology Worldwide",
+    slug: "cardiology-worldwide",
+    description: "Anticoagulation, interactions, and cardiac drug therapy — open to clinicians anywhere.",
+    scope: "global",
+    country_code: null,
+    creatorEmail: "seed.marcus@asyashare.dev",
+    memberEmails: ["seed.amina@asyashare.dev", "seed.tom@asyashare.dev"],
+  },
+  {
+    name: "Pediatric Dosing Safety",
+    slug: "pediatric-dosing-safety",
+    description: "Weight-based dosing, decimal-point errors, and pediatric near-misses.",
+    scope: "global",
+    country_code: null,
+    creatorEmail: "seed.priya@asyashare.dev",
+    memberEmails: ["seed.layla@asyashare.dev"],
+  },
+  {
+    name: "Critical Care Pharmacists",
+    slug: "critical-care-pharmacists",
+    description: "ICU and rapid-response medication safety, high-alert IV drugs, code situations.",
+    scope: "global",
+    country_code: null,
+    creatorEmail: "seed.layla@asyashare.dev",
+    memberEmails: ["seed.priya@asyashare.dev", "seed.diego@asyashare.dev"],
+  },
+  {
+    name: "Saudi Pharmacy Network",
+    slug: "saudi-pharmacy-network",
+    description: "Clinical discussion for pharmacists practicing in Saudi Arabia.",
+    scope: "country",
+    country_code: "SA",
+    creatorEmail: "seed.amina@asyashare.dev",
+    memberEmails: [],
+  },
+  {
+    name: "UK Oncology Pharmacy",
+    slug: "uk-oncology-pharmacy",
+    description: "High-alert oncology medications and transitions-of-care in the UK.",
+    scope: "country",
+    country_code: "GB",
+    creatorEmail: "seed.tom@asyashare.dev",
+    memberEmails: [],
+  },
+  {
+    name: "Mexico Ambulatory Care",
+    slug: "mexico-ambulatory-care",
+    description: "Community and ambulatory pharmacy practice in Mexico.",
+    scope: "country",
+    country_code: "MX",
+    creatorEmail: "seed.diego@asyashare.dev",
+    memberEmails: ["seed.marcus@asyashare.dev"],
+  },
+];
+
 async function ensureAuthor(author: SeedAuthor): Promise<string> {
   const { data: created, error: createError } =
     await supabase.auth.admin.createUser({
@@ -315,6 +383,43 @@ async function main() {
 
     if (error) throw error;
     console.log(`Inserted case: ${seedCase.title}`);
+  }
+
+  for (const seedCommunity of communities) {
+    const creatorId = authorIds.get(seedCommunity.creatorEmail);
+    if (!creatorId) throw new Error(`No author id for ${seedCommunity.creatorEmail}`);
+
+    const { data: inserted, error } = await supabase
+      .from("communities")
+      .insert({
+        name: seedCommunity.name,
+        slug: seedCommunity.slug,
+        description: seedCommunity.description,
+        scope: seedCommunity.scope,
+        country_code: seedCommunity.country_code,
+        creator_id: creatorId,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    console.log(`Inserted community: ${seedCommunity.name}`);
+
+    const memberIds = [creatorId, ...seedCommunity.memberEmails.map((email) => {
+      const id = authorIds.get(email);
+      if (!id) throw new Error(`No author id for ${email}`);
+      return id;
+    })];
+
+    const { error: memberError } = await supabase.from("community_members").insert(
+      memberIds.map((user_id) => ({
+        community_id: inserted.id,
+        user_id,
+        status: "joined" as const,
+      })),
+    );
+
+    if (memberError) throw memberError;
   }
 
   console.log("Seed complete.");

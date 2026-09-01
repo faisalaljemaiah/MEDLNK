@@ -19,7 +19,7 @@ export function StreakCard({
   const subtitle = `${postsThisWeek} ${postsThisWeek === 1 ? "post" : "posts"} · ${commentsThisWeek} ${commentsThisWeek === 1 ? "comment" : "comments"} this week`;
 
   return (
-    <div className="mx-4 flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-sm shadow-slate-900/[0.03]">
+    <div className="mx-4 flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]">
       <span
         aria-hidden
         className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"

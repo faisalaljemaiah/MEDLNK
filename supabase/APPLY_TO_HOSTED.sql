@@ -1737,6 +1737,117 @@ create policy "support_messages_update_admin"
   using (public.is_admin());
 
 -- ============================================================================
+-- 0031_communities.sql — Communities (join/save + follower-gated creation)
+-- ============================================================================
+
+create table if not exists public.communities (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  slug text not null unique,
+  description text,
+  scope text not null check (scope in ('global', 'country')),
+  country_code text,
+  creator_id uuid references public.profiles (id) on delete set null,
+  created_at timestamptz not null default now(),
+  check (
+    (scope = 'country' and country_code is not null)
+    or (scope = 'global' and country_code is null)
+  )
+);
+
+create table if not exists public.community_members (
+  community_id uuid not null references public.communities (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  status text not null check (status in ('joined', 'saved')),
+  created_at timestamptz not null default now(),
+  primary key (community_id, user_id)
+);
+
+alter table public.communities enable row level security;
+alter table public.community_members enable row level security;
+
+create or replace function public.has_min_followers(min_count int)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select (
+    select count(*) from public.follows where followee_id = auth.uid()
+  ) >= min_count;
+$$;
+
+drop policy if exists "communities_select_all" on public.communities;
+create policy "communities_select_all"
+  on public.communities for select
+  using (true);
+
+drop policy if exists "communities_insert_eligible" on public.communities;
+create policy "communities_insert_eligible"
+  on public.communities for insert
+  with check (
+    auth.uid() = creator_id
+    and public.is_verified()
+    and public.has_min_followers(100)
+  );
+
+drop policy if exists "communities_update_creator" on public.communities;
+create policy "communities_update_creator"
+  on public.communities for update
+  using (auth.uid() = creator_id);
+
+drop policy if exists "communities_delete_creator" on public.communities;
+create policy "communities_delete_creator"
+  on public.communities for delete
+  using (auth.uid() = creator_id);
+
+drop policy if exists "community_members_select_all" on public.community_members;
+create policy "community_members_select_all"
+  on public.community_members for select
+  using (true);
+
+drop policy if exists "community_members_insert_own" on public.community_members;
+create policy "community_members_insert_own"
+  on public.community_members for insert
+  with check (auth.uid() = user_id and public.is_verified());
+
+drop policy if exists "community_members_update_own" on public.community_members;
+create policy "community_members_update_own"
+  on public.community_members for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "community_members_delete_own" on public.community_members;
+create policy "community_members_delete_own"
+  on public.community_members for delete
+  using (auth.uid() = user_id);
+
+-- ============================================================================
+-- 0032_analytics_events.sql — product analytics (feature usage + onboarding funnel)
+-- ============================================================================
+
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  user_id uuid references public.profiles (id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.analytics_events enable row level security;
+
+drop policy if exists "analytics_events_insert_anyone" on public.analytics_events;
+create policy "analytics_events_insert_anyone"
+  on public.analytics_events for insert
+  with check (user_id is null or user_id = auth.uid());
+
+drop policy if exists "analytics_events_select_admin" on public.analytics_events;
+create policy "analytics_events_select_admin"
+  on public.analytics_events for select
+  using (public.is_admin());
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -1912,5 +2023,13 @@ from (
      exists (select 1 from pg_proc where proname = 'is_blocked_pair')),
     ('table: support_messages',
      exists (select 1 from information_schema.tables
-             where table_schema = 'public' and table_name = 'support_messages'))
+             where table_schema = 'public' and table_name = 'support_messages')),
+    ('table: communities',
+     to_regclass('public.communities') is not null),
+    ('table: community_members',
+     to_regclass('public.community_members') is not null),
+    ('SECURITY: community creation requires 100 followers',
+     to_regprocedure('public.has_min_followers(int)') is not null),
+    ('table: analytics_events',
+     to_regclass('public.analytics_events') is not null)
 ) as checks(item, present);

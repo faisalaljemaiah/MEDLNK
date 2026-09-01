@@ -6,6 +6,7 @@ import { isMissingColumnError, isMissingBucketError } from "@/lib/supabase/error
 import { ROLES } from "@/lib/roles";
 import { COUNTRIES } from "@/lib/countries";
 import { validateImageUpload, validateDocumentUpload } from "@/lib/uploads";
+import { trackEventAction } from "@/app/actions/analytics";
 
 export type ProfileFormState = { error: string } | undefined;
 
@@ -170,6 +171,10 @@ export async function updateProfileAction(
       return { error: "That handle is already taken — try another." };
     }
     return { error: error.message };
+  }
+
+  if (!existing?.handle) {
+    await trackEventAction("onboarding_completed");
   }
 
   redirect(`/u/${handle}`);

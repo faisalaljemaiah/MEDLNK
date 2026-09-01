@@ -178,16 +178,22 @@ body {
 }
 
 /*
- * Brand-only variant for the Create button specifically (bottom nav +
- * desktop sidebar) — Create is a plain compose action, not an AI feature,
- * so it gets Asyashare's own Caribbean green plus white instead of the
- * AI-hue sweep the rest of .ai-glow's usages (the AI button, the search
- * bar) keep. Same rim-only mechanic as .ai-glow — this only overrides the
- * spinning layer's color, stacked alongside the base class:
- * `ai-glow ai-glow-round ai-glow-brand`.
+ * Brand-only variant — the Create button (bottom nav + desktop sidebar) and
+ * every search bar. None of these are AI features, so they don't get the
+ * AI-hue sweep or its perpetual spin: a ring that rotates forever around a
+ * control seen dozens of times a session is exactly the "ambient AI glow"
+ * pattern worth using sparingly, reserved for the one place it's actually
+ * true (the AI button). Same rim-only clipping mechanic as .ai-glow, but
+ * frozen — a static green/silver ring reads as "branded," not "thinking."
+ * Stacked alongside the base class: `ai-glow ai-glow-round ai-glow-brand`.
  */
 .ai-glow-brand::before {
-  background: conic-gradient(from 0deg, var(--accent), white, var(--accent));
+  background: conic-gradient(from 0deg, var(--accent), var(--silver), var(--accent));
+  animation: none;
+}
+
+.ai-glow-brand:hover::before {
+  animation: none;
 }
 
 /*
@@ -265,7 +271,12 @@ body {
   animation: medlnk-ecg-scroll 1.4s linear infinite;
 }
 
-/* See GlowBlobs (src/components/ui/glow-blobs.tsx) for the rationale. */
+/*
+ * See GlowBlobs (src/components/ui/glow-blobs.tsx) for the rationale.
+ * Single-accent-plus-neutral, not the AI-hue sweep — these sit behind
+ * auth-screen chrome, not an AI feature, so they follow the same
+ * green/silver-only rule as .ai-glow-brand above.
+ */
 .glow-blob {
   position: absolute;
   border-radius: 9999px;
@@ -279,8 +290,8 @@ body {
   height: 65vw;
   max-width: 420px;
   max-height: 420px;
-  background: radial-gradient(circle, var(--ai-hue-1), transparent 70%);
-  opacity: 0.35;
+  background: radial-gradient(circle, var(--accent), transparent 70%);
+  opacity: 0.25;
 }
 
 .glow-blob-2 {
@@ -290,7 +301,7 @@ body {
   height: 70vw;
   max-width: 460px;
   max-height: 460px;
-  background: radial-gradient(circle, var(--ai-hue-4), transparent 70%);
+  background: radial-gradient(circle, var(--silver), transparent 70%);
   opacity: 0.3;
 }
 
@@ -301,8 +312,8 @@ body {
   height: 45vw;
   max-width: 300px;
   max-height: 300px;
-  background: radial-gradient(circle, var(--ai-hue-5), transparent 70%);
-  opacity: 0.25;
+  background: radial-gradient(circle, var(--accent), transparent 70%);
+  opacity: 0.18;
 }
 
 /*
@@ -330,10 +341,13 @@ body {
 }
 
 /*
- * Case card hover — lift, deepen the shadow, and reveal a thin AI-hue
+ * Case card hover — lift, deepen the shadow, and reveal a thin green/silver
  * top-edge line, all keyed off .group so the same hover also drives the
  * "Let's dive deep" arrow (a plain group-hover:translate-x-* in
- * case-card.tsx, no CSS needed here for that part).
+ * case-card.tsx, no CSS needed here for that part). The shadow is tinted to
+ * --shadow-tint (the app's ink color) rather than neutral black, so it reads
+ * as a soft cast shadow instead of a heavier true-black one at the same
+ * opacity.
  */
 .case-card-hover {
   transition:
@@ -343,7 +357,7 @@ body {
 
 .case-card-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px -16px rgba(16, 32, 58, 0.18);
+  box-shadow: 0 12px 28px -16px rgb(var(--shadow-tint) / 0.18);
 }
 
 /* A brief, one-shot pulse for a bolt/lightning icon on hover. */
@@ -355,6 +369,23 @@ body {
   50% {
     transform: scale(1.18);
   }
+}
+
+/* Spool's dark, colorful backdrop — scoped to that one view, not the rest of
+ * the app's light theme. The three hues reuse existing palette values
+ * (--accent green, --ai-hue-2 sky blue, --accent-2/--ai-hue-4 violet) rather
+ * than inventing new ones, just applied as large soft glows on black instead
+ * of a thin ring. Static, not drifting: the view already has real motion —
+ * the drag-to-turn gesture on the cards themselves — and a constantly
+ * animating background behind actively-moving content would compete with it
+ * rather than support it.
+ */
+.spool-backdrop {
+  background-color: #05070a;
+  background-image:
+    radial-gradient(circle at 18% 20%, rgb(15 118 110 / 0.55), transparent 55%),
+    radial-gradient(circle at 82% 28%, rgb(56 189 248 / 0.4), transparent 55%),
+    radial-gradient(circle at 50% 88%, rgb(124 58 237 / 0.5), transparent 60%);
 }
 
 @media (prefers-reduced-motion: reduce) {

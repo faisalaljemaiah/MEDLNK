@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { trackEventAction } from "@/app/actions/analytics";
 import type { ReactionType } from "@/lib/database.types";
 
 export type ReactionActionResult = { error: string } | { ok: true };
@@ -60,6 +61,9 @@ export async function toggleReactionAction(
       }
       return { error: error.message };
     }
+    // Only the "adding" branch counts as feature usage — removing a
+    // reaction is the same click undoing itself, not a second use.
+    await trackEventAction("reaction_toggled", { type });
   }
 
   revalidatePath(path);

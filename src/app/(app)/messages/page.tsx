@@ -1,12 +1,23 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getConversations } from "@/lib/messages";
+import { getCommunityCreationEligibility, getMyCommunities } from "@/lib/communities";
 import { Avatar } from "@/components/avatar";
+import { CommunitiesTab } from "@/components/messages/communities-tab";
 
-export default async function MessagesPage() {
-  const supabase = await createClient();
+type MessagesTab = "communities" | "direct";
+
+export default async function MessagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab: rawTab } = await searchParams;
+  const tab: MessagesTab = rawTab === "communities" ? "communities" : "direct";
+
   const user = await getViewer();
 
   if (!user) redirect("/login");
@@ -26,11 +37,75 @@ export default async function MessagesPage() {
     );
   }
 
-  const conversations = await getConversations(supabase, user.id);
-
   return (
     <div>
       <h1 className="px-4 py-4 font-headline text-xl text-text">Messages</h1>
+      <div className="flex gap-1 border-b border-line px-4">
+        <MessagesTabLink tab="communities" active={tab === "communities"}>
+          Communities
+        </MessagesTabLink>
+        <MessagesTabLink tab="direct" active={tab === "direct"}>
+          Direct Messages
+        </MessagesTabLink>
+      </div>
+
+      {tab === "communities" ? (
+        <MessagesCommunitiesTab userId={user.id} />
+      ) : (
+        <MessagesDirectTab userId={user.id} />
+      )}
+    </div>
+  );
+}
+
+function MessagesTabLink({
+  tab,
+  active,
+  children,
+}: {
+  tab: MessagesTab;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={tab === "direct" ? "/messages" : `/messages?tab=${tab}`}
+      aria-current={active ? "page" : undefined}
+      className={clsx(
+        "relative px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out",
+        active ? "text-text" : "text-muted hover:text-text",
+      )}
+    >
+      {children}
+      {active && (
+        <span aria-hidden className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" />
+      )}
+    </Link>
+  );
+}
+
+async function MessagesCommunitiesTab({ userId }: { userId: string }) {
+  const supabase = await createClient();
+  const [communities, eligibility] = await Promise.all([
+    getMyCommunities(supabase, userId),
+    getCommunityCreationEligibility(supabase, userId),
+  ]);
+
+  return (
+    <CommunitiesTab
+      communities={communities}
+      eligible={eligibility.eligible}
+      followerCount={eligibility.followerCount}
+    />
+  );
+}
+
+async function MessagesDirectTab({ userId }: { userId: string }) {
+  const supabase = await createClient();
+  const conversations = await getConversations(supabase, userId);
+
+  return (
+    <div>
       {conversations.length === 0 ? (
         <p className="px-4 py-10 text-center text-sm text-muted">
           No conversations yet. Message a clinician from their profile to start
@@ -53,7 +128,7 @@ export default async function MessagesPage() {
               </p>
               <p className="truncate text-sm text-muted">
                 {c.lastMessage
-                  ? `${c.lastMessage.sender_id === user.id ? "You: " : ""}${c.lastMessage.body}`
+                  ? `${c.lastMessage.sender_id === userId ? "You: " : ""}${c.lastMessage.body}`
                   : "No messages yet"}
               </p>
             </div>
