@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored skill packs (npx skills add / pnpm dlx skills add) — third-
+    // party content, not this app's source, so it shouldn't be held to (or
+    // fail) this app's lint rules.
+    ".agents/**",
+    ".claude/skills/**",
   ]),
 ]);
 
