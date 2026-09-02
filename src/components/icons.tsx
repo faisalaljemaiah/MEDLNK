@@ -7,7 +7,12 @@ function base(props: SVGProps<SVGSVGElement>) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 2,
+    // A touch heavier than the default 2 — every icon already joins its
+    // corners with strokeLinejoin: round, so the extra weight is what makes
+    // that rounding actually read at these sizes instead of staying a
+    // barely-visible fillet. One shared value, so it changes the whole set's
+    // personality at once rather than icon-by-icon path surgery.
+    strokeWidth: 2.5,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     ...props,
@@ -134,7 +139,7 @@ export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
 export function PlusSquareIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>
-      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <rect x="3" y="3" width="18" height="18" rx="7" />
       <path d="M12 8v8" />
       <path d="M8 12h8" />
     </svg>
@@ -166,7 +171,7 @@ export function UsersIcon(props: SVGProps<SVGSVGElement>) {
 export function ClipboardIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>
-      <rect x="6" y="4" width="12" height="17" rx="2" />
+      <rect x="6" y="4" width="12" height="17" rx="4" />
       <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
       <path d="M9 11h6" />
       <path d="M9 15h6" />
@@ -292,7 +297,7 @@ export function CompassIcon(props: SVGProps<SVGSVGElement>) {
 export function ImageIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>
-      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <rect x="3" y="3" width="18" height="18" rx="5" />
       <circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none" />
       <path d="m21 15-5-5-9 9" />
     </svg>
