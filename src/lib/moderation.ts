@@ -12,6 +12,11 @@ export type ReportWithContext = Report & {
     moderation_status: string;
     author_id: string;
   } | null;
+  reported_profile: {
+    id: string;
+    handle: string | null;
+    full_name: string | null;
+  } | null;
 };
 
 /**
@@ -33,7 +38,8 @@ export async function getReportQueue(
     .select(
       "*," +
         "reporter:profiles!reports_reporter_id_fkey(handle,full_name)," +
-        "reported_case:cases!reports_case_id_fkey(id,title,case_number,moderation_status,author_id)",
+        "reported_case:cases!reports_case_id_fkey(id,title,case_number,moderation_status,author_id)," +
+        "reported_profile:profiles!reports_reported_profile_id_fkey(id,handle,full_name)",
     )
     .order("created_at", { ascending: true });
 

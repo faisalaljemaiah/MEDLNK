@@ -330,3 +330,14 @@ export function ArrowLeftIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+/** Three dots, horizontal — the "more actions" overflow menu trigger. */
+export function MoreIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)} fill="currentColor" stroke="none">
+      <circle cx="5" cy="12" r="1.75" />
+      <circle cx="12" cy="12" r="1.75" />
+      <circle cx="19" cy="12" r="1.75" />
+    </svg>
+  );
+}

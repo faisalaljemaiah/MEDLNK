@@ -34,8 +34,20 @@ export async function reportCommentAction(
   return fileReport({ comment_id: commentId }, formData);
 }
 
+/**
+ * Files a report against an account itself — a pattern of behaviour rather
+ * than one case or reply. The `reports` table (0009) was already built with
+ * a third target column for exactly this; this is the first thing to use it.
+ */
+export async function reportProfileAction(
+  profileId: string,
+  formData: FormData,
+): Promise<ReportResult> {
+  return fileReport({ reported_profile_id: profileId }, formData);
+}
+
 async function fileReport(
-  target: { case_id: string } | { comment_id: string },
+  target: { case_id: string } | { comment_id: string } | { reported_profile_id: string },
   formData: FormData,
 ): Promise<ReportResult> {
   const supabase = await createClient();

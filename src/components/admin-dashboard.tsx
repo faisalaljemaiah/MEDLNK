@@ -601,6 +601,23 @@ async function ReportsQueue({
                       </span>
                     )}
                   </p>
+                ) : r.reported_profile ? (
+                  <p className="mt-2 text-sm">
+                    Account:{" "}
+                    <Link
+                      href={
+                        r.reported_profile.handle
+                          ? `/u/${r.reported_profile.handle}`
+                          : "#"
+                      }
+                      className="text-accent hover:underline"
+                    >
+                      {r.reported_profile.full_name ?? "Unnamed"}
+                      {r.reported_profile.handle
+                        ? ` (@${r.reported_profile.handle})`
+                        : ""}
+                    </Link>
+                  </p>
                 ) : (
                   <p className="mt-2 text-sm text-muted">
                     The reported content no longer exists.

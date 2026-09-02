@@ -13,7 +13,7 @@ import { ReputationBadge } from "@/components/reputation-badge";
 import { computeReputationTier } from "@/lib/reputation";
 import { startConversationAction } from "@/app/actions/messages";
 import { AdminDashboard } from "@/components/admin-dashboard";
-import { BlockButton } from "@/components/block-button";
+import { ProfileOverflowMenu } from "@/components/profile-overflow-menu";
 import { StreakCard } from "@/components/home/streak-card";
 
 const TABS = [
@@ -146,31 +146,33 @@ export default async function ProfilePage({
               </div>
             </div>
           ) : user ? (
-            <div className="flex min-w-0 flex-col items-start gap-2 sm:items-end">
-              {viewerHasBlocked ? (
-                <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
-              ) : (
-                <>
-                  <FollowButton
-                    followeeId={profile.id}
-                    initialFollowing={viewerFollows}
-                    path={path}
-                  />
-                  <form action={startConversationAction.bind(null, profile.id)}>
-                    <button
-                      type="submit"
-                      className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[border-color,transform] duration-150 ease-out active:scale-95"
-                    >
-                      Message
-                    </button>
-                  </form>
-                </>
-              )}
-              <BlockButton
-                blockedId={profile.id}
-                initialBlocked={viewerHasBlocked}
-                path={path}
-              />
+            <div className="flex min-w-0 flex-col items-end gap-2">
+              <div className="flex items-center gap-2">
+                {viewerHasBlocked ? (
+                  <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
+                ) : (
+                  <>
+                    <FollowButton
+                      followeeId={profile.id}
+                      initialFollowing={viewerFollows}
+                      path={path}
+                    />
+                    <form action={startConversationAction.bind(null, profile.id)}>
+                      <button
+                        type="submit"
+                        className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[border-color,transform] duration-150 ease-out active:scale-95"
+                      >
+                        Message
+                      </button>
+                    </form>
+                  </>
+                )}
+                <ProfileOverflowMenu
+                  profileId={profile.id}
+                  initialBlocked={viewerHasBlocked}
+                  path={path}
+                />
+              </div>
             </div>
           ) : null}
         </div>
