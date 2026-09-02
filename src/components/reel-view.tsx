@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ReelSlide } from "@/components/reel-slide";
+import { SpoolIntro } from "@/components/spool-intro";
 import type { FeedCase } from "@/lib/cases";
 
 const DRAG_THRESHOLD = 70;
@@ -14,18 +15,18 @@ const SETTLE_TRANSITION = "transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1)";
 
 /**
  * Spool: cases as a stack of circles you turn rather than a list you scroll.
- * Dragging translates and rotates the current card together — rotating
- * around its own center reads as "spinning the reel," not just moving it —
- * and releasing past DRAG_THRESHOLD commits to the next/previous card with a
- * spring-like settle. Plain pointer events + CSS transforms, no gesture
- * library: the only physics this needs is a drag distance and a threshold,
- * not velocity/momentum projection.
+ * Dragging left/right translates the current slide and spins its circle —
+ * rotating around its own center reads as "spinning the reel," not just
+ * moving it — and releasing past DRAG_THRESHOLD commits to the next/previous
+ * card with a spring-like settle. Plain pointer events + CSS transforms, no
+ * gesture library: the only physics this needs is a drag distance and a
+ * threshold, not velocity/momentum projection.
  */
 export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
   const [index, setIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const startYRef = useRef<number | null>(null);
+  const startXRef = useRef<number | null>(null);
   const dragOffsetRef = useRef(0);
   const wheelLockRef = useRef(false);
 
@@ -39,7 +40,7 @@ export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
   );
 
   function onPointerDown(e: React.PointerEvent) {
-    startYRef.current = e.clientY;
+    startXRef.current = e.clientX;
     setDragging(true);
   }
 
@@ -50,15 +51,17 @@ export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
     if (!dragging) return;
 
     function onMove(e: PointerEvent) {
-      if (startYRef.current === null) return;
-      const offset = e.clientY - startYRef.current;
+      if (startXRef.current === null) return;
+      const offset = e.clientX - startXRef.current;
       dragOffsetRef.current = offset;
       setDragOffset(offset);
     }
     function onUp() {
       const delta = dragOffsetRef.current;
-      startYRef.current = null;
+      startXRef.current = null;
       setDragging(false);
+      // Dragging left ("to the right side" motion pulls the next card in
+      // from the right) advances; dragging right goes back.
       if (delta < -DRAG_THRESHOLD) goTo(index + 1);
       else if (delta > DRAG_THRESHOLD) goTo(index - 1);
       else {
@@ -86,8 +89,8 @@ export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "ArrowDown") goTo(index + 1);
-      else if (e.key === "ArrowUp") goTo(index - 1);
+      if (e.key === "ArrowRight") goTo(index + 1);
+      else if (e.key === "ArrowLeft") goTo(index - 1);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -96,7 +99,7 @@ export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
   if (cases.length === 0) {
     return (
       <div className="spool-backdrop flex h-[calc(100dvh-145px)] w-full shrink-0 items-center justify-center text-sm text-white/70">
-        No cases yet — be the first to share one.
+        No case videos yet — be the first to share one.
       </div>
     );
   }
@@ -110,8 +113,9 @@ export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
       onWheel={onWheel}
       tabIndex={0}
       role="region"
-      aria-label="Case reel — drag, scroll, or use the arrow keys to browse"
+      aria-label="Case reel — drag, scroll, or use the left/right arrow keys to browse"
     >
+      <SpoolIntro />
       {cases.map((c, i) => {
         const relative = i - index;
         // Only the current card and its immediate neighbors ever need to be
@@ -123,12 +127,12 @@ export function ReelView({ cases, path }: { cases: FeedCase[]; path: string }) {
             key={c.id}
             className="absolute inset-0 flex items-center justify-center"
             style={{
-              transform: `translateY(calc(${relative * 100}% + ${dragging ? dragOffset : 0}px)) rotate(${relative === 0 ? rotate : 0}deg)`,
+              transform: `translateX(calc(${relative * 100}% + ${dragging ? dragOffset : 0}px))`,
               transition: dragging ? "none" : SETTLE_TRANSITION,
             }}
             aria-hidden={relative !== 0}
           >
-            <ReelSlide feedCase={c} path={path} />
+            <ReelSlide feedCase={c} path={path} rotate={relative === 0 ? rotate : 0} />
           </div>
         );
       })}
