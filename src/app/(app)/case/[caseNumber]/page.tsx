@@ -16,6 +16,7 @@ import { getRevealIfAnswered } from "@/app/actions/interactive";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
 import { isVideoUrl } from "@/lib/media";
 import { Avatar } from "@/components/avatar";
+import { BackButton } from "@/components/back-button";
 import { ReactionBar } from "@/components/reaction-bar";
 import { CaseQuestion } from "@/components/case-question";
 import { CaseFollowButton } from "@/components/case-follow-button";
@@ -103,7 +104,9 @@ export default async function CasePage({
 
   return (
     <div className="px-4 py-6">
-      <p className="font-label text-xs uppercase tracking-wide text-muted">
+      <BackButton />
+
+      <p className="mt-3 font-label text-xs uppercase tracking-wide text-muted">
         {feedCase.case_number ?? "CASE"}
         {feedCase.specialty ? ` · ${feedCase.specialty}` : ""}
         {countryName(feedCase.country_code) ? ` · ${countryName(feedCase.country_code)}` : ""}
