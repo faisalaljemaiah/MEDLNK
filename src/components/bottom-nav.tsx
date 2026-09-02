@@ -28,7 +28,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
     : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
 
   return (
-    <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+    <nav className="animate-enter pointer-events-none fixed inset-x-0 top-0 z-20 px-4 pt-[calc(1rem+env(safe-area-inset-top))]">
       <div
         className={clsx(
           "pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full px-3 py-2 transition-colors duration-200",
