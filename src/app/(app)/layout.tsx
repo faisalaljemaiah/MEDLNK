@@ -20,15 +20,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-dvh flex-1 flex-col md:pl-56">
       <DesktopSidebar profile={profile} />
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
-        {/* Nav and header have swapped places (an experiment) — nav now
-            floats at the top, the header bar now sits fixed at the bottom.
-            Neither reserves flow space any more (both are `fixed`), so the
-            content column carries the padding that used to come for free:
-            pt- clears the floating nav (mobile only, md:hidden below),
-            pb- clears the header bar now fixed at the bottom on every
-            width. */}
-        <main className="flex flex-1 flex-col pt-24 pb-16 md:pt-0">{children}</main>
         <TopHeader />
+        <main className="flex flex-1 flex-col pb-24 md:pb-10">{children}</main>
       </div>
       <div className="md:hidden">
         <BottomNav profile={profile} />

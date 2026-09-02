@@ -220,7 +220,7 @@ export default async function ProfilePage({
 
       <div
         className={clsx(
-          "min-h-[40vh] rounded-t-full bg-gradient-to-br from-accent-soft via-surface-2 to-accent/15",
+          "min-h-[40vh] rounded-t-[2rem] bg-gradient-to-br from-accent-soft via-surface-2 to-accent/15",
           !isOwnProfile && "border-t border-line",
         )}
       >
