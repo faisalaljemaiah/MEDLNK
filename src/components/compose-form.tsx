@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createCaseAction } from "@/app/actions/case";
@@ -11,6 +11,12 @@ import { toUploadableImage } from "@/lib/heic";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AIButton } from "@/components/ui/ai-button";
+import { ReelIcon } from "@/components/icons";
+
+/** Longest title auto-derived from a video's caption — long enough to read
+ *  as a real headline in the Spool info-peel, short enough to stay a
+ *  headline rather than repeating the whole caption verbatim. */
+const VIDEO_TITLE_MAX = 60;
 
 /** Free-text fields worth copy-editing — specialty and tags are controlled vocabulary. */
 const POLISH_FIELDS = [
@@ -155,6 +161,37 @@ export function ComposeForm({
   const [nearMissSections, setNearMissSections] = useState<string[]>([]);
   const [mediaPlacement, setMediaPlacement] = useState("top");
 
+  // Spool's minimal video composer (below) has no visible title field — the
+  // server still requires one (every case needs a headline elsewhere in the
+  // app), so it's derived from the caption as the author types and carried
+  // in a hidden input instead of asked for twice.
+  const videoTitleRef = useRef<HTMLInputElement>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    };
+  }, [videoPreviewUrl]);
+
+  function handleVideoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setVideoPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+  }
+
+  function handleCaptionInputForTitle(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    if (!videoTitleRef.current) return;
+    const trimmed = e.target.value.trim();
+    videoTitleRef.current.value = trimmed
+      ? trimmed.length > VIDEO_TITLE_MAX
+        ? `${trimmed.slice(0, VIDEO_TITLE_MAX)}…`
+        : trimmed
+      : "Video";
+  }
+
   const typeMeta = caseTypeMeta(caseType);
   const showFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
 
@@ -249,6 +286,119 @@ export function ComposeForm({
       if (el) el.value = suggestion.after;
     }
     setSuggestions([]);
+  }
+
+  // Video is Spool's format, and Spool is TikTok/Instagram-shaped: pick a
+  // clip, write a caption, post — not the numbered multi-section template
+  // every other format uses. Everything the rest of the app needs (a title,
+  // the de-identification warning flow, the same legal checkbox every case
+  // requires) still happens, just without asking for it as separate steps.
+  if (typeMeta.requiresVideo) {
+    return (
+      <form ref={formRef} action={action} className="flex flex-col gap-5">
+        <input type="hidden" name="acknowledge_warning" ref={acknowledgeRef} defaultValue="false" />
+        <input type="hidden" name="case_type" value={caseType} />
+        <input type="hidden" name="title" ref={videoTitleRef} defaultValue="Video" />
+
+        <label
+          htmlFor="video"
+          className="relative flex aspect-[9/16] max-h-[65vh] w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-line bg-surface-2 text-center transition-colors duration-150 hover:border-accent"
+        >
+          {videoPreviewUrl ? (
+            <video
+              src={videoPreviewUrl}
+              muted
+              loop
+              autoPlay
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <>
+              <span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <ReelIcon width={22} height={22} strokeWidth={2} />
+              </span>
+              <span className="text-sm font-medium text-text">Choose a video</span>
+              <span className="px-6 text-xs text-muted">
+                From your camera roll — MP4, WebM or MOV, up to 50MB.
+              </span>
+            </>
+          )}
+          <input
+            id="video"
+            name="video"
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,.mov"
+            required
+            onChange={handleVideoFileChange}
+            className="sr-only"
+          />
+        </label>
+
+        <Textarea
+          label="Caption"
+          name="short_caption"
+          placeholder="A sentence or two — what you saw and why it stuck with you."
+          onChange={handleCaptionInputForTitle}
+          required
+        />
+
+        <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
+          <span className="font-medium text-text">Keep it de-identified.</span>{" "}
+          No patient names, medical record numbers, addresses, or footage that
+          could identify someone.
+        </p>
+
+        {error && (
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+        )}
+
+        {warning && (
+          <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+            <p className="text-sm text-warning">⚠ {warning}</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (acknowledgeRef.current) acknowledgeRef.current.value = "true";
+                  formRef.current?.requestSubmit();
+                }}
+                className="rounded-lg border border-warning/50 px-3.5 py-2 text-sm text-warning"
+              >
+                Post anyway
+              </button>
+              <p className="self-center text-xs text-muted">
+                or edit the caption and post again
+              </p>
+            </div>
+          </div>
+        )}
+
+        <label className="flex items-start gap-2.5 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-3 text-xs leading-relaxed text-text">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            required
+            className="mt-0.5 size-3.5 shrink-0 accent-[var(--danger)]"
+          />
+          <span>
+            I confirm this post contains no real patient names, medical record
+            numbers, identifying footage, or other personally identifying
+            information, and that everything I&apos;ve written is accurate to
+            the best of my knowledge. I understand I am solely responsible for
+            what I post, and that if patient-identifiable information — in
+            text or in the video — is found, my account will be{" "}
+            <span className="font-medium">permanently blocked from Asyashare</span>{" "}
+            — I will not be able to sign up again.
+          </span>
+        </label>
+
+        <SubmitButton disabled={!agreedToTerms}>Post</SubmitButton>
+      </form>
+    );
   }
 
   return (

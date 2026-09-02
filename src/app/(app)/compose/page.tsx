@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { ComposeForm } from "@/components/compose-form";
+import { caseTypeMeta } from "@/lib/case-types";
 
 export default async function ComposePage({
   searchParams,
@@ -28,11 +29,17 @@ export default async function ComposePage({
     );
   }
 
+  const isVideo = caseTypeMeta(type).requiresVideo;
+
   return (
     <div className="px-4 py-6">
-      <h1 className="mb-1 font-headline text-xl text-text">Share a case</h1>
+      <h1 className="mb-1 font-headline text-xl text-text">
+        {isVideo ? "New Spool video" : "Share a case"}
+      </h1>
       <p className="mb-6 text-sm text-muted">
-        Cases are public to every verified clinician on Asyashare.
+        {isVideo
+          ? "Short clips are public to every verified clinician, just like Spool itself."
+          : "Cases are public to every verified clinician on Asyashare."}
       </p>
       <ComposeForm initialType={type} viewerCountryCode={profile.country_code} />
     </div>
