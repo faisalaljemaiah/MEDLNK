@@ -16,7 +16,7 @@ export function WeeklyActivityCard({
   locale: Locale;
 }) {
   return (
-    <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]">
       <div className="flex items-center gap-2">
         <span
           aria-hidden

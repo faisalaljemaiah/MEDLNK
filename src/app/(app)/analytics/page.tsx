@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getViewer } from "@/lib/auth";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getPersonalAnalytics } from "@/lib/analytics";
+import { getHomeStats } from "@/lib/home";
 import { CLINICAL_REACTIONS } from "@/lib/reaction-types";
+import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 
 const MONTH_FORMAT = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -25,8 +27,13 @@ export default async function AnalyticsPage() {
   const user = await getViewer();
   if (!user) redirect("/login");
 
-  const data = await getPersonalAnalytics(supabase, user.id);
+  const [data, weeklyStats, profile] = await Promise.all([
+    getPersonalAnalytics(supabase, user.id),
+    getHomeStats(supabase, user.id),
+    getViewerProfile(),
+  ]);
   const maxMonthCount = Math.max(1, ...data.casesByMonth.map((m) => m.count));
+  const locale = profile?.locale ?? "en";
 
   return (
     <div className="px-4 py-6">
@@ -34,6 +41,12 @@ export default async function AnalyticsPage() {
       <p className="mt-1 text-sm text-muted">
         What you&apos;ve shared, and what other clinicians said it was worth.
       </p>
+
+      {weeklyStats && (
+        <div className="mt-6">
+          <WeeklyActivityCard activity={weeklyStats.activity} locale={locale} />
+        </div>
+      )}
 
       {data.casesByMonth.length === 0 ? (
         <p className="mt-8 text-center text-sm text-muted">
