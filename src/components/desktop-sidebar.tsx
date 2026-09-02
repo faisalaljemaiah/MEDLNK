@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { HomeIcon, CompassIcon, ReelIcon } from "@/components/icons";
+import { HomeIcon, CompassIcon, SendIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
 
@@ -74,11 +74,15 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
         </span>
       </div>
 
-      {/* Spool (the reel/story browsing mode) took this slot over Messages
-          and Settings — both stay one tap away via the top header's icons
-          and the profile's action-links row. */}
-      <SidebarLink href="/spool" label="Spool" active={onSpool} onSpool={onSpool}>
-        <ReelIcon />
+      {/* Spool gave this slot back to Messages — Spool itself stays one tap
+          away via the top header's button and the Discover page. */}
+      <SidebarLink
+        href="/messages"
+        label="Messages"
+        active={pathname.startsWith("/messages")}
+        onSpool={onSpool}
+      >
+        <SendIcon />
       </SidebarLink>
 
       <div

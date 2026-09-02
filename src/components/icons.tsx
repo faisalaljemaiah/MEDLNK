@@ -74,7 +74,7 @@ export function HomeIcon(
 export function ReelIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>
-      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <circle cx="12" cy="12" r="9" />
       <path d="M10 9.5v5l4.5-2.5Z" fill="currentColor" stroke="none" />
     </svg>
   );

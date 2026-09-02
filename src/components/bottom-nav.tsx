@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ViewTransition } from "react";
 import { clsx } from "clsx";
-import { HomeIcon, CompassIcon, ReelIcon } from "@/components/icons";
+import { HomeIcon, CompassIcon, SendIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
 
@@ -57,11 +57,10 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
         <span className="ai-glow ai-glow-round ai-glow-brand inline-flex">
           <CreateMenu active={pathname === "/compose"} />
         </span>
-        {/* Spool (the reel/story browsing mode) took this slot back over
-            Messages — Messages stays one tap away via the top header's send
-            icon and the profile's action-links row, same as Settings. */}
-        <NavLink href="/spool" active={onSpool} onSpool={onSpool}>
-          <ReelIcon />
+        {/* Spool gave this slot back to Messages — Spool itself stays one
+            tap away via the top header's button and the Discover page. */}
+        <NavLink href="/messages" active={pathname.startsWith("/messages")} onSpool={onSpool}>
+          <SendIcon />
         </NavLink>
         <Link
           href={profileHref}
