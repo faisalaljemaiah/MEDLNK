@@ -15,8 +15,6 @@ import {
 import { feedFilter } from "@/lib/feed-filters";
 import { getLiveSafetyAlerts } from "@/lib/safety-alerts";
 import {
-  getHomeStats,
-  getHomeStreak,
   getTrendingTopics,
   getTrendingCommunities,
   getRecommendedPeople,
@@ -26,10 +24,8 @@ import { FeedFilterBar } from "@/components/feed-filter-bar";
 import { SafetyAlertBanner } from "@/components/safety-alert-banner";
 import { UnavailableNotice } from "@/components/unavailable-notice";
 import { TrendingStrip } from "@/components/home/trending-strip";
-import { StreakCard } from "@/components/home/streak-card";
 import { QuickActions } from "@/components/home/quick-actions";
 import { HomeFeedTabs, type HomeFeedView } from "@/components/home/feed-tabs";
-import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
 import { RecommendedPeople } from "@/components/home/recommended-people";
@@ -63,8 +59,6 @@ export default async function FeedPage({
   const [
     alerts,
     profile,
-    stats,
-    streak,
     topics,
     communities,
     discussions,
@@ -73,8 +67,6 @@ export default async function FeedPage({
   ] = await Promise.all([
     getLiveSafetyAlerts(supabase, viewerId),
     user ? getViewerProfile() : Promise.resolve(null),
-    user ? getHomeStats(supabase, user.id) : Promise.resolve(null),
-    user ? getHomeStreak(supabase, user.id) : Promise.resolve(null),
     getTrendingTopics(supabase, viewerId),
     getTrendingCommunities(supabase, viewerId),
     getActiveDiscussions(supabase, viewerId),
@@ -132,16 +124,6 @@ export default async function FeedPage({
         <TrendingStrip topics={topics} />
       </div>
 
-      {user && stats && (
-        <div className="animate-enter stagger-2 mt-4">
-          <StreakCard
-            days={streak?.days ?? 0}
-            postsThisWeek={stats.activity.postsThisWeek}
-            commentsThisWeek={stats.activity.commentsThisWeek}
-          />
-        </div>
-      )}
-
       {user && profile?.verified && (
         <div className="animate-enter stagger-2 mt-3">
           <QuickActions />
@@ -185,9 +167,6 @@ export default async function FeedPage({
         </div>
       </ViewTransition>
 
-      {user && stats && (
-        <WeeklyActivityCard activity={stats.activity} locale={locale} />
-      )}
       <TrendingCommunities communities={communities} locale={locale} />
       <ActiveDiscussions cases={discussions} locale={locale} />
       {user && people && (

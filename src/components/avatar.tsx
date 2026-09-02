@@ -5,12 +5,14 @@ const SIZES = {
   xs: "h-6 w-6 text-[10px]",
   sm: "h-9 w-9 text-xs",
   lg: "h-20 w-20 text-2xl",
+  xl: "h-24 w-24 text-3xl",
 } as const;
 
 const PIXELS: Record<keyof typeof SIZES, number> = {
   xs: 24,
   sm: 36,
   lg: 80,
+  xl: 96,
 };
 
 export function Avatar({
