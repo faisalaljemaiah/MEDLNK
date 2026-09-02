@@ -34,6 +34,7 @@ type NavProfile = {
  */
 export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
   const pathname = usePathname();
+  const onSpool = pathname === "/spool";
   const profileHref = profile
     ? profile.handle
       ? `/u/${profile.handle}`
@@ -44,18 +45,26 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
     : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
 
   return (
-    <aside className="fixed left-0 top-0 z-10 hidden max-h-dvh w-56 flex-col gap-1 overflow-y-auto border-r border-line bg-bg px-4 py-6 md:flex">
+    <aside
+      className={clsx(
+        "fixed left-0 top-0 z-10 hidden max-h-dvh w-56 flex-col gap-1 overflow-y-auto px-4 py-6 transition-colors duration-200 md:flex",
+        onSpool ? "border-transparent bg-transparent" : "border-r border-line bg-bg",
+      )}
+    >
       <Link
         href="/"
-        className="mb-6 flex items-center px-3 font-headline text-lg text-text"
+        className={clsx(
+          "mb-6 flex items-center px-3 font-headline text-lg",
+          onSpool ? "text-white" : "text-text",
+        )}
       >
         Asyashare
       </Link>
 
-      <SidebarLink href="/" label="Home" active={pathname === "/"}>
+      <SidebarLink href="/" label="Home" active={pathname === "/"} onSpool={onSpool}>
         <HomeIcon filled={pathname === "/"} />
       </SidebarLink>
-      <SidebarLink href="/search" label="Discover" active={pathname === "/search"}>
+      <SidebarLink href="/search" label="Discover" active={pathname === "/search"} onSpool={onSpool}>
         <CompassIcon />
       </SidebarLink>
 
@@ -68,16 +77,27 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
       {/* Spool (the reel/story browsing mode) took this slot over Messages
           and Settings — both stay one tap away via the top header's icons
           and the profile's action-links row. */}
-      <SidebarLink href="/spool" label="Spool" active={pathname === "/spool"}>
+      <SidebarLink href="/spool" label="Spool" active={onSpool} onSpool={onSpool}>
         <ReelIcon />
       </SidebarLink>
 
-      <div className="mt-2 border-t border-line pt-2">
+      <div
+        className={clsx(
+          "mt-2 border-t pt-2",
+          onSpool ? "border-white/10" : "border-line",
+        )}
+      >
         <Link
           href={profileHref}
           className={clsx(
             "flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out",
-            isProfileActive ? "bg-accent-soft text-accent" : "text-muted hover:text-text",
+            isProfileActive
+              ? onSpool
+                ? "bg-white/15 text-white"
+                : "bg-accent-soft text-accent"
+              : onSpool
+                ? "text-white/70 hover:text-white"
+                : "text-muted hover:text-text",
           )}
         >
           <Avatar avatarUrl={profile?.avatar_url} name={profile?.full_name} size="sm" />
@@ -92,11 +112,16 @@ function SidebarLink({
   href,
   label,
   active,
+  onSpool,
   children,
 }: {
   href: string;
   label: string;
   active: boolean;
+  /** Spool's transparent rail needs its own idle/active colors — the
+   *  light-surface pair (text-muted, bg-accent-soft) would wash out on a
+   *  black backdrop. */
+  onSpool: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -104,7 +129,13 @@ function SidebarLink({
       href={href}
       className={clsx(
         "flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out",
-        active ? "bg-accent-soft text-accent" : "text-muted hover:text-text",
+        active
+          ? onSpool
+            ? "bg-white/15 text-white"
+            : "bg-accent-soft text-accent"
+          : onSpool
+            ? "text-white/70 hover:text-white"
+            : "text-muted hover:text-text",
       )}
     >
       {children}
