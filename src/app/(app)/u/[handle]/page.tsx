@@ -218,7 +218,12 @@ export default async function ProfilePage({
         </div>
       )}
 
-      <div className={clsx(!isOwnProfile && "border-t border-line")}>
+      <div
+        className={clsx(
+          "min-h-[40vh] bg-gradient-to-br from-accent-soft via-surface-2 to-accent/15",
+          !isOwnProfile && "border-t border-line",
+        )}
+      >
         {visibleCases.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted">
             {emptyMessage}
