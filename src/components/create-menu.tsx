@@ -8,6 +8,7 @@ import {
   QuestionIcon,
   AlertTriangleIcon,
   BoltIcon,
+  ReelIcon,
   PlusSquareIcon,
 } from "@/components/icons";
 import { trackEventAction } from "@/app/actions/analytics";
@@ -36,6 +37,15 @@ const CREATE_OPTIONS = [
     label: "Quick Update",
     hint: "Something interesting, in a sentence or two.",
     icon: BoltIcon,
+  },
+  {
+    // video_post is the same short-form, video-required format Spool's feed
+    // filters for (src/app/(app)/spool/page.tsx) — this is just a themed
+    // shortcut into it, not a separate post type.
+    type: "video_post",
+    label: "Spool",
+    hint: "A short video clip — up to 50MB.",
+    icon: ReelIcon,
   },
 ] as const;
 
