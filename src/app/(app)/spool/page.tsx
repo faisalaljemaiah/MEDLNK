@@ -15,5 +15,14 @@ export default async function SpoolPage() {
     (c) => c.media_url && isVideoUrl(c.media_url),
   );
 
-  return <ReelView cases={videoCases} path="/spool" />;
+  return (
+    <>
+      {/* Fixed, full-viewport — paints behind the now-transparent header,
+          sidebar and bottom nav too, not just the content column between
+          them, so Spool reads as one solid black screen rather than a black
+          strip framed by the rest of the app's light chrome. */}
+      <div aria-hidden className="spool-backdrop fixed inset-0 -z-10" />
+      <ReelView cases={videoCases} path="/spool" />
+    </>
+  );
 }

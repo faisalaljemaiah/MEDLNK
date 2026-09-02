@@ -2,8 +2,10 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { clsx } from "clsx";
 import { ReactionBar, type ReactionBarHandle } from "@/components/reaction-bar";
 import { Avatar } from "@/components/avatar";
+import { ChevronDownIcon } from "@/components/icons";
 import type { FeedCase } from "@/lib/cases";
 
 const DOUBLE_TAP_MS = 300;
@@ -22,6 +24,7 @@ export function ReelSlide({
 }) {
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const [burst, setBurst] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const lastTapRef = useRef(0);
   const reactionBarRef = useRef<ReactionBarHandle>(null);
 
@@ -40,10 +43,12 @@ export function ReelSlide({
     // rather than inside — Spool is now video-only, so the circle is entirely
     // the clip of the video, with no room (or need) for interactions layered
     // on top of the footage itself.
-    <section className="flex h-full w-full shrink-0 flex-col items-center justify-center gap-4">
+    <section className="flex h-full w-full shrink-0 flex-col items-center justify-center gap-3">
       {/* A perfect circle, capped so it never outgrows the viewport in either
           dimension. `rotate` (not the section's own transform) is what spins
-          it during a drag, around its own center. */}
+          it during a drag, around its own center. Clean video, no text — the
+          arrow is the only thing on it; tapping it peels the caption open
+          below rather than laying text over the footage. */}
       <div
         className="relative aspect-square h-[min(72dvh,90vw,520px)] shrink-0 overflow-hidden rounded-full ring-1 ring-white/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.7)]"
         style={{ transform: `rotate(${rotate}deg)` }}
@@ -60,11 +65,6 @@ export function ReelSlide({
           playsInline
           className="absolute inset-0 h-full w-full object-cover"
         />
-        {/* Case videos are arbitrary and a near-white one would leave white
-            text unreadable, so this holds a dark floor through the middle of
-            the circle where the text sits — a legibility aid, not a colour
-            choice. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/45 to-black/20" />
 
         <div
           className="absolute inset-0"
@@ -79,22 +79,40 @@ export function ReelSlide({
           </div>
         )}
 
-        {/* Constrained to the circle's inscribed square, not the full width —
-            content that reaches toward the rim would clip against the curve. */}
-        <div className="relative z-[1] mx-auto flex h-full w-[72%] flex-col items-center justify-center text-center">
-          <p className="pointer-events-none font-label text-[11px] uppercase tracking-wide text-white/70">
+        <button
+          type="button"
+          onClick={() => setInfoOpen((v) => !v)}
+          aria-label={infoOpen ? "Hide case details" : "Show case details"}
+          aria-expanded={infoOpen}
+          className="absolute bottom-3 left-1/2 z-[2] flex size-8 -translate-x-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-transform duration-200 ease-out active:scale-90"
+        >
+          <ChevronDownIcon
+            width={18}
+            height={18}
+            strokeWidth={2.5}
+            className={clsx("transition-transform duration-200", infoOpen && "rotate-180")}
+          />
+        </button>
+      </div>
+
+      {infoOpen && (
+        // A quarter-circle, not a rectangle — one corner left square-cornered
+        // (where it meets the arrow) and the opposite corner a full arc, so it
+        // reads as a wedge peeling out from the circle above rather than a
+        // plain dropdown card. Translucent over the black backdrop, same
+        // glass language as the rest of Spool's overlays.
+        <div className="animate-enter w-[min(78vw,380px)] rounded-tl-3xl rounded-tr-3xl rounded-bl-3xl rounded-br-[100%] border border-white/10 bg-white/10 px-5 pb-8 pt-4 text-center backdrop-blur-lg">
+          <p className="font-label text-[11px] uppercase tracking-wide text-white/70">
             {feedCase.case_number}
             {feedCase.specialty ? ` · ${feedCase.specialty}` : ""}
           </p>
-          <h2 className="pointer-events-none mt-1.5 line-clamp-2 font-headline text-lg text-white">
-            {feedCase.title}
-          </h2>
-          <p className="pointer-events-none mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/75">
+          <h2 className="mt-1.5 font-headline text-lg text-white">{feedCase.title}</h2>
+          <p className="mt-1.5 text-xs leading-relaxed text-white/75">
             {feedCase.short_caption}
           </p>
           <Link
             href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}
-            className="pointer-events-auto mt-2.5 flex items-center gap-1.5 text-xs text-white/85 hover:text-white"
+            className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-white/85 hover:text-white"
           >
             <Avatar
               avatarUrl={feedCase.author?.avatar_url}
@@ -110,12 +128,12 @@ export function ReelSlide({
 
           <Link
             href={caseHref}
-            className="pointer-events-auto mt-3 rounded-full bg-white/20 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur"
+            className="mt-3 inline-block rounded-full bg-white/20 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur"
           >
             Let&apos;s dive deep →
           </Link>
         </div>
-      </div>
+      )}
 
       <div className="shrink-0">
         <ReactionBar
