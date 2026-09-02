@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Profile } from "@/lib/database.types";
 import { getFeedCases, type FeedCase } from "@/lib/cases";
 import { isClinicalReaction } from "@/lib/reaction-types";
+import { getHomeStats, getHomeStreak, type HomeStats } from "@/lib/home";
 
 type Client = SupabaseClient<Database>;
 
@@ -37,6 +38,12 @@ export type ProfilePageData = {
   markedCases: FeedCase[];
   savedCases: FeedCase[];
   stats: ContributionStats;
+  /** The Home dashboard's weekly-activity dial + streak — personal metrics
+   *  computed from the viewer's own activity, so only ever fetched (and
+   *  only ever meaningful) when isOwnProfile is true. null on someone
+   *  else's profile. */
+  weeklyStats: HomeStats | null;
+  streakDays: number | null;
   followerCount: number;
   followingCount: number;
   viewerFollows: boolean;
@@ -57,6 +64,8 @@ export async function getProfileByHandle(
 
   if (!profile) return null;
 
+  const isOwnProfile = viewerId === profile.id;
+
   // The follow counts and the case list don't depend on each other, so they go
   // out together — awaiting the counts first would add a round trip (~260ms)
   // to every profile view for no reason.
@@ -67,6 +76,8 @@ export async function getProfileByHandle(
     viewerBlockRow,
     allCases,
     replyCountRes,
+    weeklyStats,
+    streak,
   ] = await Promise.all([
     supabase
       .from("follows")
@@ -99,9 +110,13 @@ export async function getProfileByHandle(
       .from("comments")
       .select("*", { count: "exact", head: true })
       .eq("user_id", profile.id),
+    // The Home dashboard's weekly-activity dial + streak are personal
+    // metrics computed from the viewer's own activity — only worth fetching
+    // (and only ever shown) on the viewer's own profile.
+    isOwnProfile ? getHomeStats(supabase, profile.id) : Promise.resolve(null),
+    isOwnProfile ? getHomeStreak(supabase, profile.id) : Promise.resolve(null),
   ]);
 
-  const isOwnProfile = viewerId === profile.id;
   const cases = allCases.filter((c) => c.author_id === profile.id);
   // viewerReactions reflects viewerId's own reactions, so these are only
   // meaningful (and only ever rendered) when isOwnProfile is true.
@@ -145,6 +160,8 @@ export async function getProfileByHandle(
     markedCases,
     savedCases,
     stats,
+    weeklyStats,
+    streakDays: streak?.days ?? null,
     followerCount: followerCount ?? 0,
     followingCount: followingCount ?? 0,
     viewerFollows: Boolean(viewerFollowRow.data),

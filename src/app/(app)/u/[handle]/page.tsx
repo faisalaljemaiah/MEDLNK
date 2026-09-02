@@ -15,6 +15,8 @@ import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { BlockButton } from "@/components/block-button";
+import { StreakCard } from "@/components/home/streak-card";
+import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 
 const TABS = [
   { key: "posts", label: "Posts" },
@@ -50,6 +52,8 @@ export default async function ProfilePage({
     markedCases,
     savedCases,
     stats,
+    weeklyStats,
+    streakDays,
     followerCount,
     followingCount,
     viewerFollows,
@@ -95,104 +99,131 @@ export default async function ProfilePage({
 
   return (
     <div>
-      <div className="flex flex-wrap items-start gap-4 px-4 py-6">
-        <Avatar avatarUrl={profile.avatar_url} name={profile.full_name} size="lg" />
-
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-lg font-semibold text-text">
-            {profile.full_name || "(no name yet)"}
-            {profile.verified && <span className="ml-1 text-positive">✓</span>}
-          </p>
-          <p className="font-label text-sm text-muted">
-            @{profile.handle} {profile.role ? `· ${profile.role}` : ""}
-          </p>
-          {(profile.specialty || profile.city) && (
-            <p className="mt-1 text-sm text-muted">
-              {[profile.specialty, profile.city].filter(Boolean).join(" · ")}
-            </p>
-          )}
-          <ReputationBadge tier={computeReputationTier(stats)} />
-          <div className="mt-2 flex gap-4 text-sm text-muted">
-            <span>
-              <span className="font-medium text-text">{followerCount}</span>{" "}
-              followers
-            </span>
-            <span>
-              <span className="font-medium text-text">{followingCount}</span>{" "}
-              following
-            </span>
-          </div>
+      <div className="animate-enter relative">
+        <div className="h-24 overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-accent-soft via-surface-2 to-accent/15 sm:h-32" />
+        <div className="flow-root px-4">
+          <Avatar
+            avatarUrl={profile.avatar_url}
+            name={profile.full_name}
+            size="xl"
+            className="-mt-12 ring-4 ring-bg shadow-[0_6px_20px_-6px_rgb(var(--shadow-tint)/0.35)] sm:-mt-14"
+          />
         </div>
+      </div>
 
-        {isOwnProfile ? (
-          <div className="flex min-w-0 flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
-              <Link
-                href="/onboarding"
-                className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
-              >
-                Edit profile
-              </Link>
-              <Link
-                href="/settings"
-                aria-label="Settings"
-                className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-text transition-transform duration-150 ease-out active:scale-90"
-              >
-                <SettingsIcon width={16} height={16} strokeWidth={2} />
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">
-              <Link href="/messages" className="hover:text-text">
-                Messages
-              </Link>
-              <Link href="/consults" className="hover:text-text">
-                Consults
-              </Link>
-              <Link href="/analytics" className="hover:text-text">
-                Analytics
-              </Link>
-              <Link href="/learn" className="hover:text-text">
-                Learn
-              </Link>
-              <Link href="/notifications" className="hover:text-text">
-                Notifications
-              </Link>
-              <form action={signOutAction}>
-                <button type="submit" className="hover:text-text">
-                  Sign out
-                </button>
-              </form>
-            </div>
+      <div className="animate-enter stagger-1 px-4 pb-2 pt-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-semibold text-text">
+              {profile.full_name || "(no name yet)"}
+              {profile.verified && <span className="ml-1 text-positive">✓</span>}
+            </p>
+            <p className="font-label text-sm text-muted">
+              @{profile.handle} {profile.role ? `· ${profile.role}` : ""}
+            </p>
+            {(profile.specialty || profile.city) && (
+              <p className="mt-1 text-sm text-muted">
+                {[profile.specialty, profile.city].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            <ReputationBadge tier={computeReputationTier(stats)} />
           </div>
-        ) : user ? (
-          <div className="flex min-w-0 flex-col items-end gap-2">
-            {viewerHasBlocked ? (
-              <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
-            ) : (
-              <>
-                <FollowButton
-                  followeeId={profile.id}
-                  initialFollowing={viewerFollows}
-                  path={path}
-                />
-                <form action={startConversationAction.bind(null, profile.id)}>
-                  <button
-                    type="submit"
-                    className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[border-color,transform] duration-150 ease-out active:scale-95"
-                  >
-                    Message
+
+          {isOwnProfile ? (
+            <div className="flex min-w-0 flex-col items-start gap-2 sm:items-end">
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/onboarding"
+                  className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
+                >
+                  Edit profile
+                </Link>
+                <Link
+                  href="/settings"
+                  aria-label="Settings"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-text transition-transform duration-150 ease-out active:scale-90"
+                >
+                  <SettingsIcon width={16} height={16} strokeWidth={2} />
+                </Link>
+              </div>
+              <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs text-muted sm:justify-end">
+                <Link href="/messages" className="hover:text-text">
+                  Messages
+                </Link>
+                <Link href="/consults" className="hover:text-text">
+                  Consults
+                </Link>
+                <Link href="/analytics" className="hover:text-text">
+                  Analytics
+                </Link>
+                <Link href="/learn" className="hover:text-text">
+                  Learn
+                </Link>
+                <Link href="/notifications" className="hover:text-text">
+                  Notifications
+                </Link>
+                <form action={signOutAction}>
+                  <button type="submit" className="hover:text-text">
+                    Sign out
                   </button>
                 </form>
-              </>
-            )}
-            <BlockButton
-              blockedId={profile.id}
-              initialBlocked={viewerHasBlocked}
-              path={path}
-            />
-          </div>
-        ) : null}
+              </div>
+            </div>
+          ) : user ? (
+            <div className="flex min-w-0 flex-col items-start gap-2 sm:items-end">
+              {viewerHasBlocked ? (
+                <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
+              ) : (
+                <>
+                  <FollowButton
+                    followeeId={profile.id}
+                    initialFollowing={viewerFollows}
+                    path={path}
+                  />
+                  <form action={startConversationAction.bind(null, profile.id)}>
+                    <button
+                      type="submit"
+                      className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[border-color,transform] duration-150 ease-out active:scale-95"
+                    >
+                      Message
+                    </button>
+                  </form>
+                </>
+              )}
+              <BlockButton
+                blockedId={profile.id}
+                initialBlocked={viewerHasBlocked}
+                path={path}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
+            <span className="font-medium text-text">{followerCount}</span>{" "}
+            followers
+          </span>
+          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
+            <span className="font-medium text-text">{followingCount}</span>{" "}
+            following
+          </span>
+        </div>
       </div>
+
+      {isOwnProfile && weeklyStats && (
+        <div className="animate-enter stagger-2 mt-1 flex flex-col gap-3">
+          <StreakCard
+            days={streakDays ?? 0}
+            postsThisWeek={weeklyStats.activity.postsThisWeek}
+            commentsThisWeek={weeklyStats.activity.commentsThisWeek}
+          />
+          <WeeklyActivityCard
+            activity={weeklyStats.activity}
+            locale={profile.locale}
+          />
+        </div>
+      )}
 
       <ProfileStats stats={stats} />
 

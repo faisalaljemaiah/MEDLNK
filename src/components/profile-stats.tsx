@@ -20,25 +20,36 @@ export function ProfileStats({ stats }: { stats: ContributionStats }) {
 
   if (stats.casesShared === 0 && stats.repliesWritten === 0) return null;
 
+  const tiles = [
+    { value: stats.casesShared, label: "cases" },
+    ...(stats.safetyPosts > 0
+      ? [{ value: stats.safetyPosts, label: "patient safety" }]
+      : []),
+    ...(stats.teachingCases > 0
+      ? [{ value: stats.teachingCases, label: "cases to answer" }]
+      : []),
+    { value: stats.repliesWritten, label: "replies" },
+  ];
+
   return (
-    <section className="border-t border-line px-4 py-4">
+    <section className="mx-4 mt-4 rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]">
       <p className="font-label text-xs uppercase tracking-wide text-muted">
         Contribution
       </p>
 
-      <div className="mt-2.5 flex flex-wrap gap-x-6 gap-y-2">
-        <Stat value={stats.casesShared} label="cases" />
-        {stats.safetyPosts > 0 && (
-          <Stat value={stats.safetyPosts} label="patient safety" />
-        )}
-        {stats.teachingCases > 0 && (
-          <Stat value={stats.teachingCases} label="cases to answer" />
-        )}
-        <Stat value={stats.repliesWritten} label="replies" />
+      <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {tiles.map((tile) => (
+          <div key={tile.label} className="rounded-xl bg-surface-2 p-3">
+            <p className="text-lg font-semibold tabular-nums text-text">
+              {tile.value}
+            </p>
+            <p className="font-label text-xs text-muted">{tile.label}</p>
+          </div>
+        ))}
       </div>
 
       {signalTotal > 0 && (
-        <div className="mt-3">
+        <div className="mt-3.5 border-t border-line pt-3.5">
           <p className="font-label text-xs uppercase tracking-wide text-muted">
             What others said
           </p>
@@ -47,7 +58,7 @@ export function ProfileStats({ stats }: { stats: ContributionStats }) {
               <span
                 key={r.value}
                 title={`${r.label} — from other clinicians`}
-                className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-label text-xs text-muted"
+                className="flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1 font-label text-xs text-muted"
               >
                 <span aria-hidden>{r.emoji}</span>
                 <span className="tabular-nums text-text">
@@ -60,14 +71,5 @@ export function ProfileStats({ stats }: { stats: ContributionStats }) {
         </div>
       )}
     </section>
-  );
-}
-
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <span className="text-sm text-muted">
-      <span className="font-medium tabular-nums text-text">{value}</span>{" "}
-      {label}
-    </span>
   );
 }
