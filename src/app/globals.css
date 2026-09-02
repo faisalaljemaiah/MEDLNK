@@ -371,21 +371,13 @@ body {
   }
 }
 
-/* Spool's dark, colorful backdrop — scoped to that one view, not the rest of
- * the app's light theme. The three hues reuse existing palette values
- * (--accent green, --ai-hue-2 sky blue, --accent-2/--ai-hue-4 violet) rather
- * than inventing new ones, just applied as large soft glows on black instead
- * of a thin ring. Static, not drifting: the view already has real motion —
- * the drag-to-turn gesture on the cards themselves — and a constantly
- * animating background behind actively-moving content would compete with it
- * rather than support it.
+/* Spool's dark backdrop — scoped to that one view, not the rest of the app's
+ * light theme. Plain black: the videos themselves carry the color now that
+ * every Spool card is a video, so a colorful backdrop competed with the
+ * footage rather than framing it.
  */
 .spool-backdrop {
-  background-color: #05070a;
-  background-image:
-    radial-gradient(circle at 18% 20%, rgb(15 118 110 / 0.55), transparent 55%),
-    radial-gradient(circle at 82% 28%, rgb(56 189 248 / 0.4), transparent 55%),
-    radial-gradient(circle at 50% 88%, rgb(124 58 237 / 0.5), transparent 60%);
+  background-color: #000;
 }
 
 @media (prefers-reduced-motion: reduce) {

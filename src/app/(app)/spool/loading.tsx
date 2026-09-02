@@ -7,7 +7,7 @@ export default function Loading() {
       aria-label="Loading"
       className="spool-backdrop flex h-[calc(100dvh-145px)] w-full shrink-0 items-center justify-center"
     >
-      <div className="aspect-square h-[min(78dvh,78vw,460px)] animate-pulse rounded-full bg-white/[0.07] ring-1 ring-white/10" />
+      <div className="aspect-square h-[min(72dvh,90vw,520px)] animate-pulse rounded-full bg-white/[0.07] ring-1 ring-white/10" />
     </div>
   );
 }
