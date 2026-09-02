@@ -11,12 +11,10 @@ import { CaseCard } from "@/components/case-card";
 import { ProfileStats } from "@/components/profile-stats";
 import { ReputationBadge } from "@/components/reputation-badge";
 import { computeReputationTier } from "@/lib/reputation";
-import { signOutAction } from "@/app/actions/auth";
 import { startConversationAction } from "@/app/actions/messages";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { BlockButton } from "@/components/block-button";
 import { StreakCard } from "@/components/home/streak-card";
-import { WeeklyActivityCard } from "@/components/home/weekly-activity";
 
 const TABS = [
   { key: "posts", label: "Posts" },
@@ -146,28 +144,6 @@ export default async function ProfilePage({
                   <SettingsIcon width={16} height={16} strokeWidth={2} />
                 </Link>
               </div>
-              <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs text-muted sm:justify-end">
-                <Link href="/messages" className="hover:text-text">
-                  Messages
-                </Link>
-                <Link href="/consults" className="hover:text-text">
-                  Consults
-                </Link>
-                <Link href="/analytics" className="hover:text-text">
-                  Analytics
-                </Link>
-                <Link href="/learn" className="hover:text-text">
-                  Learn
-                </Link>
-                <Link href="/notifications" className="hover:text-text">
-                  Notifications
-                </Link>
-                <form action={signOutAction}>
-                  <button type="submit" className="hover:text-text">
-                    Sign out
-                  </button>
-                </form>
-              </div>
             </div>
           ) : user ? (
             <div className="flex min-w-0 flex-col items-start gap-2 sm:items-end">
@@ -212,15 +188,11 @@ export default async function ProfilePage({
       </div>
 
       {isOwnProfile && weeklyStats && (
-        <div className="animate-enter stagger-2 mt-1 flex flex-col gap-3">
+        <div className="animate-enter stagger-2 mt-1">
           <StreakCard
             days={streakDays ?? 0}
             postsThisWeek={weeklyStats.activity.postsThisWeek}
             commentsThisWeek={weeklyStats.activity.commentsThisWeek}
-          />
-          <WeeklyActivityCard
-            activity={weeklyStats.activity}
-            locale={profile.locale}
           />
         </div>
       )}

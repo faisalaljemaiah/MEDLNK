@@ -42,13 +42,44 @@ export default async function SettingsPage() {
         </section>
       )}
 
+      {/* Messages/Consults/My Analytics/Learn used to live as a quick-link
+          row on the profile header; moved here to keep that page from
+          feeling crowded with navigation that isn't really about the
+          profile itself. */}
       <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
+        <Link
+          href="/messages"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          Messages →
+        </Link>
+        <Link
+          href="/consults"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          Consults →
+        </Link>
+        <Link
+          href="/analytics"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          My Analytics →
+        </Link>
+        <Link
+          href="/learn"
+          className="text-sm font-medium text-text hover:text-accent"
+        >
+          Learn →
+        </Link>
         <Link
           href="/notifications"
           className="text-sm font-medium text-text hover:text-accent"
         >
           {t(locale, "nav.notifications")} →
         </Link>
+      </section>
+
+      <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
         {/* An admin's own profile page (/u/[handle]) is the moderation
             dashboard rather than the normal profile, so it no longer
             carries these — this is the one place left to reach them. */}
