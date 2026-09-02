@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
+import { SettingsIcon } from "@/components/icons";
+import { signOutAction } from "@/app/actions/auth";
 import {
   approveUserAction,
   rejectUserAction,
@@ -63,7 +65,30 @@ export async function AdminDashboard({
 
   return (
     <div className="px-4 py-6">
-      <h1 className="font-headline text-xl text-text">Admin dashboard</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-headline text-xl text-text">Admin dashboard</h1>
+        {/* This dashboard replaces the normal profile view entirely (see
+            this component's own doc comment), so it's the only place an
+            admin's own account ever renders — Settings/Sign out have to
+            live here, not on a profile action row that never shows up. */}
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-text transition-transform duration-150 ease-out active:scale-90"
+          >
+            <SettingsIcon width={16} height={16} strokeWidth={2} />
+          </Link>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-transform duration-150 ease-out active:scale-95"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+      </div>
 
       <div className="mt-4 flex gap-1 overflow-x-auto border-b border-line pb-px">
         {TABS.map((t) => (
