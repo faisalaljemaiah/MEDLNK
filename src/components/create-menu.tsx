@@ -3,59 +3,37 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
-import {
-  FileIcon,
-  QuestionIcon,
-  AlertTriangleIcon,
-  BoltIcon,
-  ReelIcon,
-  PlusSquareIcon,
-} from "@/components/icons";
+import { FileIcon, ReelIcon, PlusSquareIcon } from "@/components/icons";
 import { trackEventAction } from "@/app/actions/analytics";
 
+// Two branches, not five: every written format (case, question, near miss,
+// quick update, ...) lives behind the full post-type picker on /compose
+// itself, one tap away from "Post". Spool is the one format shaped
+// differently enough (pick a clip, not a form) to deserve its own entry
+// point — see the minimal video composer in compose-form.tsx.
 const CREATE_OPTIONS = [
   {
     type: "clinical_case",
-    label: "Share a Case",
-    hint: "The standard write-up: presentation, what you did, the lesson.",
+    label: "Post",
+    hint: "A case, a question, a near miss — pick the format next.",
     icon: FileIcon,
-  },
-  {
-    type: "what_would_you_do",
-    label: "Ask a Question",
-    hint: "Readers commit to an answer before they see yours.",
-    icon: QuestionIcon,
-  },
-  {
-    type: "near_miss",
-    label: "Report a Near Miss",
-    hint: "Something caught before it reached the patient.",
-    icon: AlertTriangleIcon,
-  },
-  {
-    type: "saw_this_today",
-    label: "Quick Update",
-    hint: "Something interesting, in a sentence or two.",
-    icon: BoltIcon,
   },
   {
     // video_post is the same short-form, video-required format Spool's feed
     // filters for (src/app/(app)/spool/page.tsx) — this is just a themed
-    // shortcut into it, not a separate post type.
+    // entry point into it, not a separate post type.
     type: "video_post",
     label: "Spool",
-    hint: "A short video clip — up to 50MB.",
+    hint: "A short video clip.",
     icon: ReelIcon,
   },
 ] as const;
 
 /**
  * The bottom nav's center slot — was a plain Link straight to /compose,
- * now opens a sheet of grounded entry points (each just /compose?type=X,
- * the same query param ComposeForm already reads for its initialType
- * prop) instead of always landing on the default clinical-case format.
- * Every other format is still one tap away from there via the full
- * post-type picker; this is four shortcuts into it, not a new flow.
+ * now opens a sheet asking the one real fork in the road: a written post
+ * or a Spool video. Every written format still lives one tap further in,
+ * behind the post-type picker /compose itself already has.
  *
  * The trigger mirrors bottom-nav.tsx's NavLink classes by hand (matte,
  * active-state ring) since NavLink itself renders a Link, not a button,
@@ -133,25 +111,21 @@ export function CreateMenu({
             <p className="mb-2 px-1 font-label text-xs uppercase tracking-wide text-muted">
               Create
             </p>
-            <div className="flex flex-col gap-1">
+            <div className="grid grid-cols-2 gap-3">
               {CREATE_OPTIONS.map((option) => (
                 <Link
                   key={option.type}
                   href={`/compose?type=${option.type}`}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-surface-2 active:scale-[0.99]"
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-line px-4 py-6 text-center transition-colors duration-150 ease-out hover:border-accent hover:bg-surface-2 active:scale-[0.98]"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                    <option.icon width={17} height={17} strokeWidth={2} aria-hidden="true" />
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                    <option.icon width={22} height={22} strokeWidth={2} aria-hidden="true" />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-text">
-                      {option.label}
-                    </span>
-                    <span className="block truncate text-xs text-muted">
-                      {option.hint}
-                    </span>
+                  <span className="text-sm font-medium text-text">
+                    {option.label}
                   </span>
+                  <span className="text-xs text-muted">{option.hint}</span>
                 </Link>
               ))}
             </div>
