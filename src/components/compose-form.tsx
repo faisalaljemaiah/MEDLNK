@@ -51,7 +51,7 @@ function Textarea({
       </label>
       <textarea
         id={props.name}
-        className="min-h-24 resize-y rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="min-h-24 resize-y rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none"
         {...props}
       />
     </div>
@@ -631,7 +631,7 @@ export function ComposeForm({
                         type="text"
                         name={`option_${i}`}
                         placeholder={i < 2 ? "Required" : "Optional"}
-                        className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="flex-1 border-0 border-b-2 border-line bg-transparent px-0.5 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
                       />
                     </div>
                   ))}
@@ -805,7 +805,7 @@ export function ComposeForm({
                     name="media_placement"
                     value={effectiveMediaPlacement}
                     onChange={(e) => setMediaPlacement(e.target.value)}
-                    className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
                   >
                     <option value="top">Top of the case</option>
                     {FULL_BODY_SECTIONS.filter((s) => bodySections.includes(s.name)).map((s) => (

@@ -43,7 +43,7 @@ export default function ContactPage() {
             id="reason"
             name="reason"
             defaultValue={SUPPORT_REASONS[0].value}
-            className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
           >
             {SUPPORT_REASONS.map((r) => (
               <option key={r.value} value={r.value}>
@@ -60,7 +60,7 @@ export default function ContactPage() {
             id="message"
             name="message"
             required
-            className="min-h-28 resize-y rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="min-h-28 resize-y rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text placeholder:text-muted focus:border-accent focus:outline-none"
           />
         </div>
         {state && "error" in state && (

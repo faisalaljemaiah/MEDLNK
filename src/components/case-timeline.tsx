@@ -78,13 +78,13 @@ export function CaseTimeline({
                 name="stage"
                 placeholder="Stage — e.g. Troponin result, Diagnosis, Outcome"
                 required
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="border-0 border-b-2 border-line bg-transparent px-0.5 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
               />
               <textarea
                 name="body"
                 placeholder="What changed, and what it meant."
                 required
-                className="min-h-20 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="min-h-20 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
               />
               <div className="flex gap-2">
                 <button

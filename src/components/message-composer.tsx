@@ -29,7 +29,7 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
           placeholder="Message…"
           autoComplete="off"
           required
-          className="flex-1 rounded-full border border-line bg-surface px-4 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className="flex-1 rounded-full border border-line bg-surface px-4 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
         />
         <button
           type="submit"

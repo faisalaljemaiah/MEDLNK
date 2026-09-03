@@ -106,7 +106,7 @@ export function CommentComposer({
         name="body"
         required
         placeholder="Educational discussion only — no patient identifiers, and nothing patient-specific."
-        className="min-h-24 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="min-h-24 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
       />
 
       {error && <p className="text-xs text-danger">{error}</p>}

@@ -42,7 +42,7 @@ export function ReportReview({
         type="text"
         name="note"
         placeholder="Note for the audit log (optional)"
-        className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="border-0 border-b-2 border-line bg-transparent px-0.5 py-1.5 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
       />
       <div className="flex flex-wrap gap-2">
         {DECISIONS.map((d) => (

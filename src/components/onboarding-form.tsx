@@ -108,7 +108,7 @@ export function OnboardingForm({
           name="role"
           defaultValue={profile.role ?? ""}
           required
-          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
         >
           <option value="" disabled>
             Select a role
@@ -143,7 +143,7 @@ export function OnboardingForm({
           id="country_code"
           name="country_code"
           defaultValue={profile.country_code ?? ""}
-          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
         >
           <option value="">Prefer not to say</option>
           {COUNTRIES.map((c) => (

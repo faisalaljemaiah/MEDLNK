@@ -114,7 +114,7 @@ export function ReportButton({
       <textarea
         name="details"
         placeholder="Anything else the moderators should know? (optional)"
-        className="min-h-16 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="min-h-16 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
       />
 
       {error && <p className="text-xs text-danger">{error}</p>}

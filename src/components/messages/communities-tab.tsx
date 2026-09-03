@@ -62,7 +62,7 @@ function CreateCommunityForm() {
           name="description"
           rows={2}
           maxLength={280}
-          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-text transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-text transition-colors duration-150 ease-out placeholder:text-muted focus:border-accent focus:outline-none"
         />
       </div>
 

@@ -200,12 +200,12 @@ function AddNodeForm({
         name="label"
         placeholder="Short label — e.g. Elevated troponin"
         required
-        className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="border-0 border-b-2 border-line bg-transparent px-0.5 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
       />
       <textarea
         name="body"
         placeholder="Why it mattered, or why it was ruled out (optional)."
-        className="min-h-16 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="min-h-16 resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
       />
       <div className="flex gap-2">
         <button

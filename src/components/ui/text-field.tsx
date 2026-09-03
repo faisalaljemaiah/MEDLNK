@@ -14,9 +14,15 @@ export function TextField({ label, id, ...props }: TextFieldProps) {
       >
         {label}
       </label>
+      {/* An underline, not a bordered box with a glowing focus ring — that
+          box-plus-ring recipe is the single most recognizable "generic
+          web-app form" tell there is. A plain rule under the text reads
+          more like filling out a paper form, which fits the app's
+          stamped-document identity (src/components/brand.tsx) better than
+          another rounded rectangle would. */}
       <input
         id={inputId}
-        className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="border-0 border-b-2 border-line bg-transparent px-0.5 py-2 text-text transition-colors duration-150 ease-out placeholder:text-muted focus:border-accent focus:outline-none"
         {...props}
       />
     </div>
