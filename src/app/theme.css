@@ -23,22 +23,21 @@
   --text: #10203a; /* primary text — deep navy ink, softer than pure black */
   --muted: #56657f; /* secondary text, labels, timestamps */
   /*
-   * Caribbean green / turquoise-green, not LinkedIn blue — deliberately
-   * darker than the brand-swatch version of this color: at the lighter,
-   * more "turquoise" end (e.g. #0d9488) white button text clears only
-   * ~3.7:1, under the 4.5:1 AA floor. #0f766e keeps the same hue family
-   * while passing 4.5:1 in both directions (white-on-accent for buttons,
-   * accent-on-bg for links/active states) — re-check both if this is tuned.
-   * Distinct from --positive on purpose: --positive is a leaf green
-   * (~148° hue) for verified/success signals, this is a bluer teal
-   * (~176° hue) for interactive elements, so the two don't read as the same
-   * color doing two different jobs.
+   * Warm ink charcoal — the "stamped document" theme's accent: a near-black
+   * with a warm brown undertone (like actual stamp-pad ink), not a hue at
+   * all in the strict sense, replacing the earlier Caribbean-green identity.
+   * Deliberately distinct from --text (a cool navy, ~215° hue) despite both
+   * being very dark, and from --danger/--warning/--positive (red/amber/leaf
+   * green) so none of those read as "the same color doing two jobs."
+   * #2b2420 clears 4.5:1 AA in both directions the same way the old accent
+   * did (white-on-accent for buttons, accent-on-bg for links/active
+   * states) — re-check both if this is tuned.
    */
-  --accent: #0f766e; /* primary brand accent (links, active states, logo) */
-  /* A light mint tint of --accent, for backgrounds/chips/icon wells that want
-     "green, but as a wash rather than a foreground color" — distinct from
-     --surface-2, which is a blue-gray, not a green, tint. */
-  --accent-soft: #e1f3ef;
+  --accent: #2b2420; /* primary brand accent (links, active states, logo) */
+  /* A light warm-cream tint of --accent, for backgrounds/chips/icon wells
+     that want "ink, but as a wash rather than a foreground color" —
+     distinct from --surface-2, which is a cool blue-gray tint. */
+  --accent-soft: #f0ebe6;
   --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
   --positive: #0b7c44; /* verified badges, success states */
   --warning: #b45309; /* privacy/identifier warnings */
