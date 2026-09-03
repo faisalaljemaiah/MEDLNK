@@ -6,6 +6,7 @@ import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getConversations } from "@/lib/messages";
 import { getCommunityCreationEligibility, getMyCommunities } from "@/lib/communities";
 import { Avatar } from "@/components/avatar";
+import { CommentIcon } from "@/components/icons";
 import { CommunitiesTab } from "@/components/messages/communities-tab";
 
 type MessagesTab = "communities" | "direct";
@@ -39,7 +40,12 @@ export default async function MessagesPage({
 
   return (
     <div>
-      <h1 className="px-4 py-4 font-headline text-xl text-text">Messages</h1>
+      <div className="px-4 pb-3 pt-5">
+        <h1 className="font-headline text-2xl text-text">Messages</h1>
+        <p className="mt-0.5 text-sm text-muted">
+          Conversations and the communities you&apos;re part of.
+        </p>
+      </div>
       <div className="flex gap-1 border-b border-line px-4">
         <MessagesTabLink tab="communities" active={tab === "communities"}>
           Communities
@@ -105,43 +111,51 @@ async function MessagesDirectTab({ userId }: { userId: string }) {
   const conversations = await getConversations(supabase, userId);
 
   return (
-    <div>
+    <div className="px-4 py-3">
       {conversations.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-muted">
-          No conversations yet. Message a clinician from their profile to start
-          one.
-        </p>
+        <div className="flex flex-col items-center gap-3 py-14 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted">
+            <CommentIcon width={22} height={22} />
+          </span>
+          <p className="max-w-[22ch] text-sm text-muted">
+            No conversations yet. Message a clinician from their profile to
+            start one.
+          </p>
+        </div>
       ) : (
-        conversations.map((c) => (
-          <Link
-            key={c.id}
-            href={`/messages/${c.id}`}
-            className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0"
-          >
-            <Avatar
-              avatarUrl={c.otherUser?.avatar_url}
-              name={c.otherUser?.full_name}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-text">
-                {c.otherUser?.full_name ?? "Unknown clinician"}
-              </p>
-              <p className="truncate text-sm text-muted">
-                {c.lastMessage
-                  ? `${c.lastMessage.sender_id === userId ? "You: " : ""}${c.lastMessage.body}`
-                  : "No messages yet"}
-              </p>
-            </div>
-            {c.lastMessage && (
-              <p className="shrink-0 font-label text-xs text-muted">
-                {new Date(c.lastMessage.created_at).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
-            )}
-          </Link>
-        ))
+        <div className="flex flex-col gap-2.5">
+          {conversations.map((c) => (
+            <Link
+              key={c.id}
+              href={`/messages/${c.id}`}
+              className="case-card-hover flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)] transition-transform duration-150 ease-out active:scale-[0.99]"
+            >
+              <Avatar
+                avatarUrl={c.otherUser?.avatar_url}
+                name={c.otherUser?.full_name}
+                className="ring-2 ring-bg"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-text">
+                  {c.otherUser?.full_name ?? "Unknown clinician"}
+                </p>
+                <p className="truncate text-sm text-muted">
+                  {c.lastMessage
+                    ? `${c.lastMessage.sender_id === userId ? "You: " : ""}${c.lastMessage.body}`
+                    : "No messages yet"}
+                </p>
+              </div>
+              {c.lastMessage && (
+                <p className="shrink-0 self-start font-label text-xs text-muted">
+                  {new Date(c.lastMessage.created_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
+              )}
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );

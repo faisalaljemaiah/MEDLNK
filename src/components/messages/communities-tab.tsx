@@ -12,7 +12,7 @@ import { TextField } from "@/components/ui/text-field";
 
 function CommunityRow({ community }: { community: CommunityCard }) {
   return (
-    <div className="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
+    <div className="case-card-hover flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)] transition-transform duration-150 ease-out">
       <Link
         href={`/communities/${community.slug}`}
         className="flex min-w-0 flex-1 items-center gap-3"
@@ -21,7 +21,7 @@ function CommunityRow({ community }: { community: CommunityCard }) {
           {community.name.charAt(0).toUpperCase()}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-text">{community.name}</p>
+          <p className="truncate text-sm font-semibold text-text">{community.name}</p>
           <p className="flex items-center gap-1 font-label text-xs text-muted">
             <UsersIcon width={11} height={11} strokeWidth={2.5} />
             {community.memberCount}{" "}
@@ -38,7 +38,7 @@ function CommunityRow({ community }: { community: CommunityCard }) {
       >
         <button
           type="submit"
-          className="shrink-0 text-xs font-medium text-muted hover:text-danger"
+          className="shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 ease-out hover:border-danger hover:text-danger"
         >
           {community.viewerStatus === "joined" ? "Leave" : "Remove"}
         </button>
@@ -126,33 +126,42 @@ export function CommunitiesTab({
   const hasAny = communities.joined.length > 0 || communities.saved.length > 0;
 
   return (
-    <div className="px-4 py-4">
+    <div className="px-4 py-3">
       {communities.joined.length > 0 && (
         <div className="mb-4">
-          <p className="mb-1 font-label text-xs uppercase tracking-wide text-muted">
+          <p className="mb-2 font-label text-xs uppercase tracking-wide text-muted">
             Joined
           </p>
-          {communities.joined.map((c) => (
-            <CommunityRow key={c.id} community={c} />
-          ))}
+          <div className="flex flex-col gap-2.5">
+            {communities.joined.map((c) => (
+              <CommunityRow key={c.id} community={c} />
+            ))}
+          </div>
         </div>
       )}
 
       {communities.saved.length > 0 && (
         <div className="mb-4">
-          <p className="mb-1 font-label text-xs uppercase tracking-wide text-muted">
+          <p className="mb-2 font-label text-xs uppercase tracking-wide text-muted">
             Saved
           </p>
-          {communities.saved.map((c) => (
-            <CommunityRow key={c.id} community={c} />
-          ))}
+          <div className="flex flex-col gap-2.5">
+            {communities.saved.map((c) => (
+              <CommunityRow key={c.id} community={c} />
+            ))}
+          </div>
         </div>
       )}
 
       {!hasAny && (
-        <p className="py-6 text-center text-sm text-muted">
-          Communities you join or save from Discover will show up here.
-        </p>
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted">
+            <UsersIcon width={22} height={22} />
+          </span>
+          <p className="max-w-[24ch] text-sm text-muted">
+            Communities you join or save from Discover will show up here.
+          </p>
+        </div>
       )}
 
       <div className="mt-2 border-t border-line pt-4">
