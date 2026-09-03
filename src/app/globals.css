@@ -532,6 +532,14 @@ body {
  * above, so only the gradient turns — the mask (and the check hole) stays
  * put. Two elements, not one, because a single element can't rotate its own
  * background without also rotating the mask clipping it.
+ *
+ * `.diamond-badge-outline` gives the hole a black rim: it draws the same
+ * checkmark path, stroked wider (4) than the hole cut into the mask (2.4),
+ * centered on the same line. The parent's mask clips this layer exactly
+ * like it clips the gradient underneath it, removing the same 2.4-wide
+ * center band — what survives is only the ~0.8-wide margin outside that
+ * band, which reads as a thin black outline framing the transparent check
+ * rather than filling it.
  */
 .diamond-badge {
   position: relative;
@@ -564,7 +572,14 @@ body {
     #fca5a5,
     #7dd3fc
   );
-  animation: medlnk-diamond-spin 4s linear infinite;
+  animation: medlnk-diamond-spin 9s linear infinite;
+}
+
+.diamond-badge-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 @keyframes medlnk-diamond-spin {
