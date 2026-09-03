@@ -507,6 +507,51 @@ async function SupportInbox({
                   day: "numeric",
                 })}
               </p>
+
+              {m.reporter ? (
+                <div className="mt-2 rounded-lg border border-line bg-surface-2 p-2.5">
+                  <Link
+                    href={m.reporter.handle ? `/u/${m.reporter.handle}` : "#"}
+                    className="text-sm font-medium text-text hover:underline"
+                  >
+                    {m.reporter.full_name || "(no name yet)"}
+                  </Link>
+                  <p className="font-label text-xs text-muted">
+                    @{m.reporter.handle ?? "—"} · {m.reporter.role || "no role"}
+                    {m.reporter.specialty ? ` · ${m.reporter.specialty}` : ""}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <span
+                      className={clsx(
+                        "rounded-full border px-2 py-0.5 font-label text-xs",
+                        m.reporter.verification_status === "approved"
+                          ? "border-positive/40 text-positive"
+                          : m.reporter.verification_status === "rejected"
+                            ? "border-danger/40 text-danger"
+                            : "border-warning/40 text-warning",
+                      )}
+                    >
+                      {m.reporter.verification_status}
+                    </span>
+                    {m.reporter.is_admin && (
+                      <span className="rounded-full border border-accent/40 px-2 py-0.5 font-label text-xs text-accent">
+                        admin
+                      </span>
+                    )}
+                    {m.reporter.suspended_at && (
+                      <span className="rounded-full border border-danger/40 px-2 py-0.5 font-label text-xs text-danger">
+                        suspended
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted">
+                  Not signed in when sent — only the name and email above are
+                  available.
+                </p>
+              )}
+
               <p className="mt-2 whitespace-pre-wrap text-sm text-text">{m.message}</p>
               {!m.resolved && (
                 <form
