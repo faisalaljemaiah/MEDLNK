@@ -1,8 +1,7 @@
 import { clsx } from "clsx";
 import type { BadgeTier } from "@/lib/database.types";
 
-const TIER_CLASS: Record<BadgeTier, string> = {
-  diamond: "text-badge-diamond",
+const TIER_CLASS: Record<Exclude<BadgeTier, "diamond">, string> = {
   gold: "text-badge-gold",
   platinum: "text-badge-platinum",
   green: "text-positive",
@@ -17,10 +16,10 @@ const TIER_CLASS: Record<BadgeTier, string> = {
  *
  * A filled circle with a white check cut into it (Twitter/Instagram's
  * verified badge shape) reads as a real credential at a glance, rather than
- * a bare "✓" that could be mistaken for a checkbox or list marker. The
- * circle's own color is what carries the tier — currentColor fill, so the
- * same TIER_CLASS text-color classes that colored the old glyph still work
- * unchanged.
+ * a bare "✓" that could be mistaken for a checkbox or list marker. Every
+ * tier but Diamond colors that circle with currentColor (see TIER_CLASS);
+ * Diamond gets its own treatment below since a flat fill can't do what an
+ * actual diamond does.
  */
 export function VerifiedBadge({
   tier,
@@ -36,21 +35,31 @@ export function VerifiedBadge({
     <span
       className={clsx(
         "ml-1 inline-flex items-center gap-1 align-middle -translate-y-px",
-        tier ? TIER_CLASS[tier] : "text-badge-verified",
+        tier && tier !== "diamond" ? TIER_CLASS[tier] : "text-badge-verified",
         className,
       )}
     >
-      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <circle cx="10" cy="10" r="10" />
-        <path
-          d="M6 10.3l2.4 2.4L14 7"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-      </svg>
+      {tier === "diamond" ? (
+        // See .diamond-badge/.diamond-badge-spin in globals.css: a moving
+        // conic gradient in the diamond's own colors, with the checkmark
+        // itself cut out as a real transparent hole (a CSS mask) instead of
+        // painted white — light through a facet, not a flat check.
+        <span className="diamond-badge" style={{ width: 14, height: 14 }} aria-hidden="true">
+          <span className="diamond-badge-spin" />
+        </span>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <circle cx="10" cy="10" r="10" />
+          <path
+            d="M6 10.3l2.4 2.4L14 7"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </svg>
+      )}
       {label && "verified"}
     </span>
   );

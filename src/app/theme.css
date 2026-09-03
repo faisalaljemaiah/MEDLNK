@@ -57,17 +57,19 @@
   /*
    * Verified-checkmark tiers (see VerifiedBadge, src/lib/verification-tier.ts).
    * --badge-verified is the plain check every verified member gets by
-   * default; the other three are prestige overrides an admin assigns
-   * (Diamond/Gold automatically by verification order, Platinum/Green by
-   * hand — see 0034_verified_badge_tier.sql). Green itself just reads
-   * --positive above rather than duplicating it. Chosen to stay visually
-   * distinct from the --ai-hue-* sweep further down, which is reserved for
-   * AI-feature cues specifically and shouldn't double as a status color.
+   * default; Gold/Platinum are flat-color overrides an admin assigns
+   * (Gold automatically by verification order, Platinum by hand — see
+   * 0034_verified_badge_tier.sql). Green itself just reads --positive above
+   * rather than duplicating it. Diamond has no flat color of its own — it's
+   * an animated gradient (.diamond-badge/.diamond-badge-spin in globals.css)
+   * instead, since a flat fill can't do what an actual diamond does. Chosen
+   * to stay visually distinct from the --ai-hue-* sweep further down, which
+   * is reserved for AI-feature cues specifically and shouldn't double as a
+   * status color.
    */
   --badge-verified: #2563eb; /* blue — the default check */
   --badge-gold: #ca8a04;
   --badge-platinum: #64748b;
-  --badge-diamond: #0891b2;
 
   /* RGB triplet of --text (#10203a), space-separated for the modern
      `rgb(var(--shadow-tint) / alpha)` syntax — every shadow in the app
@@ -156,7 +158,6 @@
     --badge-verified: #60a5fa;
     --badge-gold: #facc15;
     --badge-platinum: #cbd5e1;
-    --badge-diamond: #2dd4bf;
   }
 }
 
@@ -178,7 +179,6 @@
   --color-badge-verified: var(--badge-verified);
   --color-badge-gold: var(--badge-gold);
   --color-badge-platinum: var(--badge-platinum);
-  --color-badge-diamond: var(--badge-diamond);
 
   --font-headline: var(--font-headline);
   --font-body: var(--font-body);

@@ -508,6 +508,74 @@ body {
   }
 }
 
+/*
+ * Diamond verified badge (VerifiedBadge, "diamond" tier only) — a real
+ * diamond's own colors (icy blue, white, magenta, violet, cyan, a warm
+ * glint) sweeping past each other, not a flat fill. `.diamond-badge` is a
+ * fixed circle-minus-checkmark cutout, so the checkmark itself is a true
+ * hole showing whatever is actually behind the badge, exactly like light
+ * passing through a facet, rather than a painted-white check.
+ *
+ * The mask SVG bakes the hole in as real alpha transparency via its own
+ * internal <mask> (a white circle, with the checkmark stroked in black to
+ * subtract it — SVG's own luminance masking, guaranteed by the SVG spec)
+ * rather than relying on the *outer* CSS mask-image to read luminance from
+ * a flat black-and-white drawing: a browser's default `mask-mode` for an
+ * image source is alpha, not luminance, and every pixel in a plain
+ * circle-with-a-black-check drawing is fully opaque — the check and the
+ * circle would be equally "visible" and the hole would never appear. This
+ * SVG has already composited that decision into its own alpha channel by
+ * the time the outer mask reads it, so it works under either mode.
+ *
+ * `.diamond-badge-spin` is the color layer underneath: same
+ * oversized-square-rotated-via-transform technique as .ai-glow::before
+ * above, so only the gradient turns — the mask (and the check hole) stays
+ * put. Two elements, not one, because a single element can't rotate its own
+ * background without also rotating the mask clipping it.
+ */
+.diamond-badge {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  isolation: isolate;
+  --diamond-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cmask id='m'%3E%3Ccircle cx='10' cy='10' r='10' fill='white'/%3E%3Cpath d='M6 10.3l2.4 2.4L14 7' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/mask%3E%3Crect width='20' height='20' fill='white' mask='url(%23m)'/%3E%3C/svg%3E");
+  -webkit-mask-image: var(--diamond-mask);
+  mask-image: var(--diamond-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.diamond-badge-spin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    #7dd3fc,
+    #ffffff,
+    #f0abfc,
+    #a78bfa,
+    #67e8f9,
+    #fca5a5,
+    #7dd3fc
+  );
+  animation: medlnk-diamond-spin 4s linear infinite;
+}
+
+@keyframes medlnk-diamond-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
