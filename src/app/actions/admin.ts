@@ -3,7 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { setSuspensionAction } from "@/app/actions/reports";
+import {
+  sendVerificationApprovedEmail,
+  sendVerificationRejectedEmail,
+} from "@/lib/email";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -30,6 +35,30 @@ function revalidateAdminViews(handle: string | null) {
   if (handle) revalidatePath(`/u/${handle}`);
 }
 
+/** Email lives in auth.users, not profiles, so notifying the applicant
+ *  needs the service-role client regardless of which way the decision went.
+ *  Failures here are swallowed — the moderation decision itself already
+ *  landed by the time this runs, and a broken email provider must never
+ *  turn into an admin-facing error for what looks like a normal approve
+ *  or reject click. */
+async function notifyApplicant(
+  profileId: string,
+  send: (email: string, name: string) => Promise<void>,
+) {
+  try {
+    const admin = createAdminClient();
+    const [{ data: authUser }, { data: profile }] = await Promise.all([
+      admin.auth.admin.getUserById(profileId),
+      admin.from("profiles").select("full_name").eq("id", profileId).single(),
+    ]);
+    const email = authUser?.user?.email;
+    if (!email) return;
+    await send(email, profile?.full_name ?? "there");
+  } catch (error) {
+    console.error("Failed to notify applicant of verification decision:", error);
+  }
+}
+
 export async function approveUserAction(profileId: string, viewerHandle: string | null) {
   const { supabase } = await requireAdmin();
   await supabase
@@ -37,6 +66,7 @@ export async function approveUserAction(profileId: string, viewerHandle: string 
     .update({ verified: true, verification_status: "approved" })
     .eq("id", profileId);
   revalidateAdminViews(viewerHandle);
+  await notifyApplicant(profileId, sendVerificationApprovedEmail);
 }
 
 export async function rejectUserAction(profileId: string, viewerHandle: string | null) {
@@ -46,6 +76,7 @@ export async function rejectUserAction(profileId: string, viewerHandle: string |
     .update({ verified: false, verification_status: "rejected" })
     .eq("id", profileId);
   revalidateAdminViews(viewerHandle);
+  await notifyApplicant(profileId, sendVerificationRejectedEmail);
 }
 
 /**
