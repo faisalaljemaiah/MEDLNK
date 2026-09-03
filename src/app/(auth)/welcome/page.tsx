@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
+import { WelcomeSplash } from "@/components/welcome-splash";
 
 /**
  * The signed-out entry point: a brief, animated welcome before the sign-in/
@@ -13,6 +14,7 @@ import { AnalyticsPageView } from "@/components/analytics-page-view";
 export default function WelcomePage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col items-center justify-center gap-10 px-6 py-12 text-center">
+      <WelcomeSplash />
       <AnalyticsPageView event="welcome_viewed" />
       <div className="animate-welcome-logo flex flex-col items-center gap-4">
         <h1 className="font-headline text-3xl text-text">Asyashare</h1>

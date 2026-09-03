@@ -6,12 +6,14 @@ import { signInAction } from "@/app/actions/auth";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
+import { PlasmaCells } from "@/components/ui/plasma-cells";
 
 export default function LoginPage() {
   const [state, action] = useActionState(signInAction, undefined);
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
+      <PlasmaCells />
       <AnalyticsPageView event="login_viewed" />
       <Link
         href="/welcome"
