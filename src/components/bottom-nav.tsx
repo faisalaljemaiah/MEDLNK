@@ -28,13 +28,28 @@ function useShrinkOnScrollDown() {
 
   useEffect(() => {
     let lastY = window.scrollY;
-    function onScroll() {
+    // rAF-throttled: a native "scroll" event can fire many times inside a
+    // single frame during a fast or momentum scroll, and without this a
+    // setState (plus the resulting re-render) would run on every one of
+    // them — real main-thread work competing with the scroll itself. This
+    // caps the check at once per frame regardless of event volume.
+    let ticking = false;
+
+    function evaluate() {
       const y = window.scrollY;
       const delta = y - lastY;
       if (y > 80 && delta > 4) setShrunk(true);
       else if (delta < -4 || y < 80) setShrunk(false);
       lastY = y;
+      ticking = false;
     }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(evaluate);
+    }
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -59,7 +74,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
   return (
     <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div
-        style={{ transformOrigin: "center bottom" }}
+        style={{ transformOrigin: "center bottom", willChange: "transform" }}
         className={clsx(
           "pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full px-3 py-2 transition-[color,background-color,transform] duration-200 ease-out",
           shrunk && "scale-90",
