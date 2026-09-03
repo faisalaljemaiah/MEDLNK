@@ -46,16 +46,6 @@ export function VerifiedBadge({
         // painted white — light through a facet, not a flat check.
         <span className="diamond-badge" style={{ width: 14, height: 14 }} aria-hidden="true">
           <span className="diamond-badge-spin" />
-          <svg className="diamond-badge-outline" viewBox="0 0 20 20">
-            <path
-              d="M6 10.3l2.4 2.4L14 7"
-              stroke="black"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
         </span>
       ) : (
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
