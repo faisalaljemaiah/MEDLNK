@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import { HomeIcon, CompassIcon, SendIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { CreateMenu } from "@/components/create-menu";
+import { Logo } from "@/components/brand";
 
 type NavProfile = {
   handle: string | null;
@@ -53,12 +54,9 @@ export function DesktopSidebar({ profile }: { profile: NavProfile | null }) {
     >
       <Link
         href="/"
-        className={clsx(
-          "mb-6 flex items-center px-3 font-headline text-lg",
-          onSpool ? "text-white" : "text-text",
-        )}
+        className={clsx("mb-6 flex items-center px-3", onSpool ? "text-white" : "text-text")}
       >
-        Asyashare
+        <Logo markSize={26} wordmarkClassName="text-sm" />
       </Link>
 
       <SidebarLink href="/" label="Home" active={pathname === "/"} onSpool={onSpool}>

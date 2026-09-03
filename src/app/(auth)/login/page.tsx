@@ -7,6 +7,7 @@ import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { PlasmaCells } from "@/components/ui/plasma-cells";
+import { LogoMark } from "@/components/brand";
 
 export default function LoginPage() {
   const [state, action] = useActionState(signInAction, undefined);
@@ -19,6 +20,7 @@ export default function LoginPage() {
         href="/welcome"
         className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
       >
+        <LogoMark size={40} />
         <h1 className="font-headline text-2xl text-text">Welcome back</h1>
       </Link>
 

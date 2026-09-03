@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
+import { LogoMark } from "@/components/brand";
 
 const SEEN_KEY = "medlnk-splash-seen";
 
@@ -35,7 +36,7 @@ export function WelcomeSplash() {
       onAnimationEnd={(e) => e.currentTarget.remove()}
       className="animate-splash fixed inset-0 z-50 flex items-center justify-center bg-bg"
     >
-      <h1 className="font-headline text-3xl text-text">Asyashare</h1>
+      <LogoMark size={72} />
     </div>
   );
 }

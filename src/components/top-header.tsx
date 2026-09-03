@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { ReelIcon } from "@/components/icons";
+import { Logo } from "@/components/brand";
 
 export function TopHeader() {
   // Spool is the one deliberately dark, full-bleed view — its own black
@@ -24,11 +25,8 @@ export function TopHeader() {
           : "bg-bg/95 shadow-[0_1px_0_rgb(var(--shadow-tint)/0.08),0_8px_16px_-12px_rgb(var(--shadow-tint)/0.15)] backdrop-blur",
       )}
     >
-      <Link
-        href="/"
-        className={clsx("font-headline text-lg", onSpool ? "text-white" : "text-text")}
-      >
-        Asyashare
+      <Link href="/" className={onSpool ? "text-white" : "text-text"}>
+        <Logo markSize={26} wordmarkClassName="text-sm" />
       </Link>
       {/* Settings and Messages gave up their header slot to Spool — both
           stay reachable one tap further in, from the profile page's own

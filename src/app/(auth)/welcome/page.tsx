@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { WelcomeSplash } from "@/components/welcome-splash";
+import { LogoMark, Wordmark } from "@/components/brand";
 
 /**
  * The signed-out entry point: a brief, animated welcome before the sign-in/
@@ -16,8 +17,9 @@ export default function WelcomePage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col items-center justify-center gap-10 px-6 py-12 text-center">
       <WelcomeSplash />
       <AnalyticsPageView event="welcome_viewed" />
-      <div className="animate-welcome-logo flex flex-col items-center gap-4">
-        <h1 className="font-headline text-3xl text-text">Asyashare</h1>
+      <div className="animate-welcome-logo flex flex-col items-center gap-3">
+        <LogoMark size={56} />
+        <Wordmark className="text-lg text-text" />
       </div>
 
       <div
@@ -25,7 +27,7 @@ export default function WelcomePage() {
         style={{ animationDelay: "150ms" }}
       >
         <p className="text-lg font-medium text-text">
-          See a case. Think it through. Find out what happened.
+          See a case | Think it through | Find out what happened
         </p>
         <p className="text-sm text-muted">
           A clinical knowledge network for verified healthcare professionals.

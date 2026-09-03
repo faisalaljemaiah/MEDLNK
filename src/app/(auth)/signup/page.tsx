@@ -6,6 +6,7 @@ import { signUpAction } from "@/app/actions/auth";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
+import { LogoMark } from "@/components/brand";
 
 export default function SignUpPage() {
   const [state, action] = useActionState(signUpAction, undefined);
@@ -18,6 +19,7 @@ export default function SignUpPage() {
         href="/welcome"
         className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
       >
+        <LogoMark size={40} />
         <h1 className="font-headline text-2xl text-text">Join Asyashare</h1>
         <p className="text-sm text-muted">
           A clinical knowledge network for verified medical professionals.
