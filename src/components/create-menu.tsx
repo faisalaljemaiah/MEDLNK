@@ -23,7 +23,7 @@ const CREATE_OPTIONS = [
     // filters for (src/app/(app)/spool/page.tsx) — this is just a themed
     // entry point into it, not a separate post type.
     type: "video_post",
-    label: "Spool",
+    label: "Speel",
     hint: "A short video clip.",
     icon: ReelIcon,
   },

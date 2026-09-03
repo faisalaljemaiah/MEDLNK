@@ -34,11 +34,11 @@ export default async function ComposePage({
   return (
     <div className="px-4 py-6">
       <h1 className="mb-1 font-headline text-xl text-text">
-        {isVideo ? "New Spool video" : "Share a case"}
+        {isVideo ? "New Speel video" : "Share a case"}
       </h1>
       <p className="mb-6 text-sm text-muted">
         {isVideo
-          ? "Short clips are public to every verified clinician, just like Spool itself."
+          ? "Short clips are public to every verified clinician, just like Speel itself."
           : "Cases are public to every verified clinician on Asyashare."}
       </p>
       <ComposeForm initialType={type} viewerCountryCode={profile.country_code} />

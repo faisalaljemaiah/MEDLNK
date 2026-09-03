@@ -39,7 +39,7 @@ export function SpoolIntro() {
       style={{ transitionDuration: `${FADE_MS}ms` }}
     >
       <span className="animate-enter font-headline text-4xl tracking-[0.4em] text-white">
-        SPOOL
+        SPEEL
       </span>
     </div>
   );

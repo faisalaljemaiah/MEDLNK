@@ -39,7 +39,7 @@ export function TopHeader() {
           "flex w-9 shrink-0 items-center justify-center transition-transform duration-150 ease-out active:scale-90",
           onSpool ? "text-white" : "text-text",
         )}
-        aria-label="Spool"
+        aria-label="Speel"
       >
         <ReelIcon />
       </Link>
