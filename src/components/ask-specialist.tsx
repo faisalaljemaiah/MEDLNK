@@ -127,7 +127,7 @@ export function AskSpecialist({
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-foreground disabled:opacity-60"
         >
           {isPending ? "Asking…" : "Send to specialty"}
         </button>

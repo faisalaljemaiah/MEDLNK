@@ -168,7 +168,7 @@ export default async function SearchPage({
 
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
+            className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
           >
             Search
           </button>
@@ -190,7 +190,7 @@ export default async function SearchPage({
                 aria-pressed={active}
                 className={
                   active
-                    ? "whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-white transition-transform duration-150 ease-out active:scale-95"
+                    ? "whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
                     : "whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
                 }
               >

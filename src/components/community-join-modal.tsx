@@ -121,7 +121,7 @@ export function CommunityJoinModal({
                 type="button"
                 onClick={join}
                 disabled={isPending}
-                className="w-full rounded-full bg-accent px-4 py-2.5 text-center text-sm font-medium text-white transition-[opacity,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-60"
+                className="w-full rounded-full bg-accent px-4 py-2.5 text-center text-sm font-medium text-accent-foreground transition-[opacity,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-60"
               >
                 Join now
               </button>

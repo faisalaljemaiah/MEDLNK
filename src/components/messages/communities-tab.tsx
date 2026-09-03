@@ -76,7 +76,7 @@ function CreateCommunityForm() {
             className={clsx(
               "flex-1 rounded-full border px-3 py-1.5 font-label text-xs transition-colors duration-150 ease-out",
               scope === value
-                ? "border-accent bg-accent text-white"
+                ? "border-accent bg-accent text-accent-foreground"
                 : "border-line text-muted hover:text-text",
             )}
           >

@@ -38,6 +38,12 @@
      that want "ink, but as a wash rather than a foreground color" —
      distinct from --surface-2, which is a cool blue-gray tint. */
   --accent-soft: #f0ebe6;
+  /* The text/icon color for anything sitting on top of --accent (every
+     solid accent button). White reads fine on the light theme's dark ink
+     accent; in dark mode --accent itself flips to a light cream (see
+     below), so this has to flip too or button text disappears. Always
+     reference this, never hardcode text-white next to bg-accent. */
+  --accent-foreground: #ffffff;
   --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
   --positive: #0b7c44; /* verified badges, success states */
   --warning: #b45309; /* privacy/identifier warnings */
@@ -101,6 +107,38 @@
   --font-headline: var(--font-inter, system-ui, sans-serif);
   --font-body: var(--font-inter, system-ui, sans-serif);
   --font-label: var(--font-inter, system-ui, sans-serif);
+
+  /* Lets native form controls (date pickers, etc.) pick a dark variant on
+     their own instead of staying stuck with light chrome on a dark page. */
+  color-scheme: light dark;
+}
+
+/*
+ * Dark mode — follows the OS/browser setting automatically (no in-app
+ * toggle yet). Same warm, ink-and-paper identity as the light palette
+ * above, inverted: --accent and --accent-foreground swap roles rather than
+ * getting new colors, so a dark-mode button is literally "the light
+ * theme's ink-on-cream, run backwards" (cream #e8dfd0 button, dark ink
+ * #2b2420 text) instead of the light theme's near-black button staying
+ * near-black and vanishing into a dark background.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1815;
+    --surface: #252019;
+    --surface-2: #2f291f;
+    --line: #3d372c;
+    --text: #f0ebe6;
+    --muted: #a89b8a;
+    --accent: #e8dfd0;
+    --accent-soft: #3a3226;
+    --accent-foreground: #2b2420;
+    --accent-2: #a78bfa;
+    --positive: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --silver: #6b7280;
+  }
 }
 
 @theme inline {
@@ -112,6 +150,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
   --color-accent-2: var(--accent-2);
   --color-positive: var(--positive);
   --color-warning: var(--warning);

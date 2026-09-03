@@ -56,7 +56,7 @@ export function CommunityMembershipControls({
           type="button"
           disabled={isPending}
           onClick={() => run(joinCommunityAction, "joined")}
-          className="rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-white transition-[opacity,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-60"
+          className="rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-[opacity,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-60"
         >
           Join now
         </button>

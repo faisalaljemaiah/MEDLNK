@@ -24,7 +24,7 @@ export function SubmitButton({
         // CTA — scale(0.97) on :active is emil-design-eng's baseline for
         // "buttons must feel responsive," subtle enough not to read as a
         // bounce.
-        "rounded-lg bg-accent px-4 py-2.5 font-medium text-white transition-[opacity,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100",
+        "rounded-lg bg-accent px-4 py-2.5 font-medium text-accent-foreground transition-[opacity,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100",
         className,
       )}
     >

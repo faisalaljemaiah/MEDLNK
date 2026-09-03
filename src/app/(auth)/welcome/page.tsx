@@ -40,7 +40,7 @@ export default function WelcomePage() {
       >
         <Link
           href="/signup"
-          className="rounded-full bg-accent px-5 py-3 text-center text-sm font-medium text-white transition-transform duration-150 ease-out active:scale-95"
+          className="rounded-full bg-accent px-5 py-3 text-center text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
         >
           Create account
         </Link>

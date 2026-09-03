@@ -147,7 +147,7 @@ export function CaseQuestion({
           type="button"
           disabled={!selected || isPending}
           onClick={() => selected && submit(selected)}
-          className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+          className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity disabled:opacity-50"
         >
           {isPending ? "Submitting…" : "Submit answer"}
         </button>

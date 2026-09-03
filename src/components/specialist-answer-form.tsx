@@ -92,7 +92,7 @@ export function SpecialistAnswerForm({
       <button
         type="submit"
         disabled={isPending}
-        className="self-start rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-transform duration-150 ease-out active:scale-95 disabled:opacity-60"
+        className="self-start rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95 disabled:opacity-60"
       >
         {isPending ? "Sending…" : "Answer"}
       </button>
