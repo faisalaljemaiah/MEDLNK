@@ -320,6 +320,17 @@ export type ModerationEvent = {
   created_at: string;
 };
 
+/**
+ * One row per rejected -> pending resubmission (0033_verification_resubmission_limit.sql).
+ * Written only by that migration's trigger — the app never inserts here
+ * directly, it just reads the count to decide what to show.
+ */
+export type VerificationAttempt = {
+  id: string;
+  profile_id: string;
+  created_at: string;
+};
+
 /** Mirrors the node_type check constraint in 0017_reasoning_trees_and_exchange.sql. */
 export type ReasoningNodeType =
   | "finding"
@@ -500,6 +511,12 @@ export type Database = {
           message: string;
         };
         Update: Partial<SupportMessage>;
+        Relationships: [];
+      };
+      verification_attempts: {
+        Row: VerificationAttempt;
+        Insert: Partial<VerificationAttempt> & { profile_id: string };
+        Update: Partial<VerificationAttempt>;
         Relationships: [];
       };
       ai_recaps: {

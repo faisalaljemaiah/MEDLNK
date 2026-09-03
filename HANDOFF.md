@@ -1771,6 +1771,21 @@ just shows every feature-usage and funnel-step count as 0 rather than
 failing — verified live against the real hosted project's current
 pre-migration state.
 
+**Update, this session:** 0033 (`verification_attempts`) landed — caps how
+many times a rejected member can resubmit for verification (change license
+number and/or upload a new document) at 3 per rolling 30 days, enforced by
+a trigger on the `rejected -> pending` transition 0028 opened up. Adds two
+checklist rows. Verified locally (`supabase/tests/run.sh` and
+`apply-file.sh`, both green, including a full 3-attempts-then-blocked-then
+-ages-out cycle) but **not applied to the hosted project** — same manual
+step as every migration before it. `getVerificationAttemptStatus`
+(`src/lib/verification.ts`) reads the same table to show the onboarding
+page a "N of 3 left" / "try again on <date>" banner before the member even
+fills out the form; until 0033 is applied, that read returns an empty
+array (no error), so the banner just never shows a limit and the trigger
+never fires — a rejected member can resubmit freely, same as before this
+migration, rather than anything crashing.
+
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single
 insert — they exist only to survive a partially-migrated project.

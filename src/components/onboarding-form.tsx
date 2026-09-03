@@ -13,12 +13,19 @@ import type { Profile } from "@/lib/database.types";
 export function OnboardingForm({
   profile,
   documentUploadAvailable,
+  resubmissionLocked = false,
 }: {
   profile: Profile;
   /** False on a project that hasn't applied 0027 yet — hides the upload
    *  section entirely rather than showing a control that would silently
    *  no-op, and it reappears on its own once the migration lands. */
   documentUploadAvailable: boolean;
+  /** True only when rejected and out of resubmission attempts (0033) — the
+   *  license number and document are disabled so the only submit that can
+   *  go through is one that doesn't touch either, since the server-side
+   *  trigger would reject a resubmission attempt anyway. Everything else
+   *  (name, handle, specialty, photo) stays editable. */
+  resubmissionLocked?: boolean;
 }) {
   const [state, action] = useActionState(updateProfileAction, undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -157,6 +164,14 @@ export function OnboardingForm({
         defaultValue={profile.license_number ?? ""}
         placeholder="Used for manual verification only"
         required
+        // readOnly, not disabled — a disabled field is excluded from the
+        // submitted FormData entirely, which would both fail the "required"
+        // check server-side and (since profile.ts compares the submitted
+        // value against the existing one to detect a resubmission) read as
+        // license_number having changed to empty. readOnly still submits
+        // the current value while blocking edits.
+        readOnly={resubmissionLocked}
+        className={resubmissionLocked ? "opacity-60" : undefined}
       />
       {documentUploadAvailable && (
         <div className="flex flex-col gap-1.5">
@@ -172,12 +187,15 @@ export function OnboardingForm({
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
             required={!profile.license_document_path}
-            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
+            disabled={resubmissionLocked}
+            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text disabled:opacity-50"
           />
           <p className="text-xs text-muted">
-            {profile.license_document_path
-              ? "Document on file — choose a new one only if you need to replace it."
-              : "A photo or PDF of your professional license or student ID. Reviewed manually, never shown publicly."}
+            {resubmissionLocked
+              ? "Locked until your next resubmission window opens — see above."
+              : profile.license_document_path
+                ? "Document on file — choose a new one only if you need to replace it."
+                : "A photo or PDF of your professional license or student ID. Reviewed manually, never shown publicly."}
           </p>
         </div>
       )}

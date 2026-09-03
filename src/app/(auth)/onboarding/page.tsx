@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { ArrowLeftIcon } from "@/components/icons";
+import { getVerificationAttemptStatus } from "@/lib/verification";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -30,6 +31,13 @@ export default async function OnboardingPage() {
   // column genuinely doesn't exist yet (0027 unapplied on this project).
   // Once it exists the key is always present, even holding null.
   const documentUploadAvailable = "license_document_path" in profile;
+
+  // Only matters once rejected — a pending or approved member has nothing
+  // to resubmit yet, so there's no attempt count worth a query for them.
+  const attemptStatus =
+    profile.verification_status === "rejected"
+      ? await getVerificationAttemptStatus(supabase, user.id)
+      : null;
 
   // Required the first time (a pending/rejected member still needs this
   // page reachable from wherever they land), but not a dead end — this
@@ -69,16 +77,38 @@ export default async function OnboardingPage() {
         </div>
       )}
 
-      {profile.verification_status === "rejected" && (
+      {profile.verification_status === "rejected" && attemptStatus && (
         <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
-          Your license verification was not approved. Double-check your
-          license number and upload a clearer document below to resubmit.
+          {attemptStatus.attemptsRemaining > 0 ? (
+            <>
+              Your license verification was not approved. Double-check your
+              license number and upload a clearer document below to resubmit.
+              <p className="mt-1.5 text-xs">
+                {attemptStatus.attemptsRemaining} of 3 resubmissions left this
+                month.
+              </p>
+            </>
+          ) : (
+            <>
+              You&apos;ve used all 3 resubmissions allowed in a 30-day period.
+              You can try again on{" "}
+              {new Date(attemptStatus.nextEligibleAt!).toLocaleDateString(undefined, {
+                month: "long",
+                day: "numeric",
+              })}
+              .
+            </>
+          )}
         </div>
       )}
 
       <OnboardingForm
         profile={profile}
         documentUploadAvailable={documentUploadAvailable}
+        resubmissionLocked={
+          profile.verification_status === "rejected" &&
+          attemptStatus?.attemptsRemaining === 0
+        }
       />
     </div>
   );

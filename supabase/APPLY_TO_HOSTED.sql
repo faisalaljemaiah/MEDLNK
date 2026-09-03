@@ -1848,6 +1848,55 @@ create policy "analytics_events_select_admin"
   using (public.is_admin());
 
 -- ============================================================================
+-- 0033_verification_resubmission_limit.sql — cap rejected -> pending
+-- resubmissions at 3 per rolling 30 days
+-- ============================================================================
+
+create table if not exists public.verification_attempts (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.verification_attempts enable row level security;
+
+drop policy if exists "verification_attempts_select_own_or_admin" on public.verification_attempts;
+create policy "verification_attempts_select_own_or_admin"
+  on public.verification_attempts for select
+  using (auth.uid() = profile_id or public.is_admin());
+
+create or replace function public.enforce_verification_resubmission_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  recent_attempts int;
+begin
+  select count(*) into recent_attempts
+  from public.verification_attempts
+  where profile_id = new.id
+    and created_at > now() - interval '30 days';
+
+  if recent_attempts >= 3 then
+    raise exception
+      'You''ve used all 3 verification attempts allowed in a 30-day period. Please try again later.';
+  end if;
+
+  insert into public.verification_attempts (profile_id) values (new.id);
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_enforce_verification_resubmission_limit on public.profiles;
+create trigger profiles_enforce_verification_resubmission_limit
+  before update on public.profiles
+  for each row
+  when (old.verification_status = 'rejected' and new.verification_status = 'pending')
+  execute function public.enforce_verification_resubmission_limit();
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -2031,5 +2080,9 @@ from (
     ('SECURITY: community creation requires 100 followers',
      to_regprocedure('public.has_min_followers(int)') is not null),
     ('table: analytics_events',
-     to_regclass('public.analytics_events') is not null)
+     to_regclass('public.analytics_events') is not null),
+    ('table: verification_attempts',
+     to_regclass('public.verification_attempts') is not null),
+    ('SECURITY: verification resubmission capped at 3 per 30 days',
+     to_regprocedure('public.enforce_verification_resubmission_limit()') is not null)
 ) as checks(item, present);
