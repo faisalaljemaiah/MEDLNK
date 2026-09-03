@@ -103,7 +103,7 @@ export default async function SearchPage({
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-accent"
         >
           <ReelIcon width={14} height={14} strokeWidth={2} />
-          Speel
+          Spool
         </Link>
       </div>
 

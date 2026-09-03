@@ -33,16 +33,24 @@ export function TopHeader() {
       {/* Settings and Messages gave up their header slot to Spool — both
           stay reachable one tap further in, from the profile page's own
           action-links row. */}
-      <Link
-        href="/spool"
-        className={clsx(
-          "flex w-9 shrink-0 items-center justify-center transition-transform duration-150 ease-out active:scale-90",
-          onSpool ? "text-white" : "text-text",
+      <div className="flex items-center gap-1">
+        {!onSpool && (
+          <span className="flex items-center gap-1 font-label text-xs text-accent">
+            Try Spool
+            <span aria-hidden>→</span>
+          </span>
         )}
-        aria-label="Speel"
-      >
-        <ReelIcon />
-      </Link>
+        <Link
+          href="/spool"
+          className={clsx(
+            "flex w-9 shrink-0 items-center justify-center transition-transform duration-150 ease-out active:scale-90",
+            onSpool ? "text-white" : "text-text",
+          )}
+          aria-label="Spool"
+        >
+          <ReelIcon />
+        </Link>
+      </div>
     </header>
   );
 }
