@@ -19,8 +19,8 @@ export type SpecialistThread = SpecialistRequest & {
 
 const THREAD_SELECT =
   "*," +
-  "requester:profiles!specialist_requests_requester_id_fkey(id,handle,full_name,role,verified,avatar_url)," +
-  "specialist_answers(*,responder:profiles!specialist_answers_responder_id_fkey(id,handle,full_name,role,verified,avatar_url))";
+  "requester:profiles!specialist_requests_requester_id_fkey(id,handle,full_name,role,verified,badge_tier,avatar_url)," +
+  "specialist_answers(*,responder:profiles!specialist_answers_responder_id_fkey(id,handle,full_name,role,verified,badge_tier,avatar_url))";
 
 type ThreadRow = SpecialistRequest & {
   requester: FeedAuthor | null;

@@ -8,6 +8,13 @@
 
 export type VerificationStatus = "pending" | "approved" | "rejected";
 
+/**
+ * Mirrors the badge_tier check constraint in 0034_verified_badge_tier.sql.
+ * Null (a plain blue check) is the default; every other value is a colored
+ * checkmark layered on top of `verified`, never a substitute for it.
+ */
+export type BadgeTier = "diamond" | "gold" | "platinum" | "green";
+
 /** Mirrors the locale check constraint in 0021_locale_preference.sql. */
 export type Locale = "en" | "ar";
 /**
@@ -109,6 +116,10 @@ export type Profile = {
   avatar_url: string | null;
   verified: boolean;
   verification_status: VerificationStatus;
+  /** Set once, at approval, by approveUserAction — never touched again. */
+  verified_at: string | null;
+  /** Null = plain blue check. See BadgeTier and setBadgeTierAction. */
+  badge_tier: BadgeTier | null;
   license_number: string | null;
   /**
    * Path within the private `verification-docs` bucket (0027) — never a

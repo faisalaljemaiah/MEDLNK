@@ -9,6 +9,7 @@ import {
   removeCaseAction,
   restoreCaseAction,
   toggleSuspensionAction,
+  setBadgeTierAction,
 } from "@/app/actions/admin";
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
 import { getPlatformAnalytics, getFeatureUsage, getOnboardingFunnel } from "@/lib/analytics";
@@ -334,6 +335,34 @@ async function UsersDirectory({
                     <p className="mt-1.5 text-sm text-muted">
                       No document uploaded
                     </p>
+                  )}
+                  {u.verified && (
+                    <form
+                      action={setBadgeTierAction.bind(null, u.id, viewerHandle)}
+                      className="mt-2 flex items-center gap-2"
+                    >
+                      <label className="font-label text-xs text-muted" htmlFor={`tier-${u.id}`}>
+                        Checkmark
+                      </label>
+                      <select
+                        id={`tier-${u.id}`}
+                        name="tier"
+                        defaultValue={u.badge_tier ?? ""}
+                        className="rounded-lg border border-line bg-surface px-2 py-1 text-sm text-text"
+                      >
+                        <option value="">Blue (default)</option>
+                        <option value="green">Green</option>
+                        <option value="gold">Gold</option>
+                        <option value="platinum">Platinum</option>
+                        <option value="diamond">Diamond</option>
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-line px-2.5 py-1 text-sm text-text hover:border-accent"
+                      >
+                        Save
+                      </button>
+                    </form>
                   )}
                 </div>
                 <form

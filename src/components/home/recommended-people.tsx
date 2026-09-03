@@ -5,6 +5,7 @@ import type { RecommendedPerson } from "@/lib/home";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
 import { UserPlusIcon } from "@/components/icons";
+import { VerifiedBadge } from "@/components/verified-badge";
 
 export function RecommendedPeople({
   people,
@@ -45,7 +46,7 @@ export function RecommendedPeople({
                 className="block truncate text-sm font-medium text-text hover:underline"
               >
                 {p.full_name ?? `@${p.handle}`}
-                {p.verified && <span className="ml-1 text-positive">✓</span>}
+                {p.verified && <VerifiedBadge tier={p.badge_tier} />}
               </Link>
               <p className="truncate text-xs text-muted">
                 {p.role || p.specialty || "Clinician"}

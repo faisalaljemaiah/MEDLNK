@@ -9,6 +9,8 @@ import {
   sendVerificationApprovedEmail,
   sendVerificationRejectedEmail,
 } from "@/lib/email";
+import { tierForVerificationRank } from "@/lib/verification-tier";
+import type { BadgeTier } from "@/lib/database.types";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -61,9 +63,26 @@ async function notifyApplicant(
 
 export async function approveUserAction(profileId: string, viewerHandle: string | null) {
   const { supabase } = await requireAdmin();
+
+  // Rank among everyone verified so far, oldest first — the same order
+  // verified_at itself is kept in. Diamond/Gold are the only tiers this
+  // computes automatically (see tierForVerificationRank); everything past
+  // rank 100 starts with a plain blue check until an admin hand-assigns
+  // Platinum or Green later via setBadgeTierAction.
+  const { count } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .not("verified_at", "is", null);
+  const tier = tierForVerificationRank((count ?? 0) + 1);
+
   await supabase
     .from("profiles")
-    .update({ verified: true, verification_status: "approved" })
+    .update({
+      verified: true,
+      verification_status: "approved",
+      verified_at: new Date().toISOString(),
+      ...(tier ? { badge_tier: tier } : {}),
+    })
     .eq("id", profileId);
   revalidateAdminViews(viewerHandle);
   await notifyApplicant(profileId, sendVerificationApprovedEmail);
@@ -73,10 +92,41 @@ export async function rejectUserAction(profileId: string, viewerHandle: string |
   const { supabase } = await requireAdmin();
   await supabase
     .from("profiles")
-    .update({ verified: false, verification_status: "rejected" })
+    // Cleared, not just left stale: a later re-approval recomputes rank from
+    // a fresh count of verified_at IS NOT NULL rows, which would double-count
+    // this row against itself if its old verified_at survived the rejection.
+    .update({
+      verified: false,
+      verification_status: "rejected",
+      verified_at: null,
+      badge_tier: null,
+    })
     .eq("id", profileId);
   revalidateAdminViews(viewerHandle);
   await notifyApplicant(profileId, sendVerificationRejectedEmail);
+}
+
+const BADGE_TIERS: BadgeTier[] = ["diamond", "gold", "platinum", "green"];
+
+/**
+ * Manual override/assignment for tiers with no automatic rule — Platinum and
+ * Green today, or overriding an auto-assigned Diamond/Gold. The empty
+ * "Blue (default)" option resets a member back to the plain blue check.
+ *
+ * profileId/viewerHandle are bound at the call site (UsersDirectory); the
+ * select's value arrives the usual form-action way, as the trailing
+ * FormData argument.
+ */
+export async function setBadgeTierAction(
+  profileId: string,
+  viewerHandle: string | null,
+  formData: FormData,
+) {
+  const { supabase } = await requireAdmin();
+  const raw = formData.get("tier");
+  const tier = BADGE_TIERS.includes(raw as BadgeTier) ? (raw as BadgeTier) : null;
+  await supabase.from("profiles").update({ badge_tier: tier }).eq("id", profileId);
+  revalidateAdminViews(viewerHandle);
 }
 
 /**

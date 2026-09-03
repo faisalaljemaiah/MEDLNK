@@ -1786,6 +1786,28 @@ array (no error), so the banner just never shows a limit and the trigger
 never fires — a rejected member can resubmit freely, same as before this
 migration, rather than anything crashing.
 
+**Update, this session — apply this one before deploying the code that goes
+with it:** 0034 (`verified_at` + `badge_tier` on `profiles`) landed —
+colored verified-checkmark tiers: a plain blue check by default, Diamond for
+the first 10 members ever verified, Gold for the next 90, and Platinum/Green
+as admin-assigned overrides (new "Checkmark" dropdown in the admin Users
+directory). Adds three checklist rows. Verified locally
+(`supabase/tests/run.sh` and `apply-file.sh`, both green, including the
+double-apply check) but **not applied to the hosted project** — same manual
+step as every migration before it, except this one is unlike every migration
+before it in one way: `badge_tier` was added directly into `FEED_SELECT`
+(`src/lib/cases.ts`) and the comment/specialist-thread/recommended-people
+selects, not into an isolated new query with its own null-fallback. Until
+this migration is applied, every one of those queries 42703s on the missing
+column and — because `getFeedCases`, `searchAllUsers`, and
+`getRecommendedPeople` all discard the Postgrest error and fall back to `[]`
+— **the home feed, profile pages, and admin Users directory all render
+empty** rather than crashing, which reads as "the app is broken," not "a
+small feature is inert" the way past migrations degraded. `getCaseComments`
+and `getCaseSpecialistThreads` return `null` on the same error and correctly
+show `UnavailableNotice` instead. Apply `supabase/APPLY_TO_HOSTED.sql`
+before or immediately after this deploys.
+
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single
 insert — they exist only to survive a partially-migrated project.

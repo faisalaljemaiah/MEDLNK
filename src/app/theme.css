@@ -45,7 +45,7 @@
      reference this, never hardcode text-white next to bg-accent. */
   --accent-foreground: #ffffff;
   --accent-2: #7c3aed; /* secondary accent (gradients, AI features) */
-  --positive: #0b7c44; /* verified badges, success states */
+  --positive: #0b7c44; /* success states, and the Green verified-badge tier */
   --warning: #b45309; /* privacy/identifier warnings */
   --danger: #cf2231; /* destructive actions, errors */
   /* A cool neutral used alongside --accent wherever a second, non-brand tone
@@ -53,6 +53,21 @@
      line's outer stops, the auth-screen glow blobs. Named rather than an
      inline arbitrary hex so it's one value to tune. */
   --silver: #c0c8ce;
+
+  /*
+   * Verified-checkmark tiers (see VerifiedBadge, src/lib/verification-tier.ts).
+   * --badge-verified is the plain check every verified member gets by
+   * default; the other three are prestige overrides an admin assigns
+   * (Diamond/Gold automatically by verification order, Platinum/Green by
+   * hand — see 0034_verified_badge_tier.sql). Green itself just reads
+   * --positive above rather than duplicating it. Chosen to stay visually
+   * distinct from the --ai-hue-* sweep further down, which is reserved for
+   * AI-feature cues specifically and shouldn't double as a status color.
+   */
+  --badge-verified: #2563eb; /* blue — the default check */
+  --badge-gold: #ca8a04;
+  --badge-platinum: #64748b;
+  --badge-diamond: #0891b2;
 
   /* RGB triplet of --text (#10203a), space-separated for the modern
      `rgb(var(--shadow-tint) / alpha)` syntax — every shadow in the app
@@ -138,6 +153,10 @@
     --warning: #fbbf24;
     --danger: #f87171;
     --silver: #6b7280;
+    --badge-verified: #60a5fa;
+    --badge-gold: #facc15;
+    --badge-platinum: #cbd5e1;
+    --badge-diamond: #2dd4bf;
   }
 }
 
@@ -156,6 +175,10 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-silver: var(--silver);
+  --color-badge-verified: var(--badge-verified);
+  --color-badge-gold: var(--badge-gold);
+  --color-badge-platinum: var(--badge-platinum);
+  --color-badge-diamond: var(--badge-diamond);
 
   --font-headline: var(--font-headline);
   --font-body: var(--font-body);

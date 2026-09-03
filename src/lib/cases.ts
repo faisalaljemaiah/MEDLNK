@@ -4,7 +4,7 @@ import { getBlockedPairIds } from "@/lib/blocks";
 
 export type FeedAuthor = Pick<
   Profile,
-  "id" | "handle" | "full_name" | "role" | "verified" | "avatar_url"
+  "id" | "handle" | "full_name" | "role" | "verified" | "badge_tier" | "avatar_url"
 >;
 
 export type ReactionCounts = Record<ReactionType, number> & {
@@ -38,7 +38,7 @@ type Client = SupabaseClient<Database>;
  */
 const FEED_SELECT =
   "*," +
-  "author:profiles!cases_author_id_fkey(id,handle,full_name,role,verified,avatar_url)," +
+  "author:profiles!cases_author_id_fkey(id,handle,full_name,role,verified,badge_tier,avatar_url)," +
   "reactions(type,user_id)," +
   "comments(case_id)";
 

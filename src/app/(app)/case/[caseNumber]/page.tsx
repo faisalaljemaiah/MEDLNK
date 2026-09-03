@@ -27,6 +27,7 @@ import { CaseComments } from "@/components/case-comments";
 import { ReasoningTree } from "@/components/reasoning-tree";
 import { CaseComparison } from "@/components/case-comparison";
 import { SpecialistThreads } from "@/components/specialist-threads";
+import { VerifiedBadge } from "@/components/verified-badge";
 
 export default async function CasePage({
   params,
@@ -144,7 +145,7 @@ export default async function CasePage({
           <span className="text-sm text-text">
             {feedCase.author?.full_name ?? "Unknown clinician"}
             {feedCase.author?.verified && (
-              <span className="ml-1 text-positive">✓ verified</span>
+              <VerifiedBadge tier={feedCase.author.badge_tier} label />
             )}
           </span>
         </Link>

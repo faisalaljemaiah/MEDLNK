@@ -1897,6 +1897,76 @@ create trigger profiles_enforce_verification_resubmission_limit
   execute function public.enforce_verification_resubmission_limit();
 
 -- ============================================================================
+-- 0034_verified_badge_tier.sql — colored verified-checkmark tiers (blue
+-- default; Diamond/Gold auto-assigned by verification order, Platinum/Green
+-- admin-assigned)
+-- ============================================================================
+
+alter table public.profiles
+  add column if not exists verified_at timestamptz;
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles'
+      and column_name = 'badge_tier'
+  ) then
+    alter table public.profiles add column badge_tier text
+      check (badge_tier is null or badge_tier in ('diamond', 'gold', 'platinum', 'green'));
+  end if;
+end $$;
+
+update public.profiles
+  set verified_at = created_at
+  where verified = true and verified_at is null;
+
+with ranked as (
+  select id, row_number() over (order by verified_at asc, id asc) as rn
+  from public.profiles
+  where verified = true and verified_at is not null
+)
+update public.profiles p
+  set badge_tier = case when r.rn <= 10 then 'diamond' else 'gold' end
+  from ranked r
+  where p.id = r.id and r.rn <= 100
+    -- Re-running this file must not clobber a tier an admin already hand-set
+    -- (e.g. downgraded a rank-11-100 member off Gold to plain blue) — only
+    -- ever fills in a still-null badge_tier, never overwrites one.
+    and p.badge_tier is null;
+
+create or replace function public.guard_profile_privilege_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if current_user in ('anon', 'authenticated') and not public.is_admin() then
+    if new.is_admin is distinct from old.is_admin then
+      raise exception 'Only an admin can change is_admin';
+    end if;
+    if new.verified is distinct from old.verified then
+      raise exception 'Only an admin can change verification status';
+    end if;
+    if new.verification_status is distinct from old.verification_status then
+      if not (old.verification_status = 'rejected' and new.verification_status = 'pending') then
+        raise exception 'Only an admin can change verification status';
+      end if;
+    end if;
+    if new.suspended_at is distinct from old.suspended_at
+       or new.suspended_reason is distinct from old.suspended_reason then
+      raise exception 'Only an admin can change suspension status';
+    end if;
+    if new.verified_at is distinct from old.verified_at
+       or new.badge_tier is distinct from old.badge_tier then
+      raise exception 'Only an admin can change verification badge tier';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -2084,5 +2154,16 @@ from (
     ('table: verification_attempts',
      to_regclass('public.verification_attempts') is not null),
     ('SECURITY: verification resubmission capped at 3 per 30 days',
-     to_regprocedure('public.enforce_verification_resubmission_limit()') is not null)
+     to_regprocedure('public.enforce_verification_resubmission_limit()') is not null),
+    ('column: profiles.verified_at',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'verified_at')),
+    ('column: profiles.badge_tier',
+     exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profiles'
+               and column_name = 'badge_tier')),
+    ('SECURITY: badge_tier/verified_at guarded like is_admin/verified',
+     coalesce((select prosrc like '%badge_tier%'
+               from pg_proc where proname = 'guard_profile_privilege_columns'), false))
 ) as checks(item, present);

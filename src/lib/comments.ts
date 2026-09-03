@@ -27,7 +27,7 @@ export async function getCaseComments(
   const { data, error } = await supabase
     .from("comments")
     .select(
-      "*,author:profiles!comments_user_id_fkey(id,handle,full_name,role,verified,avatar_url)",
+      "*,author:profiles!comments_user_id_fkey(id,handle,full_name,role,verified,badge_tier,avatar_url)",
     )
     .eq("case_id", caseId)
     .order("created_at", { ascending: true });

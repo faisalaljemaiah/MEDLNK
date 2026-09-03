@@ -7,6 +7,7 @@ import { ReportButton } from "@/components/report-button";
 import { UnavailableNotice } from "@/components/unavailable-notice";
 import { commentLabelMeta } from "@/lib/comment-labels";
 import type { CommentView } from "@/lib/comments";
+import { VerifiedBadge } from "@/components/verified-badge";
 
 /**
  * The discussion under a case.
@@ -68,7 +69,7 @@ export function CaseComments({
                     >
                       {c.author?.full_name ?? "Unknown clinician"}
                       {c.author?.verified && (
-                        <span className="ml-1 text-positive">✓</span>
+                        <VerifiedBadge tier={c.author.badge_tier} />
                       )}
                     </Link>
                     <span className="font-label text-xs text-muted">

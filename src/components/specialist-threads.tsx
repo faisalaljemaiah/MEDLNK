@@ -5,6 +5,7 @@ import { SpecialistAnswerForm } from "@/components/specialist-answer-form";
 import { UnavailableNotice } from "@/components/unavailable-notice";
 import { closeSpecialistRequestAction } from "@/app/actions/specialists";
 import type { SpecialistThread } from "@/lib/specialists";
+import { VerifiedBadge } from "@/components/verified-badge";
 
 /**
  * Specialist asks and answers on a case (spec §10).
@@ -137,7 +138,7 @@ export function SpecialistThreads({
                             >
                               {a.responder?.full_name ?? "Unknown clinician"}
                               {a.responder?.verified && (
-                                <span className="ml-1 text-positive">✓</span>
+                                <VerifiedBadge tier={a.responder.badge_tier} />
                               )}
                             </Link>
                             <span className="rounded-full border border-positive/40 bg-positive/10 px-2 py-0.5 font-label text-xs text-positive">

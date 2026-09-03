@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/database.types";
+import type { BadgeTier, Database } from "@/lib/database.types";
 import type { ContributionStats } from "@/lib/profile";
 import { getFeedCases } from "@/lib/cases";
 import {
@@ -312,6 +312,7 @@ export type RecommendedPerson = {
   specialty: string | null;
   avatar_url: string | null;
   verified: boolean;
+  badge_tier: BadgeTier | null;
   followerCount: number;
 };
 
@@ -335,7 +336,7 @@ export async function getRecommendedPeople(
       .from("profiles")
       // is_admin excluded — an admin account has no public profile page
       // (src/app/(app)/u/[handle]/page.tsx) to send a recommendation to.
-      .select("id,handle,full_name,role,specialty,avatar_url,verified")
+      .select("id,handle,full_name,role,specialty,avatar_url,verified,badge_tier")
       .neq("id", viewerId)
       .not("handle", "is", null)
       .eq("is_admin", false)
@@ -367,6 +368,7 @@ export async function getRecommendedPeople(
       specialty: p.specialty,
       avatar_url: p.avatar_url,
       verified: p.verified,
+      badge_tier: p.badge_tier,
       followerCount: followerCounts.get(p.id) ?? 0,
     }));
 }

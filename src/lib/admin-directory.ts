@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, ModerationStatus, VerificationStatus } from "@/lib/database.types";
+import type { BadgeTier, Database, ModerationStatus, VerificationStatus } from "@/lib/database.types";
 
 type Client = SupabaseClient<Database>;
 
@@ -11,6 +11,7 @@ export type DirectoryUser = {
   specialty: string | null;
   verified: boolean;
   verification_status: VerificationStatus;
+  badge_tier: BadgeTier | null;
   is_admin: boolean;
   suspended_at: string | null;
   created_at: string;
@@ -36,7 +37,7 @@ export async function searchAllUsers(
   const { data } = await supabase
     .from("profiles")
     .select(
-      "id, handle, full_name, role, specialty, verified, verification_status, " +
+      "id, handle, full_name, role, specialty, verified, verification_status, badge_tier, " +
         "is_admin, suspended_at, created_at, license_document_path",
     )
     .order("created_at", { ascending: false })

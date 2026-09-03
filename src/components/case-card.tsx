@@ -8,6 +8,7 @@ import { caseTypeMeta } from "@/lib/case-types";
 import { isVideoUrl } from "@/lib/media";
 import { timeAgo } from "@/lib/time";
 import type { FeedCase } from "@/lib/cases";
+import { VerifiedBadge } from "@/components/verified-badge";
 
 export function CaseCard({
   feedCase,
@@ -51,7 +52,7 @@ export function CaseCard({
           >
             {feedCase.author?.full_name ?? "Unknown clinician"}
             {feedCase.author?.verified && (
-              <span className="ml-1 text-positive">✓</span>
+              <VerifiedBadge tier={feedCase.author.badge_tier} />
             )}
           </Link>
           <p className="truncate font-label text-xs text-muted">

@@ -15,6 +15,7 @@ import { startConversationAction } from "@/app/actions/messages";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { ProfileOverflowMenu } from "@/components/profile-overflow-menu";
 import { StreakCard } from "@/components/home/streak-card";
+import { VerifiedBadge } from "@/components/verified-badge";
 
 const TABS = [
   { key: "posts", label: "Posts" },
@@ -114,7 +115,7 @@ export default async function ProfilePage({
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold text-text">
               {profile.full_name || "(no name yet)"}
-              {profile.verified && <span className="ml-1 text-positive">✓</span>}
+              {profile.verified && <VerifiedBadge tier={profile.badge_tier} />}
             </p>
             <p className="font-label text-sm text-muted">
               @{profile.handle} {profile.role ? `· ${profile.role}` : ""}
