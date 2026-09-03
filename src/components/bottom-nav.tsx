@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ViewTransition } from "react";
+import { ViewTransition, useEffect, useState } from "react";
 import { clsx } from "clsx";
 import { HomeIcon, CompassIcon, SendIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
@@ -14,9 +14,38 @@ type NavProfile = {
   avatar_url: string | null;
 };
 
+/**
+ * Scrolling down past the very top means "reading, give me the room back" —
+ * shrinking the nav a touch (not hiding it, this is the app's only way to
+ * reach Create/Messages/Search) reclaims a little vertical space without
+ * losing the affordance. Scrolling back up means "I want to navigate,"
+ * which restores full size immediately. A small +/-4px deadband against
+ * the last known position avoids flipping state on sub-pixel scroll
+ * jitter (momentum scrolling, elastic bounce).
+ */
+function useShrinkOnScrollDown() {
+  const [shrunk, setShrunk] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (y > 80 && delta > 4) setShrunk(true);
+      else if (delta < -4 || y < 80) setShrunk(false);
+      lastY = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return shrunk;
+}
+
 export function BottomNav({ profile }: { profile: NavProfile | null }) {
   const pathname = usePathname();
   const onSpool = pathname === "/spool";
+  const shrunk = useShrinkOnScrollDown();
 
   const profileHref = profile
     ? profile.handle
@@ -30,8 +59,10 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
   return (
     <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div
+        style={{ transformOrigin: "center bottom" }}
         className={clsx(
-          "pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full px-3 py-2 transition-colors duration-200",
+          "pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full px-3 py-2 transition-[color,background-color,transform] duration-200 ease-out",
+          shrunk && "scale-90",
           onSpool
             ? "bg-transparent"
             // border-t-white/70 over the general border color — a bright top
