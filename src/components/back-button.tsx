@@ -5,9 +5,9 @@ import { ArrowLeftIcon } from "@/components/icons";
 
 /**
  * router.back() rather than a fixed href — this is used on pages reached
- * from many different places (feed, profile, search, Spool...), so there's
- * no single "back to X" destination to hardcode the way onboarding's
- * back arrow can.
+ * from many different places (feed, profile, search...), so there's no
+ * single "back to X" destination to hardcode the way onboarding's back
+ * arrow can.
  */
 export function BackButton() {
   const router = useRouter();

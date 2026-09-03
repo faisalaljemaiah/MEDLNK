@@ -14,7 +14,7 @@ import { AIButton } from "@/components/ui/ai-button";
 import { ReelIcon } from "@/components/icons";
 
 /** Longest title auto-derived from a video's caption — long enough to read
- *  as a real headline in the Spool info-peel, short enough to stay a
+ *  as a real headline wherever the case is shown, short enough to stay a
  *  headline rather than repeating the whole caption verbatim. */
 const VIDEO_TITLE_MAX = 60;
 
@@ -161,7 +161,7 @@ export function ComposeForm({
   const [nearMissSections, setNearMissSections] = useState<string[]>([]);
   const [mediaPlacement, setMediaPlacement] = useState("top");
 
-  // Spool's minimal video composer (below) has no visible title field — the
+  // The minimal video composer (below) has no visible title field — the
   // server still requires one (every case needs a headline elsewhere in the
   // app), so it's derived from the caption as the author types and carried
   // in a hidden input instead of asked for twice.
@@ -288,11 +288,11 @@ export function ComposeForm({
     setSuggestions([]);
   }
 
-  // Video is Spool's format, and Spool is TikTok/Instagram-shaped: pick a
-  // clip, write a caption, post — not the numbered multi-section template
-  // every other format uses. Everything the rest of the app needs (a title,
-  // the de-identification warning flow, the same legal checkbox every case
-  // requires) still happens, just without asking for it as separate steps.
+  // Video is TikTok/Instagram-shaped: pick a clip, write a caption, post —
+  // not the numbered multi-section template every other format uses.
+  // Everything the rest of the app needs (a title, the de-identification
+  // warning flow, the same legal checkbox every case requires) still
+  // happens, just without asking for it as separate steps.
   if (typeMeta.requiresVideo) {
     return (
       <form ref={formRef} action={action} className="flex flex-col gap-5">

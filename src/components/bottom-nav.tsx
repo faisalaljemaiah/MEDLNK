@@ -59,7 +59,6 @@ function useShrinkOnScrollDown() {
 
 export function BottomNav({ profile }: { profile: NavProfile | null }) {
   const pathname = usePathname();
-  const onSpool = pathname === "/spool";
   const shrunk = useShrinkOnScrollDown();
 
   const profileHref = profile
@@ -78,22 +77,20 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
         className={clsx(
           "pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full px-3 py-2 transition-[color,background-color,transform] duration-200 ease-out",
           shrunk && "scale-90",
-          onSpool
-            ? "bg-transparent"
-            // border-t-white/70 over the general border color — a bright top
-            // edge is how light catches a floating translucent material, the
-            // same detail Apple's own toolbars use.
-            : "border border-line/60 border-t-white/70 bg-surface/75 shadow-[0_8px_24px_-8px_rgb(var(--shadow-tint)/0.18)] backdrop-blur-2xl backdrop-saturate-150",
+          // border-t-white/70 over the general border color — a bright top
+          // edge is how light catches a floating translucent material, the
+          // same detail Apple's own toolbars use.
+          "border border-line/60 border-t-white/70 bg-surface/75 shadow-[0_8px_24px_-8px_rgb(var(--shadow-tint)/0.18)] backdrop-blur-2xl backdrop-saturate-150",
         )}
       >
-        <NavLink href="/" active={pathname === "/"} onSpool={onSpool}>
+        <NavLink href="/" active={pathname === "/"}>
           <HomeIcon filled={pathname === "/"} />
         </NavLink>
         {/* Discover absorbs Search — same route (/search), the page's own
             heading and content now read "Discover" (see search/page.tsx).
             Learn (Student Mode) has no nav slot of its own; it stays one tap
             away from the Discover page and the profile's action-links row. */}
-        <NavLink href="/search" active={pathname === "/search"} onSpool={onSpool}>
+        <NavLink href="/search" active={pathname === "/search"}>
           <CompassIcon />
         </NavLink>
         {/* The one nav item that creates rather than navigates gets a
@@ -103,9 +100,7 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
         <span className="ai-glow ai-glow-round ai-glow-brand inline-flex">
           <CreateMenu active={pathname === "/compose"} />
         </span>
-        {/* Spool gave this slot back to Messages — Spool itself stays one
-            tap away via the top header's button and the Discover page. */}
-        <NavLink href="/messages" active={pathname.startsWith("/messages")} onSpool={onSpool}>
+        <NavLink href="/messages" active={pathname.startsWith("/messages")}>
           <SendIcon />
         </NavLink>
         <Link
@@ -129,15 +124,10 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
 function NavLink({
   href,
   active,
-  onSpool,
   children,
 }: {
   href: string;
   active: boolean;
-  /** Spool's transparent pill needs its own idle/active colors — the
-   *  light-surface pair (text-muted, bg-accent-soft) would wash out on a
-   *  black backdrop. */
-  onSpool: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -145,11 +135,7 @@ function NavLink({
       href={href}
       className={clsx(
         "relative flex items-center justify-center rounded-full p-2.5 transition-[color,transform] duration-150 ease-out active:scale-90",
-        active
-          ? "text-accent"
-          : onSpool
-            ? "text-white/70 hover:text-white"
-            : "text-muted hover:text-text",
+        active ? "text-accent" : "text-muted hover:text-text",
       )}
     >
       {active && (
@@ -159,10 +145,7 @@ function NavLink({
         <ViewTransition name="nav-pill">
           <span
             aria-hidden
-            className={clsx(
-              "absolute inset-0 rounded-full shadow-[0_0_10px_-3px_rgba(15,118,110,0.45)]",
-              onSpool ? "bg-white/15" : "bg-accent-soft",
-            )}
+            className="absolute inset-0 rounded-full bg-accent-soft shadow-[0_0_10px_-3px_rgba(15,118,110,0.45)]"
           />
         </ViewTransition>
       )}

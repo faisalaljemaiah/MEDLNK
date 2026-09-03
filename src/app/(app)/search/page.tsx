@@ -7,7 +7,7 @@ import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
 import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
 import { CommunityBubbles } from "@/components/community-bubbles";
-import { CompassIcon, ReelIcon } from "@/components/icons";
+import { CompassIcon } from "@/components/icons";
 
 type SearchParams = {
   q?: string;
@@ -96,15 +96,8 @@ export default async function SearchPage({
           route as before (/search), so every existing internal link
           (trending pills, specialty pills, filter chips) keeps working
           unchanged. Only the on-screen framing changed. */}
-      <div className="flex items-center justify-between px-4 pt-4">
+      <div className="px-4 pt-4">
         <h1 className="font-headline text-xl text-text">Discover</h1>
-        <Link
-          href="/spool"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-accent"
-        >
-          <ReelIcon width={14} height={14} strokeWidth={2} />
-          Spool
-        </Link>
       </div>
 
       <CommunityBubbles communities={communities} path="/search" />

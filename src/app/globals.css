@@ -508,15 +508,6 @@ body {
   }
 }
 
-/* Spool's dark backdrop — scoped to that one view, not the rest of the app's
- * light theme. Plain black: the videos themselves carry the color now that
- * every Spool card is a video, so a colorful backdrop competed with the
- * footage rather than framing it.
- */
-.spool-backdrop {
-  background-color: #000;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
