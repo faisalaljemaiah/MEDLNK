@@ -29,17 +29,13 @@ export function CaseCard({
   return (
     <article
       id={`case-${feedCase.id}`}
-      className="case-card-hover group relative mx-4 my-3 rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.05)]"
+      // A feed row, not a floating dashboard card — full-bleed with a
+      // hairline divider between posts, the same structure Instagram/
+      // Twitter/Facebook actually use for a content feed, instead of every
+      // post sitting in its own bordered-and-shadowed rounded rectangle
+      // with gaps of page background between them.
+      className="group relative border-b border-line px-4 py-4 transition-colors duration-150 ease-out hover:bg-surface-2/50"
     >
-      {/* A thin brand-colored line along the top edge, hidden until hover —
-          the same "this is alive" language as .medlnk-pulse-line, but
-          static rather than continuously sweeping since it's a hover
-          response, not an ambient cue. Green/silver, not the AI-hue sweep —
-          this card isn't an AI feature. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-4 top-0 h-0.5 rounded-full bg-gradient-to-r from-accent via-silver to-accent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-70"
-      />
       <div className="flex items-center gap-2">
         <Link href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}>
           <Avatar
