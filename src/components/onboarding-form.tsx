@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { updateProfileAction, type ProfileFormState } from "@/app/actions/profile";
 import { ROLES } from "@/lib/roles";
 import { COUNTRIES } from "@/lib/countries";
+import { citiesForCountry } from "@/lib/cities";
 import { toUploadableImage } from "@/lib/heic";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -40,6 +41,20 @@ export function OnboardingForm({
   // crop step finishes or is cancelled — this is what tells the cropper
   // modal to open, and what it crops.
   const [cropSource, setCropSource] = useState<string | null>(null);
+  // Drives which cities the picker below offers — city is scoped to
+  // whichever country is currently selected, not a fixed list, so this has
+  // to be state rather than an uncontrolled defaultValue like the rest of
+  // this form's simpler fields.
+  const [countryCode, setCountryCode] = useState(profile.country_code ?? "");
+  const availableCities = citiesForCountry(countryCode);
+  // A previously saved city that isn't in this country's curated list
+  // (a free-typed value from before this became a picker, or a smaller city
+  // that isn't listed) still gets its own option — switching to a fixed list
+  // shouldn't silently blank out data that was already there.
+  const cityOptions =
+    profile.city && !availableCities.includes(profile.city)
+      ? [profile.city, ...availableCities]
+      : availableCities;
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -170,12 +185,6 @@ export function OnboardingForm({
         defaultValue={profile.specialty ?? ""}
         placeholder="Internal Medicine"
       />
-      <TextField
-        label="City"
-        name="city"
-        defaultValue={profile.city ?? ""}
-        placeholder="Riyadh"
-      />
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="country_code"
@@ -186,7 +195,8 @@ export function OnboardingForm({
         <select
           id="country_code"
           name="country_code"
-          defaultValue={profile.country_code ?? ""}
+          value={countryCode}
+          onChange={(e) => setCountryCode(e.target.value)}
           className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
         >
           <option value="">Prefer not to say</option>
@@ -201,6 +211,31 @@ export function OnboardingForm({
           your cases in the Global Case Exchange, so it can&apos;t be
           changed per post.
         </p>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="city"
+          className="font-label text-xs uppercase tracking-wide text-muted"
+        >
+          City (optional)
+        </label>
+        <select
+          id="city"
+          name="city"
+          defaultValue={profile.city ?? ""}
+          disabled={cityOptions.length === 0}
+          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none disabled:opacity-50"
+        >
+          <option value="">Prefer not to say</option>
+          {cityOptions.map((city) => (
+            <option key={city} value={city}>
+              {city}
+            </option>
+          ))}
+        </select>
+        {cityOptions.length === 0 && (
+          <p className="text-xs text-muted">Choose a country first.</p>
+        )}
       </div>
       {/* Already-verified members never see these — nothing left to verify,
           so re-showing (and requiring) a license number or document on a
