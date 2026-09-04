@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { trackEventAction } from "@/app/actions/analytics";
+import { LOCALES } from "@/lib/i18n";
 
 export type AuthFormState =
   | { error: string }
@@ -16,6 +17,13 @@ export async function signUpAction(
 ): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const rawLocale = String(formData.get("locale") ?? "");
+  // Carried through auth.users.raw_user_meta_data into the new profile row
+  // by the handle_new_user trigger (0035) — same mechanism full_name already
+  // used, and the trigger itself falls back to 'en' for anything outside
+  // this list, so an invalid value here is harmless rather than needing its
+  // own error path.
+  const locale = LOCALES.some((l) => l.value === rawLocale) ? rawLocale : "en";
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -25,7 +33,11 @@ export async function signUpAction(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { locale } },
+  });
 
   if (error) {
     return { error: error.message };

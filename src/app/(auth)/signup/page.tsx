@@ -1,16 +1,24 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { clsx } from "clsx";
 import Link from "next/link";
 import { signUpAction } from "@/app/actions/auth";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { LogoMark } from "@/components/brand";
+import { LOCALES } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 export default function SignUpPage() {
   const [state, action] = useActionState(signUpAction, undefined);
   const [agreed, setAgreed] = useState(false);
+  // No server-side signal to default this from yet — the account doesn't
+  // exist until this form submits. English first, since that's this list's
+  // first entry and the app's existing default everywhere else a locale is
+  // unset (0021).
+  const [locale, setLocale] = useState<Locale>("en");
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
@@ -31,6 +39,30 @@ export default function SignUpPage() {
         className="animate-welcome-rise flex flex-col gap-4"
         style={{ animationDelay: "120ms" }}
       >
+        <input type="hidden" name="locale" value={locale} />
+        <div className="flex flex-col gap-1.5">
+          <span className="font-label text-xs uppercase tracking-wide text-muted">
+            Preferred language
+          </span>
+          <div className="flex gap-2">
+            {LOCALES.map((l) => (
+              <button
+                key={l.value}
+                type="button"
+                onClick={() => setLocale(l.value)}
+                aria-pressed={locale === l.value}
+                className={clsx(
+                  "flex-1 rounded-lg border px-3.5 py-2.5 text-sm transition-colors duration-150",
+                  locale === l.value
+                    ? "border-accent bg-accent/10 font-medium text-accent"
+                    : "border-line text-muted hover:text-text",
+                )}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <TextField
           label="Email"
           name="email"

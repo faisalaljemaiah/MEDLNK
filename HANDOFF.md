@@ -1808,6 +1808,22 @@ and `getCaseSpecialistThreads` return `null` on the same error and correctly
 show `UnavailableNotice` instead. Apply `supabase/APPLY_TO_HOSTED.sql`
 before or immediately after this deploys.
 
+**Update, this session:** 0035 (`handle_new_user` now reads `locale` off
+signup) landed — the signup page asks "Preferred language: English /
+العربية" before email/password, and `signUpAction`
+(`src/app/actions/auth.ts`) carries the choice into
+`auth.signUp({ options: { data: { locale } } } )`'s metadata, the same way
+`full_name` already flows in. `handle_new_user` picks it up and writes it
+straight into the new `profiles.locale` (0021) — no separate write, no
+extra round trip, and a value outside `en`/`ar` (or a signup from before
+this migration) falls back to the column's own `'en'` default rather than
+erroring. Adds one checklist row. Verified locally
+(`supabase/tests/run.sh` and `apply-file.sh`, both green) but **not applied
+to the hosted project** — same manual step as every migration before it.
+Until it's applied, `handle_new_user` stays on its 0003 definition and
+every new signup gets the default `'en'` regardless of what they picked on
+the signup page — no error, the choice is just silently not persisted yet.
+
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single
 insert — they exist only to survive a partially-migrated project.

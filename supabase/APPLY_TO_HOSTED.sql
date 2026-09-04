@@ -1967,6 +1967,35 @@ end;
 $$;
 
 -- ============================================================================
+-- 0035_signup_locale.sql — signup asks the preferred language and carries it
+-- into the new profile row
+-- ============================================================================
+-- Same raw_user_meta_data pass-through handle_new_user (0003) already uses
+-- for full_name. Anything other than 'en'/'ar' falls back to the column's
+-- own default ('en', 0021) rather than trusting client-supplied JSON.
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, full_name, locale)
+  values (
+    new.id,
+    new.raw_user_meta_data ->> 'full_name',
+    case
+      when new.raw_user_meta_data ->> 'locale' in ('en', 'ar')
+        then new.raw_user_meta_data ->> 'locale'
+      else 'en'
+    end
+  );
+  return new;
+end;
+$$;
+
+-- ============================================================================
 -- Checklist — every row should read "ok"
 -- ============================================================================
 
@@ -2165,5 +2194,8 @@ from (
                and column_name = 'badge_tier')),
     ('SECURITY: badge_tier/verified_at guarded like is_admin/verified',
      coalesce((select prosrc like '%badge_tier%'
-               from pg_proc where proname = 'guard_profile_privilege_columns'), false))
+               from pg_proc where proname = 'guard_profile_privilege_columns'), false)),
+    ('signup carries the chosen language into the new profile',
+     coalesce((select prosrc like '%locale%'
+               from pg_proc where proname = 'handle_new_user'), false))
 ) as checks(item, present);
