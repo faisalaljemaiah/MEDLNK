@@ -2,15 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { toggleFollowAction } from "@/app/actions/reactions";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 export function FollowButton({
   followeeId,
   initialFollowing,
   path,
+  locale = "en",
 }: {
   followeeId: string;
   initialFollowing: boolean;
   path: string;
+  locale?: Locale;
 }) {
   const [following, setFollowing] = useState(initialFollowing);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +45,7 @@ export function FollowButton({
             : "rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground transition-[background-color,transform] duration-150 ease-out active:scale-95 disabled:opacity-60"
         }
       >
-        {following ? "Following" : "Follow"}
+        {following ? t(locale, "common.following") : t(locale, "common.follow")}
       </button>
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>

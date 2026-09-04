@@ -8,6 +8,8 @@ import { getCommunityCreationEligibility, getMyCommunities } from "@/lib/communi
 import { Avatar } from "@/components/avatar";
 import { CommentIcon } from "@/components/icons";
 import { CommunitiesTab } from "@/components/messages/communities-tab";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 type MessagesTab = "communities" | "direct";
 
@@ -24,15 +26,16 @@ export default async function MessagesPage({
   if (!user) redirect("/login");
 
   const profile = await getViewerProfile();
+  const locale = profile?.locale ?? "en";
 
   if (!profile?.verified) {
     return (
       <div className="px-4 py-10 text-center">
-        <h1 className="font-headline text-xl text-text">Verification required</h1>
+        <h1 className="font-headline text-xl text-text">{t(locale, "messages.verificationRequired")}</h1>
         <p className="mt-2 text-sm text-muted">
           {profile?.verification_status === "rejected"
-            ? "Your license verification was not approved. Contact support if you think this is a mistake."
-            : "We manually review every license before you can message other clinicians. You'll be able to message as soon as you're approved."}
+            ? t(locale, "messages.verificationRejected")
+            : t(locale, "messages.verificationPending")}
         </p>
       </div>
     );
@@ -41,24 +44,24 @@ export default async function MessagesPage({
   return (
     <div>
       <div className="px-4 pb-3 pt-5">
-        <h1 className="font-headline text-2xl text-text">Messages</h1>
+        <h1 className="font-headline text-2xl text-text">{t(locale, "messages.title")}</h1>
         <p className="mt-0.5 text-sm text-muted">
-          Conversations and the communities you&apos;re part of.
+          {t(locale, "messages.subtitle")}
         </p>
       </div>
       <div className="flex gap-1 border-b border-line px-4">
         <MessagesTabLink tab="communities" active={tab === "communities"}>
-          Communities
+          {t(locale, "messages.tabCommunities")}
         </MessagesTabLink>
         <MessagesTabLink tab="direct" active={tab === "direct"}>
-          Direct Messages
+          {t(locale, "messages.tabDirect")}
         </MessagesTabLink>
       </div>
 
       {tab === "communities" ? (
         <MessagesCommunitiesTab userId={user.id} />
       ) : (
-        <MessagesDirectTab userId={user.id} />
+        <MessagesDirectTab userId={user.id} locale={locale} />
       )}
     </div>
   );
@@ -106,7 +109,7 @@ async function MessagesCommunitiesTab({ userId }: { userId: string }) {
   );
 }
 
-async function MessagesDirectTab({ userId }: { userId: string }) {
+async function MessagesDirectTab({ userId, locale }: { userId: string; locale: Locale }) {
   const supabase = await createClient();
   const conversations = await getConversations(supabase, userId);
 
@@ -118,8 +121,7 @@ async function MessagesDirectTab({ userId }: { userId: string }) {
             <CommentIcon width={22} height={22} />
           </span>
           <p className="max-w-[22ch] text-sm text-muted">
-            No conversations yet. Message a clinician from their profile to
-            start one.
+            {t(locale, "messages.noConversations")}
           </p>
         </div>
       ) : (
@@ -137,12 +139,12 @@ async function MessagesDirectTab({ userId }: { userId: string }) {
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-text">
-                  {c.otherUser?.full_name ?? "Unknown clinician"}
+                  {c.otherUser?.full_name ?? t(locale, "common.unknownClinician")}
                 </p>
                 <p className="truncate text-sm text-muted">
                   {c.lastMessage
-                    ? `${c.lastMessage.sender_id === userId ? "You: " : ""}${c.lastMessage.body}`
-                    : "No messages yet"}
+                    ? `${c.lastMessage.sender_id === userId ? t(locale, "messages.youPrefix") : ""}${c.lastMessage.body}`
+                    : t(locale, "messages.noMessagesYet")}
                 </p>
               </div>
               {c.lastMessage && (

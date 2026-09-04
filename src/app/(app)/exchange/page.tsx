@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getViewer } from "@/lib/auth";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getCountryBreakdown, getFeedCasesByCountry } from "@/lib/cases";
 import { countryName } from "@/lib/countries";
 import { CaseCard } from "@/components/case-card";
+import { t } from "@/lib/i18n";
 
 type ExchangeSearchParams = { country?: string };
 
@@ -21,7 +22,8 @@ export default async function ExchangePage({
   const countryCode = country?.trim().toUpperCase() ?? "";
 
   const supabase = await createClient();
-  const user = await getViewer();
+  const [user, profile] = await Promise.all([getViewer(), getViewerProfile()]);
+  const locale = profile?.locale ?? "en";
 
   const [breakdown, results] = await Promise.all([
     getCountryBreakdown(supabase),
@@ -33,17 +35,15 @@ export default async function ExchangePage({
   return (
     <div>
       <div className="px-4 py-4">
-        <h1 className="font-headline text-xl text-text">Global Case Exchange</h1>
+        <h1 className="font-headline text-xl text-text">{t(locale, "exchange.title")}</h1>
         <p className="mt-1 text-sm text-muted">
-          Cases clinicians chose to share beyond their own country. Country
-          only — never a hospital, unit or region.
+          {t(locale, "exchange.subtitle")}
         </p>
       </div>
 
       {breakdown.length === 0 ? (
         <p className="px-4 pb-10 text-sm text-muted">
-          No cases have a country attached yet. Add one next time you post to
-          put it on the map here.
+          {t(locale, "exchange.noCountries")}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2 px-4 pb-4">
@@ -65,7 +65,8 @@ export default async function ExchangePage({
 
       {countryCode && (
         <p className="px-4 pb-3 text-xs text-muted">
-          {results.length} {results.length === 1 ? "case" : "cases"} from{" "}
+          {results.length} {results.length === 1 ? t(locale, "common.case") : t(locale, "common.cases")}{" "}
+          {t(locale, "exchange.from")}{" "}
           {countryName(countryCode) ?? countryCode}
         </p>
       )}
@@ -73,7 +74,7 @@ export default async function ExchangePage({
       {countryCode &&
         (results.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted">
-            Nothing from here yet.
+            {t(locale, "exchange.noneFromHere")}
           </p>
         ) : (
           results.map((c) => (
@@ -82,6 +83,7 @@ export default async function ExchangePage({
               feedCase={c}
               path={`/exchange?country=${countryCode}`}
               viewerId={user?.id ?? null}
+              locale={locale}
             />
           ))
         ))}

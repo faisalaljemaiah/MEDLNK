@@ -49,13 +49,16 @@ export function RecommendedPeople({
                 {p.verified && <VerifiedBadge tier={p.badge_tier} />}
               </Link>
               <p className="truncate text-xs text-muted">
-                {p.role || p.specialty || "Clinician"}
+                {p.role || p.specialty || t(locale, "people.clinician")}
               </p>
               <p className="mt-0.5 text-xs text-muted">
-                {p.followerCount} {p.followerCount === 1 ? "follower" : "followers"}
+                {p.followerCount}{" "}
+                {p.followerCount === 1
+                  ? t(locale, "people.follower")
+                  : t(locale, "people.followers")}
               </p>
             </div>
-            <FollowButton followeeId={p.id} initialFollowing={false} path={path} />
+            <FollowButton followeeId={p.id} initialFollowing={false} path={path} locale={locale} />
           </div>
         ))}
       </div>

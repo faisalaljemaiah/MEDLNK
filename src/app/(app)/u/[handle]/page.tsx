@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
-import { getViewer } from "@/lib/auth";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getProfileByHandle } from "@/lib/profile";
+import { t } from "@/lib/i18n";
 import { Avatar } from "@/components/avatar";
 import { SettingsIcon } from "@/components/icons";
 import { FollowButton } from "@/components/follow-button";
@@ -18,11 +19,11 @@ import { StreakCard } from "@/components/home/streak-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 
 const TABS = [
-  { key: "posts", label: "Posts" },
+  { key: "posts", labelKey: "profile.tabPosts" },
   // "Marked", not "Liked": 0010 replaced the bare like with the three
   // clinical-value reactions, and this tab collects all of them.
-  { key: "marked", label: "Marked" },
-  { key: "saved", label: "Saved" },
+  { key: "marked", labelKey: "profile.tabMarked" },
+  { key: "saved", labelKey: "profile.tabSaved" },
 ] as const;
 
 export default async function ProfilePage({
@@ -40,7 +41,11 @@ export default async function ProfilePage({
   const { handle } = await params;
   const { tab: rawTab, resolved, uq, cq } = await searchParams;
   const supabase = await createClient();
-  const user = await getViewer();
+  const [user, viewerProfile] = await Promise.all([
+    getViewer(),
+    getViewerProfile(),
+  ]);
+  const locale = viewerProfile?.locale ?? "en";
 
   const data = await getProfileByHandle(supabase, handle, user?.id ?? null);
   if (!data) notFound();
@@ -86,15 +91,15 @@ export default async function ProfilePage({
   // nothing ever links here in the first place.
   if (profile.is_admin) notFound();
 
-  const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "posts";
+  const tab = TABS.some((tb) => tb.key === rawTab) ? rawTab! : "posts";
   const visibleCases =
     tab === "marked" ? markedCases : tab === "saved" ? savedCases : cases;
   const emptyMessage =
     tab === "marked"
-      ? "Nothing marked yet. 💡 🧠 ⚠️ on a case and it collects here."
+      ? t(locale, "profile.emptyMarked")
       : tab === "saved"
-        ? "No saved cases yet."
-        : "No cases shared yet.";
+        ? t(locale, "profile.emptySaved")
+        : t(locale, "profile.emptyPosts");
 
   return (
     <div>
@@ -114,7 +119,7 @@ export default async function ProfilePage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold text-text">
-              {profile.full_name || "(no name yet)"}
+              {profile.full_name || t(locale, "profile.noNameYet")}
               {profile.verified && <VerifiedBadge tier={profile.badge_tier} />}
             </p>
             <p className="font-label text-sm text-muted">
@@ -135,7 +140,7 @@ export default async function ProfilePage({
                   href="/onboarding"
                   className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
                 >
-                  Edit profile
+                  {t(locale, "profile.editProfile")}
                 </Link>
                 <Link
                   href="/settings"
@@ -150,20 +155,21 @@ export default async function ProfilePage({
             <div className="flex min-w-0 flex-col items-end gap-2">
               <div className="flex items-center gap-2">
                 {viewerHasBlocked ? (
-                  <p className="text-xs text-muted">You&apos;ve blocked this account.</p>
+                  <p className="text-xs text-muted">{t(locale, "profile.blocked")}</p>
                 ) : (
                   <>
                     <FollowButton
                       followeeId={profile.id}
                       initialFollowing={viewerFollows}
                       path={path}
+                      locale={locale}
                     />
                     <form action={startConversationAction.bind(null, profile.id)}>
                       <button
                         type="submit"
                         className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text transition-[border-color,transform] duration-150 ease-out active:scale-95"
                       >
-                        Message
+                        {t(locale, "profile.message")}
                       </button>
                     </form>
                   </>
@@ -181,11 +187,11 @@ export default async function ProfilePage({
         <div className="mt-3 flex gap-2">
           <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
             <span className="font-medium text-text">{followerCount}</span>{" "}
-            followers
+            {t(locale, "profile.followers")}
           </span>
           <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
             <span className="font-medium text-text">{followingCount}</span>{" "}
-            following
+            {t(locale, "profile.following")}
           </span>
         </div>
       </div>
@@ -204,18 +210,18 @@ export default async function ProfilePage({
 
       {isOwnProfile && (
         <div className="flex border-t border-line">
-          {TABS.map((t) => (
+          {TABS.map((tb) => (
             <Link
-              key={t.key}
-              href={t.key === "posts" ? path : `${path}?tab=${t.key}`}
+              key={tb.key}
+              href={tb.key === "posts" ? path : `${path}?tab=${tb.key}`}
               className={clsx(
                 "flex-1 border-b-2 py-2.5 text-center text-sm font-medium transition-colors duration-150",
-                tab === t.key
+                tab === tb.key
                   ? "border-text text-text"
                   : "border-transparent text-muted hover:text-text",
               )}
             >
-              {t.label}
+              {t(locale, tb.labelKey)}
             </Link>
           ))}
         </div>
@@ -233,7 +239,7 @@ export default async function ProfilePage({
           </p>
         ) : (
           visibleCases.map((c) => (
-            <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} />
+            <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} locale={locale} />
           ))
         )}
       </div>

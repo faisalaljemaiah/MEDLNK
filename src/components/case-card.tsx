@@ -9,11 +9,14 @@ import { isVideoUrl } from "@/lib/media";
 import { timeAgo } from "@/lib/time";
 import type { FeedCase } from "@/lib/cases";
 import { VerifiedBadge } from "@/components/verified-badge";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 export function CaseCard({
   feedCase,
   path,
   viewerId = null,
+  locale = "en",
 }: {
   feedCase: FeedCase;
   path: string;
@@ -22,6 +25,7 @@ export function CaseCard({
    *  post, deep-linking straight to the existing timeline composer on the
    *  case page (CaseTimeline) rather than duplicating that UI here. */
   viewerId?: string | null;
+  locale?: Locale;
 }) {
   const caseHref = feedCase.case_number ? `/case/${feedCase.case_number}` : "#";
   const typeMeta = caseTypeMeta(feedCase.case_type);
@@ -50,7 +54,7 @@ export function CaseCard({
             href={feedCase.author?.handle ? `/u/${feedCase.author.handle}` : "#"}
             className="truncate text-sm font-medium text-text hover:underline"
           >
-            {feedCase.author?.full_name ?? "Unknown clinician"}
+            {feedCase.author?.full_name ?? t(locale, "common.unknownClinician")}
             {feedCase.author?.verified && (
               <VerifiedBadge tier={feedCase.author.badge_tier} />
             )}
@@ -147,7 +151,7 @@ export function CaseCard({
           href={caseHref}
           className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
         >
-          Let&apos;s dive deep
+          {t(locale, "caseCard.diveDeep")}
           <span
             aria-hidden
             className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
@@ -160,7 +164,7 @@ export function CaseCard({
             href={`${caseHref}#case-timeline`}
             className="text-sm font-medium text-muted hover:text-text hover:underline"
           >
-            + Add an update
+            {t(locale, "caseCard.addUpdate")}
           </Link>
         )}
       </div>

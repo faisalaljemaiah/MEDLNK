@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getViewer } from "@/lib/auth";
+import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { getDiscoverCommunities } from "@/lib/communities";
 import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
@@ -8,6 +8,7 @@ import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
 import { CommunityBubbles } from "@/components/community-bubbles";
 import { CompassIcon } from "@/components/icons";
+import { t } from "@/lib/i18n";
 
 type SearchParams = {
   q?: string;
@@ -45,10 +46,12 @@ export default async function SearchPage({
   const supabase = await createClient();
   const user = await getViewer();
 
-  const [allCases, communities] = await Promise.all([
+  const [allCases, communities, profile] = await Promise.all([
     getFeedCases(supabase, user?.id ?? null),
     getDiscoverCommunities(supabase, user?.id ?? null),
+    user ? getViewerProfile() : Promise.resolve(null),
   ]);
+  const locale = profile?.locale ?? "en";
 
   // Built from what's actually posted rather than a hardcoded list, so the
   // dropdown can't offer a specialty with nothing behind it.
@@ -97,7 +100,7 @@ export default async function SearchPage({
           (trending pills, specialty pills, filter chips) keeps working
           unchanged. Only the on-screen framing changed. */}
       <div className="px-4 pt-4">
-        <h1 className="font-headline text-xl text-text">Discover</h1>
+        <h1 className="font-headline text-xl text-text">{t(locale, "search.title")}</h1>
       </div>
 
       <CommunityBubbles communities={communities} path="/search" />
@@ -115,7 +118,7 @@ export default async function SearchPage({
             type="text"
             name="q"
             defaultValue={q ?? ""}
-            placeholder="Search cases, tags, specialties…"
+            placeholder={t(locale, "search.placeholder")}
             autoFocus
             className="w-full rounded-full bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:outline-none"
           />
@@ -128,7 +131,7 @@ export default async function SearchPage({
             aria-label="Specialty"
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
           >
-            <option value="">Any specialty</option>
+            <option value="">{t(locale, "search.anySpecialty")}</option>
             {specialties.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -142,7 +145,7 @@ export default async function SearchPage({
             aria-label="Post type"
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
           >
-            <option value="">Any type</option>
+            <option value="">{t(locale, "search.anyType")}</option>
             {CASE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
@@ -154,7 +157,7 @@ export default async function SearchPage({
             type="text"
             name="tag"
             defaultValue={tagFilter}
-            placeholder="#tag"
+            placeholder={t(locale, "search.tagPlaceholder")}
             aria-label="Tag"
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text placeholder:text-muted focus:border-accent focus:outline-none"
           />
@@ -163,7 +166,7 @@ export default async function SearchPage({
             type="submit"
             className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
           >
-            Search
+            {t(locale, "search.searchButton")}
           </button>
         </div>
       </form>
@@ -200,13 +203,13 @@ export default async function SearchPage({
           className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
         >
           <CompassIcon width={13} height={13} strokeWidth={2.25} />
-          Browse the Global Case Exchange →
+          {t(locale, "search.browseExchange")}
         </Link>
       </div>
 
       {hasFilter && (
         <p className="px-4 pb-3 text-xs text-muted">
-          {results.length} {results.length === 1 ? "case" : "cases"}
+          {results.length} {results.length === 1 ? t(locale, "common.case") : t(locale, "common.cases")}
           {activeCount > 0 && (
             <>
               {" · "}
@@ -224,16 +227,15 @@ export default async function SearchPage({
 
       {!hasFilter ? (
         <p className="px-4 py-10 text-center text-sm text-muted">
-          Search by title, tag or specialty — or narrow by specialty, post type
-          and tag without typing anything.
+          {t(locale, "search.emptyPrompt")}
         </p>
       ) : results.length === 0 ? (
         <p className="px-4 py-10 text-center text-sm text-muted">
-          Nothing matches those filters.
+          {t(locale, "search.noResults")}
         </p>
       ) : (
         results.map((c) => (
-          <CaseCard key={c.id} feedCase={c} path="/search" viewerId={user?.id ?? null} />
+          <CaseCard key={c.id} feedCase={c} path="/search" viewerId={user?.id ?? null} locale={locale} />
         ))
       )}
     </div>
