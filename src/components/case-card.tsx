@@ -9,7 +9,7 @@ import { isVideoUrl } from "@/lib/media";
 import { timeAgo } from "@/lib/time";
 import type { FeedCase } from "@/lib/cases";
 import { VerifiedBadge } from "@/components/verified-badge";
-import { t } from "@/lib/i18n";
+import { t, caseTypeBadge } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
 
 export function CaseCard({
@@ -77,7 +77,7 @@ export function CaseCard({
             typeMeta.badgeClass,
           )}
         >
-          {typeMeta.badge}
+          {caseTypeBadge(locale, typeMeta.value) ?? typeMeta.badge}
         </span>
       )}
 

@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { deleteAccountAction } from "@/app/actions/account";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
-export function DeleteAccount() {
+export function DeleteAccount({ locale = "en" }: { locale?: Locale }) {
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +18,7 @@ export function DeleteAccount() {
         onClick={() => setOpen(true)}
         className="text-left text-sm font-medium text-danger hover:underline"
       >
-        Delete account
+        {t(locale, "settings.deleteAccount")}
       </button>
     );
   }
@@ -24,11 +26,12 @@ export function DeleteAccount() {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-danger/40 bg-danger/5 p-3">
       <p className="text-xs leading-relaxed text-text">
-        This permanently deletes your account and everything tied to it —
-        your posts, comments, messages, and reactions. There is no undo.
+        {t(locale, "settings.deleteAccountWarning")}
       </p>
       <label className="text-xs text-muted">
-        Type <span className="font-medium text-text">DELETE</span> to confirm
+        {t(locale, "settings.deleteAccountConfirmPrefix")}{" "}
+        <span className="font-medium text-text">DELETE</span>{" "}
+        {t(locale, "settings.deleteAccountConfirmSuffix")}
       </label>
       <input
         type="text"
@@ -57,7 +60,9 @@ export function DeleteAccount() {
           }
           className="rounded-full bg-danger px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
         >
-          {isPending ? "Deleting…" : "Permanently delete"}
+          {isPending
+            ? t(locale, "settings.deleteAccountDeleting")
+            : t(locale, "settings.deleteAccountPermanently")}
         </button>
         <button
           type="button"
@@ -68,7 +73,7 @@ export function DeleteAccount() {
           }}
           className="rounded-full border border-line px-4 py-1.5 text-sm font-medium text-text"
         >
-          Cancel
+          {t(locale, "common.cancel")}
         </button>
       </div>
     </div>

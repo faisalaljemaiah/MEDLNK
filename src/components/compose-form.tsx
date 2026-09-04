@@ -8,6 +8,8 @@ import { polishDraftAction, type PolishedField } from "@/app/actions/ai";
 import { CASE_TYPES, NEAR_MISS_PROMPTS, caseTypeMeta } from "@/lib/case-types";
 import { countryName } from "@/lib/countries";
 import { toUploadableImage } from "@/lib/heic";
+import { t, caseTypeLabel, caseTypeHint, nearMissPromptLabel } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AIButton } from "@/components/ui/ai-button";
@@ -28,14 +30,14 @@ const POLISH_FIELDS = [
   "lesson",
 ] as const;
 
-const FIELD_LABELS: Record<string, string> = {
-  title: "Title",
-  short_caption: "Short caption",
-  presentation: "Presentation",
-  tricky: "What was tricky",
-  actions: "What we did",
-  lesson: "The lesson",
-};
+const FIELD_LABEL_KEYS = {
+  title: "compose.titleLabel",
+  short_caption: "compose.shortCaptionLabel",
+  presentation: "compose.sectionPresentation",
+  tricky: "compose.sectionTricky",
+  actions: "compose.sectionActions",
+  lesson: "compose.sectionLesson",
+} as const;
 
 function Textarea({
   label,
@@ -125,6 +127,7 @@ function FormSection({
 export function ComposeForm({
   initialType = "clinical_case",
   viewerCountryCode = null,
+  locale = "en",
 }: {
   /** Preselects the post-type picker — e.g. a Home page quick-create action
    *  linking in as `/compose?type=what_would_you_do`. Falls back to the
@@ -134,6 +137,7 @@ export function ComposeForm({
   /** Display-only (0026) — the case's actual country is set server-side
    *  from the author's profile, never from anything this form submits. */
   viewerCountryCode?: string | null;
+  locale?: Locale;
 }) {
   const [state, action] = useActionState(createCaseAction, undefined);
   const formRef = useRef<HTMLFormElement>(null);
@@ -204,19 +208,21 @@ export function ComposeForm({
       ? trimmed.length > VIDEO_TITLE_MAX
         ? `${trimmed.slice(0, VIDEO_TITLE_MAX)}…`
         : trimmed
-      : "Video";
+      : t(locale, "compose.videoLabel");
   }
 
   const typeMeta = caseTypeMeta(caseType);
   const showFullBody = !typeMeta.shortForm && !typeMeta.usesNearMiss;
 
   const FULL_BODY_SECTIONS = [
-    { name: "presentation", label: "Presentation" },
-    { name: "tricky", label: "What was tricky" },
-    { name: "actions", label: "What we did" },
+    { name: "presentation", label: t(locale, "compose.sectionPresentation") },
+    { name: "tricky", label: t(locale, "compose.sectionTricky") },
+    { name: "actions", label: t(locale, "compose.sectionActions") },
     {
       name: "lesson",
-      label: typeMeta.usesStagedReveal ? "The lesson (hidden until reveal)" : "The lesson",
+      label: typeMeta.usesStagedReveal
+        ? t(locale, "compose.sectionLessonHidden")
+        : t(locale, "compose.sectionLesson"),
     },
   ] as const;
 
@@ -254,7 +260,7 @@ export function ComposeForm({
     setPolishNote(null);
 
     if (Object.keys(fields).length === 0) {
-      setPolishNote("Write something first and I'll tidy it up.");
+      setPolishNote(t(locale, "compose.writeSomethingFirst"));
       return;
     }
 
@@ -333,9 +339,11 @@ export function ComposeForm({
               <span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent">
                 <ReelIcon width={22} height={22} strokeWidth={2} />
               </span>
-              <span className="text-sm font-medium text-text">Choose a video</span>
+              <span className="text-sm font-medium text-text">
+                {t(locale, "compose.chooseVideo")}
+              </span>
               <span className="px-6 text-xs text-muted">
-                From your camera roll — MP4, WebM or MOV, up to 50MB.
+                {t(locale, "compose.chooseVideoHint")}
               </span>
             </>
           )}
@@ -351,7 +359,7 @@ export function ComposeForm({
         </label>
 
         <Textarea
-          label="Caption"
+          label={t(locale, "compose.captionLabel")}
           name="short_caption"
           placeholder="A sentence or two — what you saw and why it stuck with you."
           onChange={handleCaptionInputForTitle}
@@ -359,9 +367,8 @@ export function ComposeForm({
         />
 
         <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
-          <span className="font-medium text-text">Keep it de-identified.</span>{" "}
-          No patient names, medical record numbers, addresses, or footage that
-          could identify someone.
+          <span className="font-medium text-text">{t(locale, "compose.deidentifyLabel")}</span>{" "}
+          {t(locale, "compose.deidentifyBodyVideo")}
         </p>
 
         {error && (
@@ -382,10 +389,10 @@ export function ComposeForm({
                 }}
                 className="rounded-lg border border-warning/50 px-3.5 py-2 text-sm text-warning"
               >
-                Post anyway
+                {t(locale, "compose.postAnyway")}
               </button>
               <p className="self-center text-xs text-muted">
-                or edit the caption and post again
+                {t(locale, "compose.editCaptionAndPostAgain")}
               </p>
             </div>
           </div>
@@ -400,18 +407,13 @@ export function ComposeForm({
             className="mt-0.5 size-3.5 shrink-0 accent-[var(--danger)]"
           />
           <span>
-            I confirm this post contains no real patient names, medical record
-            numbers, identifying footage, or other personally identifying
-            information, and that everything I&apos;ve written is accurate to
-            the best of my knowledge. I understand I am solely responsible for
-            what I post, and that if patient-identifiable information — in
-            text or in the video — is found, my account will be{" "}
-            <span className="font-medium">permanently blocked from Asyashare</span>{" "}
-            — I will not be able to sign up again.
+            {t(locale, "compose.legalPrefixVideo")}{" "}
+            <span className="font-medium">{t(locale, "compose.legalBold")}</span>{" "}
+            {t(locale, "compose.legalSuffix")}
           </span>
         </label>
 
-        <SubmitButton disabled={!agreedToTerms}>Post</SubmitButton>
+        <SubmitButton disabled={!agreedToTerms}>{t(locale, "compose.postButton")}</SubmitButton>
       </form>
     );
   }
@@ -436,41 +438,39 @@ export function ComposeForm({
           className="absolute left-[13px] top-3.5 bottom-3.5 w-px bg-accent opacity-30"
         />
 
-        <FormSection number="01" title="The Case">
+        <FormSection number="01" title={t(locale, "compose.sectionTheCase")}>
           <div className="flex flex-col gap-1.5">
             <span className="font-label text-xs uppercase tracking-wide text-muted">
-              Post type
+              {t(locale, "compose.postTypeLabel")}
             </span>
             <div className="flex flex-wrap gap-2">
-              {CASE_TYPES.map((t) => (
+              {CASE_TYPES.map((ct) => (
                 <button
-                  key={t.value}
+                  key={ct.value}
                   type="button"
-                  onClick={() => handleTypeChange(t.value)}
-                  aria-pressed={caseType === t.value}
+                  onClick={() => handleTypeChange(ct.value)}
+                  aria-pressed={caseType === ct.value}
                   className={clsx(
                     "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
-                    caseType === t.value
+                    caseType === ct.value
                       ? "border-accent bg-accent/10 font-medium text-accent"
                       : "border-line text-muted hover:text-text",
                   )}
                 >
-                  {t.label}
+                  {caseTypeLabel(locale, ct.value)}
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-xs text-muted">{typeMeta.hint}</p>
+            <p className="mt-1 text-xs text-muted">{caseTypeHint(locale, typeMeta.value)}</p>
           </div>
 
           <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
-            <span className="font-medium text-text">Keep it de-identified.</span> No
-            patient names, medical record numbers, exact dates of birth, addresses,
-            phone numbers, or photographs that could identify someone. Post cases as
-            educational discussion — not advice about a specific patient.
+            <span className="font-medium text-text">{t(locale, "compose.deidentifyLabel")}</span>{" "}
+            {t(locale, "compose.deidentifyBody")}
           </p>
 
           <TextField
-            label="Title"
+            label={t(locale, "compose.titleLabel")}
             name="title"
             placeholder={
               typeMeta.isQuote ? "On staying humble" : "Hydralazine, meet hydroxyzine"
@@ -478,7 +478,13 @@ export function ComposeForm({
             required
           />
           <Textarea
-            label={typeMeta.isQuote ? "The quote" : typeMeta.shortForm ? "What happened?" : "Short caption"}
+            label={
+              typeMeta.isQuote
+                ? t(locale, "compose.theQuoteLabel")
+                : typeMeta.shortForm
+                  ? t(locale, "compose.whatHappenedLabel")
+                  : t(locale, "compose.shortCaptionLabel")
+            }
             name="short_caption"
             placeholder={
               typeMeta.isQuote
@@ -493,11 +499,9 @@ export function ComposeForm({
           {showFullBody && (
             <div className="rounded-xl border border-line bg-surface-2/40 p-4">
               <p className="font-label mb-1 text-xs uppercase tracking-wide text-accent">
-                Full case
+                {t(locale, "compose.fullCaseTitle")}
               </p>
-              <p className="mb-3 text-xs text-muted">
-                Add whichever sections fit this case — pick at least one.
-              </p>
+              <p className="mb-3 text-xs text-muted">{t(locale, "compose.fullCaseHint")}</p>
               <div className="flex flex-wrap gap-2">
                 {FULL_BODY_SECTIONS.map((s) => (
                   <SectionChip
@@ -520,7 +524,7 @@ export function ComposeForm({
                     s.name === "actions" ? (
                       <Textarea
                         key="actions"
-                        label="What we did (one action per line)"
+                        label={t(locale, "compose.sectionActionsLines")}
                         name="actions"
                         placeholder={"Confirmed the order against the indication\nCalled the prescriber to verify intent"}
                         required
@@ -537,16 +541,14 @@ export function ComposeForm({
           {typeMeta.usesNearMiss && (
             <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
               <p className="font-label mb-1 text-xs uppercase tracking-wide text-warning">
-                Patient safety
+                {t(locale, "compose.patientSafetyTitle")}
               </p>
-              <p className="mb-3 text-xs text-muted">
-                Add whichever prompts apply here — pick at least one.
-              </p>
+              <p className="mb-3 text-xs text-muted">{t(locale, "compose.patientSafetyHint")}</p>
               <div className="flex flex-wrap gap-2">
                 {NEAR_MISS_PROMPTS.map((prompt) => (
                   <SectionChip
                     key={prompt.name}
-                    label={prompt.label}
+                    label={nearMissPromptLabel(locale, prompt.name)}
                     active={nearMissSections.includes(prompt.name)}
                     onClick={() =>
                       setNearMissSections((prev) =>
@@ -564,7 +566,7 @@ export function ComposeForm({
                     (prompt) => (
                       <Textarea
                         key={prompt.name}
-                        label={prompt.label}
+                        label={nearMissPromptLabel(locale, prompt.name)}
                         name={`near_miss_${prompt.name}`}
                         required
                       />
@@ -578,19 +580,16 @@ export function ComposeForm({
           {typeMeta.usesComparison && (
             <div className="rounded-xl border border-line bg-surface-2/50 p-4">
               <p className="font-label mb-1 text-xs uppercase tracking-wide text-muted">
-                The two cases
+                {t(locale, "compose.twoCasesTitle")}
               </p>
-              <p className="mb-3 text-xs text-muted">
-                Reference cases already on Asyashare by their number, so readers can
-                open each one in full. Yours or anyone else&apos;s.
-              </p>
+              <p className="mb-3 text-xs text-muted">{t(locale, "compose.twoCasesHint")}</p>
               <div className="flex flex-col gap-4">
                 {/* Stacked on a phone: two short fields side by side at 360px
                     leaves neither wide enough to read what you typed. */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:gap-3">
                   <div className="min-w-0 flex-1">
                     <TextField
-                      label="First case"
+                      label={t(locale, "compose.firstCase")}
                       name="compare_left"
                       placeholder="CASE-0006"
                       required
@@ -598,7 +597,7 @@ export function ComposeForm({
                   </div>
                   <div className="min-w-0 flex-1">
                     <TextField
-                      label="Second case"
+                      label={t(locale, "compose.secondCase")}
                       name="compare_right"
                       placeholder="CASE-0012"
                       required
@@ -606,7 +605,7 @@ export function ComposeForm({
                   </div>
                 </div>
                 <Textarea
-                  label="What changes the management?"
+                  label={t(locale, "compose.whatChangesManagement")}
                   name="compare_what"
                   required
                 />
@@ -618,14 +617,16 @@ export function ComposeForm({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-label mb-1 text-xs uppercase tracking-wide text-accent">
-                  The question (optional)
+                  {t(locale, "compose.questionTitle")}
                 </p>
-                <p className="text-xs text-muted">
-                  Readers commit to an answer before they see the rest of the case.
-                </p>
+                <p className="text-xs text-muted">{t(locale, "compose.questionHint")}</p>
               </div>
               <SectionChip
-                label={includeQuestion ? "Remove" : "+ Add"}
+                label={
+                  includeQuestion
+                    ? t(locale, "compose.questionRemove")
+                    : t(locale, "compose.questionAdd")
+                }
                 active={includeQuestion}
                 onClick={() => setIncludeQuestion((v) => !v)}
               />
@@ -633,7 +634,7 @@ export function ComposeForm({
             {includeQuestion && (
               <div className="mt-4 flex flex-col gap-4">
                 <Textarea
-                  label="What are you asking?"
+                  label={t(locale, "compose.questionPromptLabel")}
                   name="question_prompt"
                   placeholder="What would you do?"
                   required
@@ -641,7 +642,7 @@ export function ComposeForm({
 
                 <div className="flex flex-col gap-2">
                   <span className="font-label text-xs uppercase tracking-wide text-muted">
-                    Answers — select the correct one
+                    {t(locale, "compose.answersLabel")}
                   </span>
                   {[0, 1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -658,7 +659,11 @@ export function ComposeForm({
                       <input
                         type="text"
                         name={`option_${i}`}
-                        placeholder={i < 2 ? "Required" : "Optional"}
+                        placeholder={
+                          i < 2
+                            ? t(locale, "compose.optionRequired")
+                            : t(locale, "compose.optionOptional")
+                        }
                         className="flex-1 border-0 border-b-2 border-line bg-transparent px-0.5 py-2 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
                       />
                     </div>
@@ -666,11 +671,11 @@ export function ComposeForm({
                 </div>
 
                 <Textarea
-                  label="Explanation (shown after they answer)"
+                  label={t(locale, "compose.explanationLabel")}
                   name="question_explanation"
                 />
-                <Textarea label="Clinical reasoning" name="question_reasoning" />
-                <Textarea label="References / evidence" name="question_evidence" />
+                <Textarea label={t(locale, "compose.reasoningLabel")} name="question_reasoning" />
+                <Textarea label={t(locale, "compose.evidenceLabel")} name="question_evidence" />
 
                 <label className="flex items-center gap-2 text-sm text-muted">
                   <input
@@ -678,32 +683,32 @@ export function ComposeForm({
                     name="allow_change"
                     className="h-4 w-4 accent-[var(--accent)]"
                   />
-                  Let readers change their answer after seeing the results
+                  {t(locale, "compose.allowChangeLabel")}
                 </label>
               </div>
             )}
           </div>
         </FormSection>
 
-        <FormSection number="02" title="Clinical Context">
+        <FormSection number="02" title={t(locale, "compose.sectionClinicalContext")}>
           <TextField
-            label="Specialty"
+            label={t(locale, "compose.specialtyLabel")}
             name="specialty"
             placeholder="Internal Medicine"
             required={!typeMeta.shortForm}
           />
           <TextField
-            label="Tags (comma separated)"
+            label={t(locale, "compose.tagsLabel")}
             name="tags"
             placeholder="LASA, medication-error"
             required={!typeMeta.shortForm}
           />
         </FormSection>
 
-        <FormSection number="03" title="Global Exchange">
+        <FormSection number="03" title={t(locale, "compose.sectionGlobalExchange")}>
           <div className="flex flex-col gap-1.5">
             <span className="font-label text-xs uppercase tracking-wide text-muted">
-              Country
+              {t(locale, "compose.countryLabel")}
             </span>
             {viewerCountryCode ? (
               <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-2.5 text-sm text-text">
@@ -711,29 +716,25 @@ export function ComposeForm({
               </p>
             ) : (
               <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-2.5 text-xs text-muted">
-                Not set —{" "}
+                {t(locale, "compose.countryNotSet")}{" "}
                 <Link href="/onboarding" className="text-accent hover:underline">
-                  add your country to your profile
+                  {t(locale, "compose.countryNotSetLink")}
                 </Link>{" "}
-                to include this case in the Global Case Exchange.
+                {t(locale, "compose.countryNotSetSuffix")}
               </p>
             )}
-            <p className="text-xs text-muted">
-              Taken from your profile, not picked per case — so every case is
-              tagged with where its author actually practices, never a
-              hospital or unit.
-            </p>
+            <p className="text-xs text-muted">{t(locale, "compose.countryHint")}</p>
           </div>
         </FormSection>
 
-        <FormSection number="04" title="Supporting Material">
+        <FormSection number="04" title={t(locale, "compose.sectionSupportingMaterial")}>
           {typeMeta.requiresVideo ? (
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="video"
                 className="font-label text-xs uppercase tracking-wide text-muted"
               >
-                Video
+                {t(locale, "compose.videoLabel")}
               </label>
               <input
                 id="video"
@@ -743,21 +744,21 @@ export function ComposeForm({
                 required
                 className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
               />
-              <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
+              <p className="text-xs text-muted">{t(locale, "compose.videoHint")}</p>
             </div>
           ) : showFullBody ? (
             <>
               <input type="hidden" name="media_kind" value={mediaKind} />
               <div className="flex flex-col gap-1.5">
                 <span className="font-label text-xs uppercase tracking-wide text-muted">
-                  Attach (optional)
+                  {t(locale, "compose.attachLabel")}
                 </span>
                 <div className="flex gap-2">
                   {(
                     [
-                      { key: "none", label: "None" },
-                      { key: "photo", label: "Photo" },
-                      { key: "video", label: "Video" },
+                      { key: "none", label: t(locale, "compose.attachNone") },
+                      { key: "photo", label: t(locale, "compose.attachPhoto") },
+                      { key: "video", label: t(locale, "compose.attachVideo") },
                     ] as const
                   ).map((opt) => (
                     <button
@@ -784,7 +785,7 @@ export function ComposeForm({
                     htmlFor="image"
                     className="font-label text-xs uppercase tracking-wide text-muted"
                   >
-                    Photo
+                    {t(locale, "compose.photoLabel")}
                   </label>
                   <input
                     ref={imageInputRef}
@@ -796,7 +797,7 @@ export function ComposeForm({
                     className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
                   />
                   {convertingImage && (
-                    <p className="text-xs text-muted">Converting photo…</p>
+                    <p className="text-xs text-muted">{t(locale, "compose.convertingPhoto")}</p>
                   )}
                 </div>
               )}
@@ -807,7 +808,7 @@ export function ComposeForm({
                     htmlFor="video"
                     className="font-label text-xs uppercase tracking-wide text-muted"
                   >
-                    Video
+                    {t(locale, "compose.videoLabel")}
                   </label>
                   <input
                     id="video"
@@ -816,7 +817,7 @@ export function ComposeForm({
                     accept="video/mp4,video/webm,video/quicktime,.mov"
                     className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
                   />
-                  <p className="text-xs text-muted">MP4, WebM or MOV, up to 50MB.</p>
+                  <p className="text-xs text-muted">{t(locale, "compose.videoHint")}</p>
                 </div>
               )}
 
@@ -826,7 +827,7 @@ export function ComposeForm({
                     htmlFor="media_placement"
                     className="font-label text-xs uppercase tracking-wide text-muted"
                   >
-                    Place it under
+                    {t(locale, "compose.placeUnder")}
                   </label>
                   <select
                     id="media_placement"
@@ -835,10 +836,10 @@ export function ComposeForm({
                     onChange={(e) => setMediaPlacement(e.target.value)}
                     className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
                   >
-                    <option value="top">Top of the case</option>
+                    <option value="top">{t(locale, "compose.topOfCase")}</option>
                     {FULL_BODY_SECTIONS.filter((s) => bodySections.includes(s.name)).map((s) => (
                       <option key={s.name} value={s.name}>
-                        {s.name === "actions" ? "What we did" : s.label}
+                        {s.name === "actions" ? t(locale, "compose.sectionActions") : s.label}
                       </option>
                     ))}
                   </select>
@@ -851,7 +852,9 @@ export function ComposeForm({
                 htmlFor="image"
                 className="font-label text-xs uppercase tracking-wide text-muted"
               >
-                {typeMeta.requiresImage ? "Photo" : "Image (optional)"}
+                {typeMeta.requiresImage
+                  ? t(locale, "compose.photoLabel")
+                  : t(locale, "compose.imageOptionalLabel")}
               </label>
               <input
                 ref={imageInputRef}
@@ -864,7 +867,7 @@ export function ComposeForm({
                 className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text"
               />
               {convertingImage && (
-                <p className="text-xs text-muted">Converting photo…</p>
+                <p className="text-xs text-muted">{t(locale, "compose.convertingPhoto")}</p>
               )}
             </div>
           )}
@@ -876,12 +879,10 @@ export function ComposeForm({
           <AIButton
             pending={isPolishing}
             onClick={handlePolish}
-            idleLabel="Check spelling & clarity"
-            pendingLabel="Checking…"
+            idleLabel={t(locale, "compose.checkSpelling")}
+            pendingLabel={t(locale, "compose.checking")}
           />
-          <p className="text-xs text-muted">
-            Suggests wording only — you approve every change.
-          </p>
+          <p className="text-xs text-muted">{t(locale, "compose.polishHint")}</p>
         </div>
         {polishNote && <p className="text-xs text-muted">{polishNote}</p>}
       </div>
@@ -890,8 +891,13 @@ export function ComposeForm({
         <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-text">
-              {suggestions.length} suggested{" "}
-              {suggestions.length === 1 ? "edit" : "edits"}
+              {t(
+                locale,
+                suggestions.length === 1
+                  ? "compose.suggestedEditsOne"
+                  : "compose.suggestedEditsMany",
+                { n: String(suggestions.length) },
+              )}
             </p>
             <div className="flex gap-2">
               <button
@@ -899,14 +905,14 @@ export function ComposeForm({
                 onClick={acceptAll}
                 className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground"
               >
-                Use all
+                {t(locale, "compose.useAll")}
               </button>
               <button
                 type="button"
                 onClick={() => setSuggestions([])}
                 className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted"
               >
-                Dismiss
+                {t(locale, "compose.dismiss")}
               </button>
             </div>
           </div>
@@ -917,7 +923,9 @@ export function ComposeForm({
               className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface p-3"
             >
               <p className="font-label text-xs uppercase tracking-wide text-muted">
-                {FIELD_LABELS[s.field] ?? s.field}
+                {s.field in FIELD_LABEL_KEYS
+                  ? t(locale, FIELD_LABEL_KEYS[s.field as keyof typeof FIELD_LABEL_KEYS])
+                  : s.field}
               </p>
               <p className="whitespace-pre-wrap text-sm text-muted line-through decoration-danger/40">
                 {s.before}
@@ -925,10 +933,7 @@ export function ComposeForm({
               <p className="whitespace-pre-wrap text-sm text-text">{s.after}</p>
 
               {s.numbersChanged && (
-                <p className="text-xs text-warning">
-                  ⚠ A number changed in this edit — check any dose or value
-                  before using it.
-                </p>
+                <p className="text-xs text-warning">{t(locale, "compose.numberChangedWarning")}</p>
               )}
 
               <div className="flex gap-2 pt-1">
@@ -937,7 +942,7 @@ export function ComposeForm({
                   onClick={() => acceptOne(s.field)}
                   className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent"
                 >
-                  Use this
+                  {t(locale, "compose.useThis")}
                 </button>
                 <button
                   type="button"
@@ -948,7 +953,7 @@ export function ComposeForm({
                   }
                   className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted"
                 >
-                  Keep mine
+                  {t(locale, "compose.keepMine")}
                 </button>
               </div>
             </div>
@@ -974,10 +979,10 @@ export function ComposeForm({
               }}
               className="rounded-lg border border-warning/50 px-3.5 py-2 text-sm text-warning"
             >
-              Post anyway
+              {t(locale, "compose.postAnyway")}
             </button>
             <p className="self-center text-xs text-muted">
-              or edit the fields above and post again
+              {t(locale, "compose.editAndPostAgain")}
             </p>
           </div>
         </div>
@@ -992,21 +997,16 @@ export function ComposeForm({
           className="mt-0.5 size-3.5 shrink-0 accent-[var(--danger)]"
         />
         <span>
-          I confirm this post contains no real patient names, medical record
-          numbers, identifying photographs, or other personally identifying
-          information, and that everything I&apos;ve written is accurate to
-          the best of my knowledge. I understand I am solely responsible for
-          what I post, and that if patient-identifiable information — in
-          text or in any photo or video — is found, my account will be{" "}
-          <span className="font-medium">permanently blocked from Asyashare</span>{" "}
-          — I will not be able to sign up again.
+          {t(locale, "compose.legalPrefixGeneral")}{" "}
+          <span className="font-medium">{t(locale, "compose.legalBold")}</span>{" "}
+          {t(locale, "compose.legalSuffix")}
         </span>
       </label>
 
       <SubmitButton disabled={convertingImage || !agreedToTerms}>
         {typeMeta.requiresImage || typeMeta.requiresVideo || typeMeta.isQuote
-          ? "Post"
-          : "Post case"}
+          ? t(locale, "compose.postButton")
+          : t(locale, "compose.postCaseButton")}
       </SubmitButton>
     </form>
   );

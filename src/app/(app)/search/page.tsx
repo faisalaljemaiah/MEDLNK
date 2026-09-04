@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { getDiscoverCommunities } from "@/lib/communities";
-import { CASE_TYPES, caseTypeMeta } from "@/lib/case-types";
+import { CASE_TYPES } from "@/lib/case-types";
 import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
 import { CommunityBubbles } from "@/components/community-bubbles";
 import { CompassIcon } from "@/components/icons";
-import { t } from "@/lib/i18n";
+import { t, caseTypeLabel } from "@/lib/i18n";
 
 type SearchParams = {
   q?: string;
@@ -146,9 +146,9 @@ export default async function SearchPage({
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
           >
             <option value="">{t(locale, "search.anyType")}</option>
-            {CASE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {CASE_TYPES.map((ct) => (
+              <option key={ct.value} value={ct.value}>
+                {caseTypeLabel(locale, ct.value)}
               </option>
             ))}
           </select>
@@ -215,7 +215,7 @@ export default async function SearchPage({
               {" · "}
               {[
                 specialtyFilter,
-                typeFilter ? caseTypeMeta(typeFilter).label : "",
+                typeFilter ? caseTypeLabel(locale, typeFilter) : "",
                 tagFilter ? `#${tagFilter}` : "",
               ]
                 .filter(Boolean)

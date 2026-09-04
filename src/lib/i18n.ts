@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/database.types";
+import type { CaseType, Locale } from "@/lib/database.types";
 
 export const LOCALES: { value: Locale; label: string; dir: "ltr" | "rtl" }[] = [
   { value: "en", label: "English", dir: "ltr" },
@@ -10,13 +10,14 @@ export function localeDir(locale: Locale): "ltr" | "rtl" {
 }
 
 /**
- * A bounded translation of Asyashare's most visible chrome — Home, the settings
- * page itself, primary navigation — not the whole app. Case bodies, comments,
- * admin tooling and the rest stay English regardless of locale; translating
- * user-generated clinical content is a different, much larger project than
- * "does switching language actually change what you see." This proves the
- * mechanism (a real persisted preference, RTL layout, real translated
- * strings) on the screens a reader hits first.
+ * Every app-authored string on Asyashare's built-in chrome — Home, Settings,
+ * the composer's post templates and their static labels/hints/buttons,
+ * Messages, Notifications, Search, profile, the Global Case Exchange — is
+ * translated through this dictionary. What stays English regardless of
+ * locale is user-generated content itself: the actual title/caption/body
+ * text a clinician typed into a case, comment or message, and admin-only
+ * tooling. Translating what someone wrote is a different, much larger
+ * project than translating the interface around it.
  *
  * Flat key → string per locale, looked up through t(). A key missing from a
  * non-English dict falls back to English rather than showing the raw key, so
@@ -123,6 +124,173 @@ const en = {
   "exchange.noCountries": "No cases have a country attached yet. Add one next time you post to put it on the map here.",
   "exchange.noneFromHere": "Nothing from here yet.",
   "exchange.from": "from",
+
+  "settings.preferences": "Preferences",
+  "settings.privacy": "Privacy",
+  "settings.blockedAccounts": "Blocked accounts",
+  "settings.unblock": "Unblock",
+  "settings.shortcuts": "Shortcuts",
+  "settings.consults": "Consults",
+  "settings.myAnalytics": "My Analytics",
+  "settings.learn": "Learn",
+  "settings.account": "Account",
+  "settings.editProfile": "Edit profile",
+  "settings.termsOfService": "Terms of Service",
+  "settings.privacyPolicy": "Privacy Policy",
+  "settings.contactReport": "Contact / report content",
+  "settings.signOut": "Sign out",
+  "settings.dangerZone": "Danger zone",
+  "settings.deleteAccount": "Delete account",
+  "settings.deleteAccountWarning": "This permanently deletes your account and everything tied to it — your posts, comments, messages, and reactions. There is no undo.",
+  "settings.deleteAccountConfirmPrefix": "Type",
+  "settings.deleteAccountConfirmSuffix": "to confirm",
+  "settings.deleteAccountDeleting": "Deleting…",
+  "settings.deleteAccountPermanently": "Permanently delete",
+
+  "common.cancel": "Cancel",
+
+  "caseType.clinicalCase.label": "Clinical case",
+  "caseType.clinicalCase.hint": "The standard write-up: presentation, what was tricky, what you did, the lesson.",
+  "caseType.whatWouldYouDo.label": "What would you do?",
+  "caseType.whatWouldYouDo.hint": "Readers commit to an answer before they see yours.",
+  "caseType.whatWouldYouDo.badge": "What would you do?",
+  "caseType.blindCase.label": "Blind case",
+  "caseType.blindCase.hint": "Hide the lesson until the reader has reasoned it through.",
+  "caseType.blindCase.badge": "Blind case",
+  "caseType.caseEvolution.label": "Case evolution",
+  "caseType.caseEvolution.hint": "Publish the case now, add updates as it unfolds.",
+  "caseType.caseEvolution.badge": "Evolving",
+  "caseType.nearMiss.label": "Near miss",
+  "caseType.nearMiss.hint": "Something caught before it reached the patient.",
+  "caseType.nearMiss.badge": "Near miss",
+  "caseType.safetyAlert.label": "Safety alert",
+  "caseType.safetyAlert.hint": "A hazard other clinicians should know about now.",
+  "caseType.safetyAlert.badge": "Safety alert",
+  "caseType.sawThisToday.label": "I saw this today",
+  "caseType.sawThisToday.hint": "Something interesting, in a sentence or two. No full write-up needed.",
+  "caseType.sawThisToday.badge": "Saw this today",
+  "caseType.clinicalPearl.label": "Clinical pearl",
+  "caseType.clinicalPearl.hint": "A small, durable piece of practice wisdom.",
+  "caseType.clinicalPearl.badge": "Pearl",
+  "caseType.thingsIWishIKnew.label": "Things I wish I knew",
+  "caseType.thingsIWishIKnew.hint": "What you'd tell yourself before that rotation, shift or role.",
+  "caseType.thingsIWishIKnew.badge": "Wish I knew",
+  "caseType.caseVsCase.label": "Case vs case",
+  "caseType.caseVsCase.hint": "Two cases side by side — what changes the management?",
+  "caseType.caseVsCase.badge": "Case vs case",
+  "caseType.researchFinding.label": "Research finding",
+  "caseType.researchFinding.hint": "A paper or result worth other clinicians' attention.",
+  "caseType.researchFinding.badge": "Research",
+  "caseType.photoPost.label": "Photo",
+  "caseType.photoPost.hint": "A photo worth sharing — a chart, a setup, a moment on shift. Keep it de-identified.",
+  "caseType.photoPost.badge": "Photo",
+  "caseType.quotePost.label": "Quote",
+  "caseType.quotePost.hint": "Something someone said — an attending, a mentor, a patient — worth remembering.",
+  "caseType.quotePost.badge": "Quote",
+  "caseType.videoPost.label": "Video",
+  "caseType.videoPost.hint": "A short clip — up to 50MB.",
+  "caseType.videoPost.badge": "Video",
+
+  "nearMiss.almost": "What almost went wrong?",
+  "nearMiss.caughtBy": "What caught it?",
+  "nearMiss.prevention": "What should have prevented it?",
+  "nearMiss.learned": "What did you learn?",
+  "nearMiss.systemChange": "What system change could prevent a repeat?",
+
+  "compose.newVideoTitle": "New video",
+  "compose.shareCaseTitle": "Share a case",
+  "compose.videoPublicSubtitle": "Short clips are public to every verified clinician on Asyashare.",
+  "compose.casePublicSubtitle": "Cases are public to every verified clinician on Asyashare.",
+  "compose.verificationPendingCase": "We manually review every license before you can post a case. You'll be able to post as soon as you're approved.",
+
+  "compose.sectionTheCase": "The Case",
+  "compose.sectionClinicalContext": "Clinical Context",
+  "compose.sectionGlobalExchange": "Global Exchange",
+  "compose.sectionSupportingMaterial": "Supporting Material",
+
+  "compose.postTypeLabel": "Post type",
+  "compose.deidentifyLabel": "Keep it de-identified.",
+  "compose.deidentifyBody": "No patient names, medical record numbers, exact dates of birth, addresses, phone numbers, or photographs that could identify someone. Post cases as educational discussion — not advice about a specific patient.",
+  "compose.deidentifyBodyVideo": "No patient names, medical record numbers, addresses, or footage that could identify someone.",
+  "compose.titleLabel": "Title",
+  "compose.shortCaptionLabel": "Short caption",
+  "compose.whatHappenedLabel": "What happened?",
+  "compose.theQuoteLabel": "The quote",
+  "compose.captionLabel": "Caption",
+  "compose.fullCaseTitle": "Full case",
+  "compose.fullCaseHint": "Add whichever sections fit this case — pick at least one.",
+  "compose.sectionPresentation": "Presentation",
+  "compose.sectionTricky": "What was tricky",
+  "compose.sectionActions": "What we did",
+  "compose.sectionActionsLines": "What we did (one action per line)",
+  "compose.sectionLesson": "The lesson",
+  "compose.sectionLessonHidden": "The lesson (hidden until reveal)",
+  "compose.patientSafetyTitle": "Patient safety",
+  "compose.patientSafetyHint": "Add whichever prompts apply here — pick at least one.",
+  "compose.twoCasesTitle": "The two cases",
+  "compose.twoCasesHint": "Reference cases already on Asyashare by their number, so readers can open each one in full. Yours or anyone else's.",
+  "compose.firstCase": "First case",
+  "compose.secondCase": "Second case",
+  "compose.whatChangesManagement": "What changes the management?",
+  "compose.questionTitle": "The question (optional)",
+  "compose.questionHint": "Readers commit to an answer before they see the rest of the case.",
+  "compose.questionRemove": "Remove",
+  "compose.questionAdd": "+ Add",
+  "compose.questionPromptLabel": "What are you asking?",
+  "compose.answersLabel": "Answers — select the correct one",
+  "compose.optionRequired": "Required",
+  "compose.optionOptional": "Optional",
+  "compose.explanationLabel": "Explanation (shown after they answer)",
+  "compose.reasoningLabel": "Clinical reasoning",
+  "compose.evidenceLabel": "References / evidence",
+  "compose.allowChangeLabel": "Let readers change their answer after seeing the results",
+  "compose.specialtyLabel": "Specialty",
+  "compose.tagsLabel": "Tags (comma separated)",
+  "compose.countryLabel": "Country",
+  "compose.countryNotSet": "Not set —",
+  "compose.countryNotSetLink": "add your country to your profile",
+  "compose.countryNotSetSuffix": "to include this case in the Global Case Exchange.",
+  "compose.countryHint": "Taken from your profile, not picked per case — so every case is tagged with where its author actually practices, never a hospital or unit.",
+  "compose.videoLabel": "Video",
+  "compose.videoHint": "MP4, WebM or MOV, up to 50MB.",
+  "compose.attachLabel": "Attach (optional)",
+  "compose.attachNone": "None",
+  "compose.attachPhoto": "Photo",
+  "compose.attachVideo": "Video",
+  "compose.photoLabel": "Photo",
+  "compose.imageOptionalLabel": "Image (optional)",
+  "compose.convertingPhoto": "Converting photo…",
+  "compose.placeUnder": "Place it under",
+  "compose.topOfCase": "Top of the case",
+  "compose.checkSpelling": "Check spelling & clarity",
+  "compose.checking": "Checking…",
+  "compose.polishHint": "Suggests wording only — you approve every change.",
+  "compose.writeSomethingFirst": "Write something first and I'll tidy it up.",
+  "compose.suggestedEditsOne": "{n} suggested edit",
+  "compose.suggestedEditsMany": "{n} suggested edits",
+  "compose.useAll": "Use all",
+  "compose.dismiss": "Dismiss",
+  "compose.useThis": "Use this",
+  "compose.keepMine": "Keep mine",
+  "compose.numberChangedWarning": "⚠ A number changed in this edit — check any dose or value before using it.",
+  "compose.postAnyway": "Post anyway",
+  "compose.editAndPostAgain": "or edit the fields above and post again",
+  "compose.editCaptionAndPostAgain": "or edit the caption and post again",
+  "compose.legalPrefixGeneral": "I confirm this post contains no real patient names, medical record numbers, identifying photographs, or other personally identifying information, and that everything I've written is accurate to the best of my knowledge. I understand I am solely responsible for what I post, and that if patient-identifiable information — in text or in any photo or video — is found, my account will be",
+  "compose.legalPrefixVideo": "I confirm this post contains no real patient names, medical record numbers, identifying footage, or other personally identifying information, and that everything I've written is accurate to the best of my knowledge. I understand I am solely responsible for what I post, and that if patient-identifiable information — in text or in the video — is found, my account will be",
+  "compose.legalBold": "permanently blocked from Asyashare",
+  "compose.legalSuffix": "— I will not be able to sign up again.",
+  "compose.postButton": "Post",
+  "compose.postCaseButton": "Post case",
+  "compose.chooseVideo": "Choose a video",
+  "compose.chooseVideoHint": "From your camera roll — MP4, WebM or MOV, up to 50MB.",
+
+  "caseDetail.patientSafety": "Patient safety",
+  "caseDetail.similarCases": "Similar cases",
+  "caseDetail.nothingSimilar": "Nothing similar yet — check back as more cases are posted.",
+  "caseDetail.removedNotice": "This case has been removed by a moderator. Only you and the moderation team can see it.",
+  "caseDetail.revealLesson": "Reveal the lesson",
+  "caseDetail.revealHint": "Reason it through first — what would you take away from this case?",
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -227,6 +395,173 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "exchange.noCountries": "لا توجد حالات مرتبطة بدولة بعد. أضف دولة في منشورك القادم لتظهر هنا على الخريطة.",
   "exchange.noneFromHere": "لا يوجد شيء من هنا بعد.",
   "exchange.from": "من",
+
+  "settings.preferences": "التفضيلات",
+  "settings.privacy": "الخصوصية",
+  "settings.blockedAccounts": "الحسابات المحظورة",
+  "settings.unblock": "إلغاء الحظر",
+  "settings.shortcuts": "اختصارات",
+  "settings.consults": "الاستشارات",
+  "settings.myAnalytics": "تحليلاتي",
+  "settings.learn": "تعلّم",
+  "settings.account": "الحساب",
+  "settings.editProfile": "تعديل الملف الشخصي",
+  "settings.termsOfService": "شروط الخدمة",
+  "settings.privacyPolicy": "سياسة الخصوصية",
+  "settings.contactReport": "التواصل / الإبلاغ عن محتوى",
+  "settings.signOut": "تسجيل الخروج",
+  "settings.dangerZone": "منطقة الخطر",
+  "settings.deleteAccount": "حذف الحساب",
+  "settings.deleteAccountWarning": "سيؤدي هذا إلى حذف حسابك نهائياً مع كل ما يرتبط به — منشوراتك وتعليقاتك ورسائلك وتفاعلاتك. لا يمكن التراجع عن هذا.",
+  "settings.deleteAccountConfirmPrefix": "اكتب",
+  "settings.deleteAccountConfirmSuffix": "للتأكيد",
+  "settings.deleteAccountDeleting": "جارٍ الحذف…",
+  "settings.deleteAccountPermanently": "حذف نهائي",
+
+  "common.cancel": "إلغاء",
+
+  "caseType.clinicalCase.label": "حالة سريرية",
+  "caseType.clinicalCase.hint": "الكتابة القياسية: العرض السريري، ما كان صعباً، ما فعلته، الدرس المستفاد.",
+  "caseType.whatWouldYouDo.label": "ماذا كنت لتفعل؟",
+  "caseType.whatWouldYouDo.hint": "يلتزم القراء بإجابة قبل رؤية إجابتك.",
+  "caseType.whatWouldYouDo.badge": "ماذا كنت لتفعل؟",
+  "caseType.blindCase.label": "حالة عمياء",
+  "caseType.blindCase.hint": "أخفِ الدرس المستفاد حتى يستنتجه القارئ بنفسه.",
+  "caseType.blindCase.badge": "حالة عمياء",
+  "caseType.caseEvolution.label": "تطور الحالة",
+  "caseType.caseEvolution.hint": "انشر الحالة الآن، وأضف تحديثات مع تطورها.",
+  "caseType.caseEvolution.badge": "تتطور",
+  "caseType.nearMiss.label": "خطأ كاد يقع",
+  "caseType.nearMiss.hint": "شيء تم تداركه قبل أن يصل إلى المريض.",
+  "caseType.nearMiss.badge": "خطأ كاد يقع",
+  "caseType.safetyAlert.label": "تنبيه سلامة",
+  "caseType.safetyAlert.hint": "خطر يجب أن يعرفه الأطباء الآخرون الآن.",
+  "caseType.safetyAlert.badge": "تنبيه سلامة",
+  "caseType.sawThisToday.label": "رأيت هذا اليوم",
+  "caseType.sawThisToday.hint": "شيء مثير للاهتمام، في جملة أو جملتين. لا حاجة لكتابة كاملة.",
+  "caseType.sawThisToday.badge": "رأيت هذا اليوم",
+  "caseType.clinicalPearl.label": "درة سريرية",
+  "caseType.clinicalPearl.hint": "قطعة صغيرة ودائمة من حكمة الممارسة السريرية.",
+  "caseType.clinicalPearl.badge": "درة",
+  "caseType.thingsIWishIKnew.label": "أشياء تمنيت لو عرفتها",
+  "caseType.thingsIWishIKnew.hint": "ما كنت لتخبر به نفسك قبل تلك المناوبة أو الدور أو المنصب.",
+  "caseType.thingsIWishIKnew.badge": "تمنيت لو عرفت",
+  "caseType.caseVsCase.label": "حالة مقابل حالة",
+  "caseType.caseVsCase.hint": "حالتان جنباً إلى جنب — ما الذي يغيّر طريقة العلاج؟",
+  "caseType.caseVsCase.badge": "حالة مقابل حالة",
+  "caseType.researchFinding.label": "نتيجة بحثية",
+  "caseType.researchFinding.hint": "ورقة بحثية أو نتيجة تستحق انتباه الأطباء الآخرين.",
+  "caseType.researchFinding.badge": "بحث",
+  "caseType.photoPost.label": "صورة",
+  "caseType.photoPost.hint": "صورة تستحق المشاركة — مخطط، إعداد، لحظة أثناء المناوبة. حافظ على إخفاء الهوية.",
+  "caseType.photoPost.badge": "صورة",
+  "caseType.quotePost.label": "اقتباس",
+  "caseType.quotePost.hint": "شيء قاله أحدهم — استشاري، مرشد، مريض — يستحق التذكر.",
+  "caseType.quotePost.badge": "اقتباس",
+  "caseType.videoPost.label": "فيديو",
+  "caseType.videoPost.hint": "مقطع قصير — حتى 50 ميغابايت.",
+  "caseType.videoPost.badge": "فيديو",
+
+  "nearMiss.almost": "ما الذي كاد يحدث بشكل خاطئ؟",
+  "nearMiss.caughtBy": "ما الذي كشف الخطأ؟",
+  "nearMiss.prevention": "ما الذي كان ينبغي أن يمنع حدوثه؟",
+  "nearMiss.learned": "ماذا تعلمت؟",
+  "nearMiss.systemChange": "ما التغيير في النظام الذي قد يمنع تكراره؟",
+
+  "compose.newVideoTitle": "فيديو جديد",
+  "compose.shareCaseTitle": "شارك حالة",
+  "compose.videoPublicSubtitle": "المقاطع القصيرة مرئية لكل طبيب موثّق على Asyashare.",
+  "compose.casePublicSubtitle": "الحالات مرئية لكل طبيب موثّق على Asyashare.",
+  "compose.verificationPendingCase": "نراجع كل ترخيص يدوياً قبل السماح لك بنشر حالة. ستتمكن من النشر فور الموافقة عليك.",
+
+  "compose.sectionTheCase": "الحالة",
+  "compose.sectionClinicalContext": "السياق السريري",
+  "compose.sectionGlobalExchange": "التبادل العالمي",
+  "compose.sectionSupportingMaterial": "مواد داعمة",
+
+  "compose.postTypeLabel": "نوع المنشور",
+  "compose.deidentifyLabel": "حافظ على إخفاء الهوية.",
+  "compose.deidentifyBody": "لا أسماء مرضى، ولا أرقام سجلات طبية، ولا تواريخ ميلاد دقيقة، ولا عناوين، ولا أرقام هواتف، ولا صور قد تكشف هوية أحد. انشر الحالات كنقاش تعليمي — وليس كنصيحة بشأن مريض محدد.",
+  "compose.deidentifyBodyVideo": "لا أسماء مرضى، ولا أرقام سجلات طبية، ولا عناوين، ولا لقطات قد تكشف هوية أحد.",
+  "compose.titleLabel": "العنوان",
+  "compose.shortCaptionLabel": "وصف مختصر",
+  "compose.whatHappenedLabel": "ماذا حدث؟",
+  "compose.theQuoteLabel": "الاقتباس",
+  "compose.captionLabel": "الوصف",
+  "compose.fullCaseTitle": "الحالة الكاملة",
+  "compose.fullCaseHint": "أضف الأقسام التي تناسب هذه الحالة — اختر قسماً واحداً على الأقل.",
+  "compose.sectionPresentation": "العرض السريري",
+  "compose.sectionTricky": "ما كان صعباً",
+  "compose.sectionActions": "ما فعلناه",
+  "compose.sectionActionsLines": "ما فعلناه (إجراء واحد في كل سطر)",
+  "compose.sectionLesson": "الدرس المستفاد",
+  "compose.sectionLessonHidden": "الدرس المستفاد (مخفي حتى الكشف)",
+  "compose.patientSafetyTitle": "سلامة المريض",
+  "compose.patientSafetyHint": "أضف الأسئلة المنطبقة هنا — اختر واحداً على الأقل.",
+  "compose.twoCasesTitle": "الحالتان",
+  "compose.twoCasesHint": "أشر إلى حالات موجودة بالفعل على Asyashare برقمها، ليتمكن القراء من فتح كل واحدة كاملة. حالاتك أو حالات أي شخص آخر.",
+  "compose.firstCase": "الحالة الأولى",
+  "compose.secondCase": "الحالة الثانية",
+  "compose.whatChangesManagement": "ما الذي يغيّر طريقة العلاج؟",
+  "compose.questionTitle": "السؤال (اختياري)",
+  "compose.questionHint": "يلتزم القراء بإجابة قبل رؤية بقية الحالة.",
+  "compose.questionRemove": "إزالة",
+  "compose.questionAdd": "+ إضافة",
+  "compose.questionPromptLabel": "ما الذي تسأل عنه؟",
+  "compose.answersLabel": "الإجابات — حدد الإجابة الصحيحة",
+  "compose.optionRequired": "مطلوب",
+  "compose.optionOptional": "اختياري",
+  "compose.explanationLabel": "الشرح (يظهر بعد الإجابة)",
+  "compose.reasoningLabel": "الاستدلال السريري",
+  "compose.evidenceLabel": "المراجع / الأدلة",
+  "compose.allowChangeLabel": "اسمح للقراء بتغيير إجابتهم بعد رؤية النتائج",
+  "compose.specialtyLabel": "التخصص",
+  "compose.tagsLabel": "الوسوم (مفصولة بفواصل)",
+  "compose.countryLabel": "الدولة",
+  "compose.countryNotSet": "غير محدد —",
+  "compose.countryNotSetLink": "أضف دولتك إلى ملفك الشخصي",
+  "compose.countryNotSetSuffix": "لإدراج هذه الحالة في شبكة تبادل الحالات العالمية.",
+  "compose.countryHint": "يُؤخذ من ملفك الشخصي، ولا يُختار لكل حالة على حدة — بحيث تُوسم كل حالة بمكان ممارسة صاحبها فعلياً، وليس بالمستشفى أو القسم أبداً.",
+  "compose.videoLabel": "فيديو",
+  "compose.videoHint": "MP4 أو WebM أو MOV، حتى 50 ميغابايت.",
+  "compose.attachLabel": "إرفاق (اختياري)",
+  "compose.attachNone": "لا شيء",
+  "compose.attachPhoto": "صورة",
+  "compose.attachVideo": "فيديو",
+  "compose.photoLabel": "صورة",
+  "compose.imageOptionalLabel": "صورة (اختياري)",
+  "compose.convertingPhoto": "جارٍ تحويل الصورة…",
+  "compose.placeUnder": "ضعها تحت",
+  "compose.topOfCase": "أعلى الحالة",
+  "compose.checkSpelling": "تحقق من الإملاء والوضوح",
+  "compose.checking": "جارٍ التحقق…",
+  "compose.polishHint": "يقترح الصياغة فقط — أنت من يوافق على كل تغيير.",
+  "compose.writeSomethingFirst": "اكتب شيئاً أولاً وسأقوم بتحسينه.",
+  "compose.suggestedEditsOne": "{n} تعديل مقترح",
+  "compose.suggestedEditsMany": "{n} تعديلات مقترحة",
+  "compose.useAll": "استخدم الكل",
+  "compose.dismiss": "تجاهل",
+  "compose.useThis": "استخدم هذا",
+  "compose.keepMine": "احتفظ بنسختي",
+  "compose.numberChangedWarning": "⚠ تغيّر رقم في هذا التعديل — تحقق من أي جرعة أو قيمة قبل استخدامها.",
+  "compose.postAnyway": "انشر على أي حال",
+  "compose.editAndPostAgain": "أو عدّل الحقول أعلاه وانشر مرة أخرى",
+  "compose.editCaptionAndPostAgain": "أو عدّل الوصف وانشر مرة أخرى",
+  "compose.legalPrefixGeneral": "أؤكد أن هذا المنشور لا يحتوي على أسماء مرضى حقيقية، أو أرقام سجلات طبية، أو صور تكشف الهوية، أو أي معلومات أخرى تحدد الهوية الشخصية، وأن كل ما كتبته دقيق حسب علمي. أتفهم أنني المسؤول الوحيد عما أنشره، وأنه في حال وُجدت معلومات تحدد هوية مريض — في النص أو في أي صورة أو فيديو — فسيتم",
+  "compose.legalPrefixVideo": "أؤكد أن هذا المنشور لا يحتوي على أسماء مرضى حقيقية، أو أرقام سجلات طبية، أو لقطات تكشف الهوية، أو أي معلومات أخرى تحدد الهوية الشخصية، وأن كل ما كتبته دقيق حسب علمي. أتفهم أنني المسؤول الوحيد عما أنشره، وأنه في حال وُجدت معلومات تحدد هوية مريض — في النص أو في الفيديو — فسيتم",
+  "compose.legalBold": "حظر حسابي نهائياً من Asyashare",
+  "compose.legalSuffix": "— ولن أتمكن من التسجيل مرة أخرى.",
+  "compose.postButton": "نشر",
+  "compose.postCaseButton": "نشر الحالة",
+  "compose.chooseVideo": "اختر فيديو",
+  "compose.chooseVideoHint": "من مكتبة الفيديو لديك — MP4 أو WebM أو MOV، حتى 50 ميغابايت.",
+
+  "caseDetail.patientSafety": "سلامة المريض",
+  "caseDetail.similarCases": "حالات مشابهة",
+  "caseDetail.nothingSimilar": "لا شيء مشابه بعد — تحقق لاحقاً مع نشر المزيد من الحالات.",
+  "caseDetail.removedNotice": "تمت إزالة هذه الحالة من قبل أحد المشرفين. أنت وفريق الإشراف فقط من يمكنكم رؤيتها.",
+  "caseDetail.revealLesson": "اكشف الدرس المستفاد",
+  "caseDetail.revealHint": "استنتج أولاً — ماذا كنت لتستخلص من هذه الحالة؟",
 };
 
 const DICTS: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, ar };
@@ -242,4 +577,113 @@ export function t(
     (s, [k, v]) => s.replaceAll(`{${k}}`, v),
     raw,
   );
+}
+
+/**
+ * caseTypeMeta (src/lib/case-types.ts) is the single source of truth for a
+ * post type's identity — value, which sections it uses, badge styling — but
+ * its label/hint/badge strings are English literals, since that file has no
+ * notion of locale. These map a CaseType to the TranslationKey holding its
+ * translated text, so every surface that renders a post type's label (the
+ * composer's type picker, the feed badge, the search filter) shows it in
+ * the reader's language instead of showing caseTypeMeta's English fallback.
+ */
+const CASE_TYPE_KEYS: Record<
+  CaseType,
+  { label: TranslationKey; hint: TranslationKey; badge?: TranslationKey }
+> = {
+  clinical_case: { label: "caseType.clinicalCase.label", hint: "caseType.clinicalCase.hint" },
+  what_would_you_do: {
+    label: "caseType.whatWouldYouDo.label",
+    hint: "caseType.whatWouldYouDo.hint",
+    badge: "caseType.whatWouldYouDo.badge",
+  },
+  blind_case: {
+    label: "caseType.blindCase.label",
+    hint: "caseType.blindCase.hint",
+    badge: "caseType.blindCase.badge",
+  },
+  case_evolution: {
+    label: "caseType.caseEvolution.label",
+    hint: "caseType.caseEvolution.hint",
+    badge: "caseType.caseEvolution.badge",
+  },
+  near_miss: {
+    label: "caseType.nearMiss.label",
+    hint: "caseType.nearMiss.hint",
+    badge: "caseType.nearMiss.badge",
+  },
+  safety_alert: {
+    label: "caseType.safetyAlert.label",
+    hint: "caseType.safetyAlert.hint",
+    badge: "caseType.safetyAlert.badge",
+  },
+  saw_this_today: {
+    label: "caseType.sawThisToday.label",
+    hint: "caseType.sawThisToday.hint",
+    badge: "caseType.sawThisToday.badge",
+  },
+  clinical_pearl: {
+    label: "caseType.clinicalPearl.label",
+    hint: "caseType.clinicalPearl.hint",
+    badge: "caseType.clinicalPearl.badge",
+  },
+  things_i_wish_i_knew: {
+    label: "caseType.thingsIWishIKnew.label",
+    hint: "caseType.thingsIWishIKnew.hint",
+    badge: "caseType.thingsIWishIKnew.badge",
+  },
+  case_vs_case: {
+    label: "caseType.caseVsCase.label",
+    hint: "caseType.caseVsCase.hint",
+    badge: "caseType.caseVsCase.badge",
+  },
+  research_finding: {
+    label: "caseType.researchFinding.label",
+    hint: "caseType.researchFinding.hint",
+    badge: "caseType.researchFinding.badge",
+  },
+  photo_post: {
+    label: "caseType.photoPost.label",
+    hint: "caseType.photoPost.hint",
+    badge: "caseType.photoPost.badge",
+  },
+  quote_post: {
+    label: "caseType.quotePost.label",
+    hint: "caseType.quotePost.hint",
+    badge: "caseType.quotePost.badge",
+  },
+  video_post: {
+    label: "caseType.videoPost.label",
+    hint: "caseType.videoPost.hint",
+    badge: "caseType.videoPost.badge",
+  },
+};
+
+export function caseTypeLabel(locale: Locale, value: string): string {
+  const keys = CASE_TYPE_KEYS[value as CaseType];
+  return keys ? t(locale, keys.label) : value;
+}
+
+export function caseTypeHint(locale: Locale, value: string): string {
+  const keys = CASE_TYPE_KEYS[value as CaseType];
+  return keys ? t(locale, keys.hint) : "";
+}
+
+export function caseTypeBadge(locale: Locale, value: string): string | null {
+  const keys = CASE_TYPE_KEYS[value as CaseType];
+  return keys?.badge ? t(locale, keys.badge) : null;
+}
+
+const NEAR_MISS_KEYS: Record<string, TranslationKey> = {
+  almost: "nearMiss.almost",
+  caught_by: "nearMiss.caughtBy",
+  prevention: "nearMiss.prevention",
+  learned: "nearMiss.learned",
+  system_change: "nearMiss.systemChange",
+};
+
+export function nearMissPromptLabel(locale: Locale, name: string): string {
+  const key = NEAR_MISS_KEYS[name];
+  return key ? t(locale, key) : name;
 }

@@ -22,16 +22,18 @@ export default async function SettingsPage() {
     <div className="px-4 py-6">
       <h1 className="font-headline text-xl text-text">{t(locale, "settings.title")}</h1>
 
-      <SettingsGroupLabel>Preferences</SettingsGroupLabel>
+      <SettingsGroupLabel>{t(locale, "settings.preferences")}</SettingsGroupLabel>
       <section className="rounded-2xl border border-line bg-surface p-4">
         <LanguageSwitcher current={locale} />
       </section>
 
       {blockedAccounts.length > 0 && (
         <>
-          <SettingsGroupLabel>Privacy</SettingsGroupLabel>
+          <SettingsGroupLabel>{t(locale, "settings.privacy")}</SettingsGroupLabel>
           <section className="rounded-2xl border border-line bg-surface p-4">
-            <h2 className="text-sm font-medium text-text">Blocked accounts</h2>
+            <h2 className="text-sm font-medium text-text">
+              {t(locale, "settings.blockedAccounts")}
+            </h2>
             <div className="mt-2 flex flex-col divide-y divide-line">
               {blockedAccounts.map((account) => (
                 <div
@@ -41,7 +43,7 @@ export default async function SettingsPage() {
                   <span className="truncate text-sm text-text">
                     {account.full_name || `@${account.handle}`}
                   </span>
-                  <UnblockButton blockedId={account.id} path="/settings" />
+                  <UnblockButton blockedId={account.id} path="/settings" locale={locale} />
                 </div>
               ))}
             </div>
@@ -55,37 +57,39 @@ export default async function SettingsPage() {
           profile itself. A grouped list with a trailing arrow per row
           (iOS Settings' own disclosure convention), not five identical
           boxes stacked with no way to tell them apart at a glance. */}
-      <SettingsGroupLabel>Shortcuts</SettingsGroupLabel>
+      <SettingsGroupLabel>{t(locale, "settings.shortcuts")}</SettingsGroupLabel>
       <section className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface px-4">
-        <SettingsLink href="/messages">Messages</SettingsLink>
-        <SettingsLink href="/consults">Consults</SettingsLink>
-        <SettingsLink href="/analytics">My Analytics</SettingsLink>
-        <SettingsLink href="/learn">Learn</SettingsLink>
+        <SettingsLink href="/messages">{t(locale, "messages.title")}</SettingsLink>
+        <SettingsLink href="/consults">{t(locale, "settings.consults")}</SettingsLink>
+        <SettingsLink href="/analytics">{t(locale, "settings.myAnalytics")}</SettingsLink>
+        <SettingsLink href="/learn">{t(locale, "settings.learn")}</SettingsLink>
         <SettingsLink href="/notifications">{t(locale, "nav.notifications")}</SettingsLink>
       </section>
 
-      <SettingsGroupLabel>Account</SettingsGroupLabel>
+      <SettingsGroupLabel>{t(locale, "settings.account")}</SettingsGroupLabel>
       <section className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface px-4">
         {/* An admin's own profile page (/u/[handle]) is the moderation
             dashboard rather than the normal profile, so it no longer
             carries these — this is the one place left to reach them. */}
-        <SettingsLink href="/onboarding">Edit profile</SettingsLink>
-        <SettingsLink href="/terms">Terms of Service</SettingsLink>
-        <SettingsLink href="/privacy">Privacy Policy</SettingsLink>
-        <SettingsLink href="/contact">Contact / report content</SettingsLink>
+        <SettingsLink href="/onboarding">{t(locale, "settings.editProfile")}</SettingsLink>
+        <SettingsLink href="/terms">{t(locale, "settings.termsOfService")}</SettingsLink>
+        <SettingsLink href="/privacy">{t(locale, "settings.privacyPolicy")}</SettingsLink>
+        <SettingsLink href="/contact">{t(locale, "settings.contactReport")}</SettingsLink>
         <form action={signOutAction}>
           <button
             type="submit"
             className="w-full py-3 text-left text-sm font-medium text-danger transition-opacity duration-150 ease-out active:opacity-60"
           >
-            Sign out
+            {t(locale, "settings.signOut")}
           </button>
         </form>
       </section>
 
-      <SettingsGroupLabel className="text-danger">Danger zone</SettingsGroupLabel>
+      <SettingsGroupLabel className="text-danger">
+        {t(locale, "settings.dangerZone")}
+      </SettingsGroupLabel>
       <section className="rounded-2xl border border-danger/30 bg-surface p-4">
-        <DeleteAccount />
+        <DeleteAccount locale={locale} />
       </section>
     </div>
   );

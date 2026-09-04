@@ -15,6 +15,7 @@ import { getDiveDeepDataAction } from "@/app/actions/recap";
 import { getRevealIfAnswered } from "@/app/actions/interactive";
 import { caseTypeMeta, NEAR_MISS_PROMPTS } from "@/lib/case-types";
 import { isVideoUrl } from "@/lib/media";
+import { t, caseTypeBadge, nearMissPromptLabel } from "@/lib/i18n";
 import { Avatar } from "@/components/avatar";
 import { BackButton } from "@/components/back-button";
 import { ReactionBar } from "@/components/reaction-bar";
@@ -72,6 +73,7 @@ export default async function CasePage({
     getReasoningTree(supabase, feedCase.id),
   ]);
 
+  const locale = viewerProfile?.locale ?? "en";
   const staged = feedCase.reveal_mode === "staged";
 
   // Null (every case posted before 0025) means the same thing "top" does —
@@ -120,7 +122,7 @@ export default async function CasePage({
             typeMeta.badgeClass,
           )}
         >
-          {typeMeta.badge}
+          {caseTypeBadge(locale, typeMeta.value) ?? typeMeta.badge}
         </span>
       )}
 
@@ -128,8 +130,7 @@ export default async function CasePage({
 
       {feedCase.moderation_status === "removed" && (
         <p className="mt-3 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-2.5 text-sm text-danger">
-          This case has been removed by a moderator. Only you and the
-          moderation team can see it.
+          {t(locale, "caseDetail.removedNotice")}
         </p>
       )}
 
@@ -143,7 +144,7 @@ export default async function CasePage({
             name={feedCase.author?.full_name}
           />
           <span className="text-sm text-text">
-            {feedCase.author?.full_name ?? "Unknown clinician"}
+            {feedCase.author?.full_name ?? t(locale, "common.unknownClinician")}
             {feedCase.author?.verified && (
               <VerifiedBadge tier={feedCase.author.badge_tier} label />
             )}
@@ -188,13 +189,19 @@ export default async function CasePage({
       {feedCase.near_miss ? (
         <section className="mt-5 rounded-xl border border-warning/40 bg-warning/5 p-4">
           <p className="font-label text-xs uppercase tracking-wide text-warning">
-            Patient safety
+            {t(locale, "caseDetail.patientSafety")}
           </p>
           <div className="mt-2 flex flex-col gap-4">
             {NEAR_MISS_PROMPTS.map((prompt) => {
               const value = feedCase.near_miss?.[prompt.name];
               if (!value) return null;
-              return <CaseBlock key={prompt.name} label={prompt.label} text={value} />;
+              return (
+                <CaseBlock
+                  key={prompt.name}
+                  label={nearMissPromptLabel(locale, prompt.name)}
+                  text={value}
+                />
+              );
             })}
           </div>
         </section>
@@ -203,14 +210,14 @@ export default async function CasePage({
           <div className="mt-5 flex flex-col gap-5">
             {feedCase.full_body.presentation && (
               <CaseBlock
-                label="Presentation"
+                label={t(locale, "compose.sectionPresentation")}
                 text={feedCase.full_body.presentation}
                 media={mediaPlacement === "presentation" ? mediaBlock : null}
               />
             )}
             {feedCase.full_body.tricky && (
               <CaseBlock
-                label="What was tricky"
+                label={t(locale, "compose.sectionTricky")}
                 text={feedCase.full_body.tricky}
                 media={mediaPlacement === "tricky" ? mediaBlock : null}
               />
@@ -218,7 +225,7 @@ export default async function CasePage({
             {feedCase.full_body.actions.length > 0 && (
               <div>
                 <p className="font-label text-xs uppercase tracking-wide text-muted">
-                  What we did
+                  {t(locale, "compose.sectionActions")}
                 </p>
                 <ul className="mt-1.5 flex list-disc flex-col gap-1.5 pl-5 text-sm text-text">
                   {feedCase.full_body.actions.map((action, i) => (
@@ -232,9 +239,9 @@ export default async function CasePage({
             {feedCase.full_body.lesson &&
               (staged ? (
                 <RevealSection
-                  label="The lesson"
-                  prompt="Reveal the lesson"
-                  hint="Reason it through first — what would you take away from this case?"
+                  label={t(locale, "compose.sectionLesson")}
+                  prompt={t(locale, "caseDetail.revealLesson")}
+                  hint={t(locale, "caseDetail.revealHint")}
                 >
                   <p className="text-sm leading-relaxed text-text">
                     {feedCase.full_body.lesson}
@@ -243,7 +250,7 @@ export default async function CasePage({
                 </RevealSection>
               ) : (
                 <CaseBlock
-                  label="The lesson"
+                  label={t(locale, "compose.sectionLesson")}
                   text={feedCase.full_body.lesson}
                   media={mediaPlacement === "lesson" ? mediaBlock : null}
                 />
@@ -318,11 +325,11 @@ export default async function CasePage({
 
       <section className="mt-6 border-t border-line pt-4">
         <p className="font-label text-xs uppercase tracking-wide text-muted">
-          Similar cases
+          {t(locale, "caseDetail.similarCases")}
         </p>
         {similar.length === 0 ? (
           <p className="mt-2 text-sm text-muted">
-            Nothing similar yet — check back as more cases are posted.
+            {t(locale, "caseDetail.nothingSimilar")}
           </p>
         ) : (
           <ul className="mt-2 flex flex-col gap-2">
