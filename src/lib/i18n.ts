@@ -56,6 +56,11 @@ const en = {
   "activity.comments": "Comments",
   "activity.reactions": "Reactions given",
 
+  "nudge.addPhotoTitle": "Add a profile photo",
+  "nudge.addPhotoBody": "Clinicians with a photo are easier to recognize and get more follows.",
+  "nudge.addPhotoCta": "Add photo",
+  "nudge.followSuggestionsTitle": "Follow a few people to get started",
+
   "communities.title": "Trending communities",
   "discussions.title": "Active discussions",
   "people.title": "People you may know",
@@ -105,6 +110,11 @@ const en = {
   "search.browseExchange": "Browse the Global Case Exchange →",
   "search.emptyPrompt": "Search by title, tag or specialty — or narrow by specialty, post type and tag without typing anything.",
   "search.noResults": "Nothing matches those filters.",
+  "search.modeCases": "Cases",
+  "search.modePeople": "People",
+  "search.peoplePlaceholder": "Search by name, handle, role, or specialty…",
+  "search.peopleEmptyPrompt": "Search for a clinician by name, handle, role, or specialty.",
+  "search.peopleNoResults": "No one matches that search.",
 
   "profile.editProfile": "Edit profile",
   "profile.message": "Message",
@@ -331,6 +341,11 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "activity.comments": "تعليقات",
   "activity.reactions": "تفاعلات",
 
+  "nudge.addPhotoTitle": "أضف صورة شخصية",
+  "nudge.addPhotoBody": "يسهل التعرف على الأطباء الذين لديهم صورة، ويحصلون على متابعين أكثر.",
+  "nudge.addPhotoCta": "أضف صورة",
+  "nudge.followSuggestionsTitle": "تابع بعض الأشخاص للبدء",
+
   "communities.title": "مجتمعات رائجة",
   "discussions.title": "نقاشات نشطة",
   "people.title": "أشخاص قد تعرفهم",
@@ -380,6 +395,11 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "search.browseExchange": "تصفح شبكة تبادل الحالات العالمية ←",
   "search.emptyPrompt": "ابحث بالعنوان أو الوسم أو التخصص — أو صفّ النتائج حسب التخصص أو نوع المنشور أو الوسم دون كتابة أي شيء.",
   "search.noResults": "لا يوجد ما يطابق هذه الفلاتر.",
+  "search.modeCases": "الحالات",
+  "search.modePeople": "الأشخاص",
+  "search.peoplePlaceholder": "ابحث بالاسم أو المعرّف أو الوظيفة أو التخصص…",
+  "search.peopleEmptyPrompt": "ابحث عن طبيب بالاسم أو المعرّف أو الوظيفة أو التخصص.",
+  "search.peopleNoResults": "لا يوجد أحد يطابق هذا البحث.",
 
   "profile.editProfile": "تعديل الملف الشخصي",
   "profile.message": "مراسلة",

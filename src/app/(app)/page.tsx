@@ -31,6 +31,7 @@ import { HomeFeedTabs, type HomeFeedView } from "@/components/home/feed-tabs";
 import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
 import { RecommendedPeople } from "@/components/home/recommended-people";
+import { ProfilePhotoNudge } from "@/components/home/profile-photo-nudge";
 import { TargetIcon } from "@/components/icons";
 import { t } from "@/lib/i18n";
 
@@ -127,11 +128,22 @@ export default async function FeedPage({
         ? "Nothing trending yet — check back soon."
         : filter.empty;
 
+  // Surfaces the same suggestions the generic bottom-of-page section would,
+  // but right inside the moment that explains why: an empty Following tab.
+  // Suppresses that bottom section (below) so the reader doesn't see the
+  // same handful of faces twice on one page load.
+  const showInlineFollowSuggestions =
+    view === "following" && cases !== null && cases.length === 0 && Boolean(people?.length);
+
   return (
     <div>
       {/* Above everything: an alert the reader hasn't acknowledged should not
           be hidden behind whichever tab or chip they last picked. */}
       <SafetyAlertBanner alerts={alerts} />
+
+      {user && profile && !profile.avatar_url && (
+        <ProfilePhotoNudge locale={locale} />
+      )}
 
       <div className="animate-enter stagger-1">
         <TrendingStrip topics={topics} />
@@ -169,9 +181,27 @@ export default async function FeedPage({
               feature={view === "following" ? "Your network feed" : "This feed"}
             />
           ) : cases.length === 0 ? (
-            <p className="px-4 py-10 text-center text-sm text-muted">
-              {emptyMessage}
-            </p>
+            <>
+              <p className="px-4 py-10 text-center text-sm text-muted">
+                {emptyMessage}
+              </p>
+              {/* The Following tab's own empty state is the moment a follow
+                  suggestion actually lands — right where the reader just
+                  learned that following nobody means seeing nothing, not
+                  buried in the generic "People you may know" row at the
+                  bottom of every other tab. That row is suppressed below
+                  (showInlineFollowSuggestions) so the same faces don't
+                  appear twice on one page. */}
+              {showInlineFollowSuggestions && people && (
+                <RecommendedPeople
+                  people={people}
+                  path={path}
+                  locale={locale}
+                  titleKey="nudge.followSuggestionsTitle"
+                  bordered={false}
+                />
+              )}
+            </>
           ) : (
             cases.map((c) => (
               <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} locale={locale} />
@@ -182,7 +212,7 @@ export default async function FeedPage({
 
       <TrendingCommunities communities={communities} locale={locale} />
       <ActiveDiscussions cases={discussions} locale={locale} />
-      {user && people && (
+      {user && people && !showInlineFollowSuggestions && (
         <RecommendedPeople people={people} path="/" locale={locale} />
       )}
     </div>

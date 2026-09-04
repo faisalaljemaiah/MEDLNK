@@ -1,20 +1,25 @@
 import Link from "next/link";
+import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getFeedCases } from "@/lib/cases";
 import { getDiscoverCommunities } from "@/lib/communities";
+import { searchPeople } from "@/lib/follows";
 import { CASE_TYPES } from "@/lib/case-types";
 import { SPECIALTIES } from "@/lib/specialties";
 import { CaseCard } from "@/components/case-card";
 import { CommunityBubbles } from "@/components/community-bubbles";
+import { FollowList } from "@/components/follow-list";
 import { CompassIcon } from "@/components/icons";
 import { t, caseTypeLabel } from "@/lib/i18n";
 
 type SearchParams = {
+  mode?: string;
   q?: string;
   specialty?: string;
   type?: string;
   tag?: string;
+  pq?: string;
 };
 
 /**
@@ -33,11 +38,13 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { q, specialty, type, tag } = await searchParams;
+  const { mode: rawMode, q, specialty, type, tag, pq } = await searchParams;
+  const mode = rawMode === "people" ? "people" : "cases";
   const query = q?.trim().toLowerCase() ?? "";
   const specialtyFilter = specialty?.trim() ?? "";
   const typeFilter = type?.trim() ?? "";
   const tagFilter = tag?.trim().toLowerCase().replace(/^#/, "") ?? "";
+  const peopleQuery = pq?.trim() ?? "";
 
   const hasFilter = Boolean(
     query || specialtyFilter || typeFilter || tagFilter,
@@ -46,10 +53,13 @@ export default async function SearchPage({
   const supabase = await createClient();
   const user = await getViewer();
 
-  const [allCases, communities, profile] = await Promise.all([
-    getFeedCases(supabase, user?.id ?? null),
-    getDiscoverCommunities(supabase, user?.id ?? null),
+  const [allCases, communities, profile, people] = await Promise.all([
+    mode === "cases" ? getFeedCases(supabase, user?.id ?? null) : Promise.resolve([]),
+    mode === "cases"
+      ? getDiscoverCommunities(supabase, user?.id ?? null)
+      : Promise.resolve([]),
     user ? getViewerProfile() : Promise.resolve(null),
+    mode === "people" ? searchPeople(supabase, peopleQuery, user?.id ?? null) : Promise.resolve([]),
   ]);
   const locale = profile?.locale ?? "en";
 
@@ -103,140 +113,215 @@ export default async function SearchPage({
         <h1 className="font-headline text-xl text-text">{t(locale, "search.title")}</h1>
       </div>
 
-      <CommunityBubbles communities={communities} path="/search" />
-
-      {/* A GET form, so every search is a shareable URL and the results stay
-          server-rendered. */}
-      <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
-        {/* Same rim mechanic as <AIButton>/the compose nav button
-            (.ai-glow, globals.css), but in Asyashare's own Caribbean green
-            and white (.ai-glow-brand) rather than the AI-hue sweep —
-            search isn't an AI feature, and every search bar in the app
-            (this one, the admin dashboard's) now shares this same look. */}
-        <div className="ai-glow ai-glow-round ai-glow-brand w-full">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder={t(locale, "search.placeholder")}
-            autoFocus
-            className="w-full rounded-full bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:outline-none"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <select
-            name="specialty"
-            defaultValue={specialtyFilter}
-            aria-label="Specialty"
-            className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
-          >
-            <option value="">{t(locale, "search.anySpecialty")}</option>
-            {specialties.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-
-          <select
-            name="type"
-            defaultValue={typeFilter}
-            aria-label="Post type"
-            className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
-          >
-            <option value="">{t(locale, "search.anyType")}</option>
-            {CASE_TYPES.map((ct) => (
-              <option key={ct.value} value={ct.value}>
-                {caseTypeLabel(locale, ct.value)}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="text"
-            name="tag"
-            defaultValue={tagFilter}
-            placeholder={t(locale, "search.tagPlaceholder")}
-            aria-label="Tag"
-            className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text placeholder:text-muted focus:border-accent focus:outline-none"
-          />
-
-          <button
-            type="submit"
-            className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
-          >
-            {t(locale, "search.searchButton")}
-          </button>
-        </div>
-      </form>
-
-      {/* Curated discipline shortcuts — separate from the <select> above,
-          which only ever lists specialties that already have posts behind
-          them. These jump straight to a discipline even before anyone has
-          posted in it yet (see src/lib/specialties.ts). */}
-      <div className="px-4 pb-3">
-        <div className="flex flex-wrap gap-2">
-          {SPECIALTIES.map((s) => {
-            const active = specialtyFilter === s;
-            return (
-              <Link
-                key={s}
-                href={specialtyHref(active ? "" : s)}
-                aria-pressed={active}
-                className={
-                  active
-                    ? "whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
-                    : "whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
-                }
-              >
-                {s}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="px-4 pb-3">
+      {/* A member's own directory search sits beside case search rather than
+          inside it — the query shapes and result cards are different enough
+          (a name/handle/role match against profiles vs. a title/tag match
+          against cases) that folding them into one form and one result list
+          would mean guessing which the reader meant. */}
+      <div className="flex gap-2 px-4 pt-3">
         <Link
-          href="/exchange"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+          href="/search"
+          aria-pressed={mode === "cases"}
+          className={clsx(
+            "rounded-full border px-3.5 py-1.5 font-label text-xs transition-colors duration-150",
+            mode === "cases"
+              ? "border-accent bg-accent/10 font-medium text-accent"
+              : "border-line text-muted hover:text-text",
+          )}
         >
-          <CompassIcon width={13} height={13} strokeWidth={2.25} />
-          {t(locale, "search.browseExchange")}
+          {t(locale, "search.modeCases")}
+        </Link>
+        <Link
+          href="/search?mode=people"
+          aria-pressed={mode === "people"}
+          className={clsx(
+            "rounded-full border px-3.5 py-1.5 font-label text-xs transition-colors duration-150",
+            mode === "people"
+              ? "border-accent bg-accent/10 font-medium text-accent"
+              : "border-line text-muted hover:text-text",
+          )}
+        >
+          {t(locale, "search.modePeople")}
         </Link>
       </div>
 
-      {hasFilter && (
-        <p className="px-4 pb-3 text-xs text-muted">
-          {results.length} {results.length === 1 ? t(locale, "common.case") : t(locale, "common.cases")}
-          {activeCount > 0 && (
-            <>
-              {" · "}
-              {[
-                specialtyFilter,
-                typeFilter ? caseTypeLabel(locale, typeFilter) : "",
-                tagFilter ? `#${tagFilter}` : "",
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </>
-          )}
-        </p>
-      )}
+      {mode === "people" ? (
+        <>
+          <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
+            <input type="hidden" name="mode" value="people" />
+            <div className="ai-glow ai-glow-round ai-glow-brand w-full">
+              <input
+                type="text"
+                name="pq"
+                defaultValue={peopleQuery}
+                placeholder={t(locale, "search.peoplePlaceholder")}
+                autoFocus
+                className="w-full rounded-full bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="self-start rounded-full bg-accent px-4 py-2 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+            >
+              {t(locale, "search.searchButton")}
+            </button>
+          </form>
 
-      {!hasFilter ? (
-        <p className="px-4 py-10 text-center text-sm text-muted">
-          {t(locale, "search.emptyPrompt")}
-        </p>
-      ) : results.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-muted">
-          {t(locale, "search.noResults")}
-        </p>
+          {!peopleQuery ? (
+            <p className="px-4 py-10 text-center text-sm text-muted">
+              {t(locale, "search.peopleEmptyPrompt")}
+            </p>
+          ) : (
+            <FollowList
+              people={people}
+              viewerId={user?.id ?? null}
+              emptyMessage={t(locale, "search.peopleNoResults")}
+              path={`/search?mode=people${peopleQuery ? `&pq=${encodeURIComponent(peopleQuery)}` : ""}`}
+              locale={locale}
+            />
+          )}
+        </>
       ) : (
-        results.map((c) => (
-          <CaseCard key={c.id} feedCase={c} path="/search" viewerId={user?.id ?? null} locale={locale} />
-        ))
+        <>
+          <CommunityBubbles communities={communities} path="/search" />
+
+          {/* A GET form, so every search is a shareable URL and the results
+              stay server-rendered. */}
+          <form action="/search" className="flex flex-col gap-2.5 px-4 py-4">
+            {/* Same rim mechanic as <AIButton>/the compose nav button
+                (.ai-glow, globals.css), but in Asyashare's own Caribbean
+                green and white (.ai-glow-brand) rather than the AI-hue
+                sweep — search isn't an AI feature, and every search bar in
+                the app (this one, the admin dashboard's) now shares this
+                same look. */}
+            <div className="ai-glow ai-glow-round ai-glow-brand w-full">
+              <input
+                type="text"
+                name="q"
+                defaultValue={q ?? ""}
+                placeholder={t(locale, "search.placeholder")}
+                autoFocus
+                className="w-full rounded-full bg-surface px-4 py-2.5 text-text placeholder:text-muted focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <select
+                name="specialty"
+                defaultValue={specialtyFilter}
+                aria-label="Specialty"
+                className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
+              >
+                <option value="">{t(locale, "search.anySpecialty")}</option>
+                {specialties.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                name="type"
+                defaultValue={typeFilter}
+                aria-label="Post type"
+                className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text focus:border-accent focus:outline-none"
+              >
+                <option value="">{t(locale, "search.anyType")}</option>
+                {CASE_TYPES.map((ct) => (
+                  <option key={ct.value} value={ct.value}>
+                    {caseTypeLabel(locale, ct.value)}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="text"
+                name="tag"
+                defaultValue={tagFilter}
+                placeholder={t(locale, "search.tagPlaceholder")}
+                aria-label="Tag"
+                className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-2 font-label text-xs text-text placeholder:text-muted focus:border-accent focus:outline-none"
+              />
+
+              <button
+                type="submit"
+                className="shrink-0 rounded-full bg-accent px-4 py-2 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+              >
+                {t(locale, "search.searchButton")}
+              </button>
+            </div>
+          </form>
+
+          {/* Curated discipline shortcuts — separate from the <select>
+              above, which only ever lists specialties that already have
+              posts behind them. These jump straight to a discipline even
+              before anyone has posted in it yet (see
+              src/lib/specialties.ts). */}
+          <div className="px-4 pb-3">
+            <div className="flex flex-wrap gap-2">
+              {SPECIALTIES.map((s) => {
+                const active = specialtyFilter === s;
+                return (
+                  <Link
+                    key={s}
+                    href={specialtyHref(active ? "" : s)}
+                    aria-pressed={active}
+                    className={
+                      active
+                        ? "whitespace-nowrap rounded-full border border-accent bg-accent px-3 py-1.5 font-label text-xs text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+                        : "whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 font-label text-xs text-text transition-colors duration-150 ease-out hover:border-accent/40 hover:text-accent active:scale-95"
+                    }
+                  >
+                    {s}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="px-4 pb-3">
+            <Link
+              href="/exchange"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+            >
+              <CompassIcon width={13} height={13} strokeWidth={2.25} />
+              {t(locale, "search.browseExchange")}
+            </Link>
+          </div>
+
+          {hasFilter && (
+            <p className="px-4 pb-3 text-xs text-muted">
+              {results.length}{" "}
+              {results.length === 1 ? t(locale, "common.case") : t(locale, "common.cases")}
+              {activeCount > 0 && (
+                <>
+                  {" · "}
+                  {[
+                    specialtyFilter,
+                    typeFilter ? caseTypeLabel(locale, typeFilter) : "",
+                    tagFilter ? `#${tagFilter}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </>
+              )}
+            </p>
+          )}
+
+          {!hasFilter ? (
+            <p className="px-4 py-10 text-center text-sm text-muted">
+              {t(locale, "search.emptyPrompt")}
+            </p>
+          ) : results.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-muted">
+              {t(locale, "search.noResults")}
+            </p>
+          ) : (
+            results.map((c) => (
+              <CaseCard key={c.id} feedCase={c} path="/search" viewerId={user?.id ?? null} locale={locale} />
+            ))
+          )}
+        </>
       )}
     </div>
   );
