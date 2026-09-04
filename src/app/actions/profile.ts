@@ -39,8 +39,8 @@ export async function updateProfileAction(
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "");
-  const role = String(formData.get("role") ?? "").trim();
-  const city = String(formData.get("city") ?? "").trim();
+  const rawRole = String(formData.get("role") ?? "").trim();
+  const rawCity = String(formData.get("city") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
   // Verified members no longer see this field at all (onboarding-form.tsx),
   // so nothing is submitted for it on a routine edit — fall back to whatever
@@ -51,6 +51,25 @@ export async function updateProfileAction(
   const country_code = COUNTRIES.some((c) => c.code === rawCountry)
     ? rawCountry
     : null;
+
+  if (!ROLES.includes(rawRole as (typeof ROLES)[number])) {
+    return { error: "Please choose a valid role." };
+  }
+  // "Other" stores whatever the author actually typed, not the literal word
+  // "Other" — the dropdown is a fixed, necessarily incomplete list of every
+  // healthcare role, but the column itself has always been plain text with
+  // no CHECK constraint, so there's nowhere else this needs to be taught.
+  const role =
+    rawRole === "Other"
+      ? String(formData.get("role_other") ?? "").trim()
+      : rawRole;
+  // Same idea for a city not in the curated per-country list — city is
+  // optional everywhere already, so an empty typed value just means no city,
+  // same as "Prefer not to say" does.
+  const city =
+    rawCity === "__other__"
+      ? String(formData.get("city_other") ?? "").trim()
+      : rawCity;
 
   if (
     !full_name ||
@@ -64,9 +83,6 @@ export async function updateProfileAction(
   }
   if (handle.length < 3) {
     return { error: "Handle must be at least 3 characters (letters, numbers, _)." };
-  }
-  if (!ROLES.includes(role as (typeof ROLES)[number])) {
-    return { error: "Please choose a valid role." };
   }
 
   let avatar_url: string | undefined;

@@ -47,14 +47,17 @@ export function OnboardingForm({
   // this form's simpler fields.
   const [countryCode, setCountryCode] = useState(profile.country_code ?? "");
   const availableCities = citiesForCountry(countryCode);
-  // A previously saved city that isn't in this country's curated list
-  // (a free-typed value from before this became a picker, or a smaller city
-  // that isn't listed) still gets its own option — switching to a fixed list
-  // shouldn't silently blank out data that was already there.
-  const cityOptions =
-    profile.city && !availableCities.includes(profile.city)
-      ? [profile.city, ...availableCities]
-      : availableCities;
+  // A previously saved city that isn't in this country's curated list (typed
+  // before "Other" existed, or just a smaller city that isn't in the
+  // curated set) opens straight into "Other" with that value already
+  // filled in, rather than silently losing it.
+  const isCustomCity = Boolean(profile.city) && !availableCities.includes(profile.city!);
+  const [cityValue, setCityValue] = useState(isCustomCity ? "__other__" : (profile.city ?? ""));
+  // Same idea for role — the dropdown can never cover every healthcare
+  // title, so a stored value outside the list opens into "Other" with the
+  // real text preserved instead of just vanishing.
+  const isCustomRole = Boolean(profile.role) && !ROLES.includes(profile.role as (typeof ROLES)[number]);
+  const [roleValue, setRoleValue] = useState(isCustomRole ? "Other" : (profile.role ?? ""));
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -165,7 +168,8 @@ export function OnboardingForm({
         <select
           id="role"
           name="role"
-          defaultValue={profile.role ?? ""}
+          value={roleValue}
+          onChange={(e) => setRoleValue(e.target.value)}
           required
           className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
         >
@@ -178,6 +182,15 @@ export function OnboardingForm({
             </option>
           ))}
         </select>
+        {roleValue === "Other" && (
+          <TextField
+            label="What's your role?"
+            name="role_other"
+            defaultValue={isCustomRole ? (profile.role ?? "") : ""}
+            placeholder="e.g. Clinical Research Coordinator"
+            required
+          />
+        )}
       </div>
       <TextField
         label="Specialty"
@@ -222,19 +235,29 @@ export function OnboardingForm({
         <select
           id="city"
           name="city"
-          defaultValue={profile.city ?? ""}
-          disabled={cityOptions.length === 0}
+          value={cityValue}
+          onChange={(e) => setCityValue(e.target.value)}
+          disabled={!countryCode}
           className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none disabled:opacity-50"
         >
           <option value="">Prefer not to say</option>
-          {cityOptions.map((city) => (
+          {availableCities.map((city) => (
             <option key={city} value={city}>
               {city}
             </option>
           ))}
+          <option value="__other__">Other — type it in</option>
         </select>
-        {cityOptions.length === 0 && (
+        {!countryCode && (
           <p className="text-xs text-muted">Choose a country first.</p>
+        )}
+        {cityValue === "__other__" && (
+          <TextField
+            label="City"
+            name="city_other"
+            defaultValue={isCustomCity ? (profile.city ?? "") : ""}
+            placeholder="Type your city"
+          />
         )}
       </div>
       {/* Already-verified members never see these — nothing left to verify,
