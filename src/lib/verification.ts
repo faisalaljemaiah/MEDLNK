@@ -3,6 +3,18 @@ import type { Database } from "@/lib/database.types";
 
 type Client = SupabaseClient<Database>;
 
+/**
+ * Temporary switch for sending out a test link before real license review is
+ * ready to run: false means the onboarding/profile-edit flow never asks for
+ * a license number or document, and everyone who completes their profile is
+ * auto-approved instead of sitting in the admin's manual verification queue.
+ *
+ * Flip back to true to restore the full flow (license fields required,
+ * manual admin approval) — every place that reads this already has both
+ * behaviors implemented, so this one line is the whole rollback.
+ */
+export const LICENSE_VERIFICATION_ENABLED = false;
+
 const MAX_ATTEMPTS = 3;
 const WINDOW_DAYS = 30;
 

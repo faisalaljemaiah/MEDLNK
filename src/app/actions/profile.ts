@@ -2,11 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingColumnError, isMissingBucketError } from "@/lib/supabase/errors";
 import { ROLES } from "@/lib/roles";
 import { COUNTRIES } from "@/lib/countries";
 import { validateImageUpload, validateDocumentUpload } from "@/lib/uploads";
 import { trackEventAction } from "@/app/actions/analytics";
+import { LICENSE_VERIFICATION_ENABLED } from "@/lib/verification";
 
 export type ProfileFormState = { error: string } | undefined;
 
@@ -50,7 +52,12 @@ export async function updateProfileAction(
     ? rawCountry
     : null;
 
-  if (!full_name || !handle || !role || (!existing?.verified && !license_number)) {
+  if (
+    !full_name ||
+    !handle ||
+    !role ||
+    (LICENSE_VERIFICATION_ENABLED && !existing?.verified && !license_number)
+  ) {
     return {
       error: "Full name, handle, role, and license number are required.",
     };
@@ -117,6 +124,7 @@ export async function updateProfileAction(
       license_document_path = path;
     }
   } else if (
+    LICENSE_VERIFICATION_ENABLED &&
     documentFeatureLive &&
     !existing?.verified &&
     !existing?.license_document_path
@@ -183,6 +191,24 @@ export async function updateProfileAction(
 
   if (!existing?.handle) {
     await trackEventAction("onboarding_completed");
+  }
+
+  // While license verification is switched off (src/lib/verification.ts),
+  // nobody should be stuck waiting in the admin's manual review queue —
+  // approve on the spot instead. Needs the service-role client: the
+  // privilege-guard triggers (0028) block a regular user from ever setting
+  // `verified` on their own row, by design, and that guard should stay
+  // intact rather than being carved open for this.
+  if (!LICENSE_VERIFICATION_ENABLED && !existing?.verified) {
+    const admin = createAdminClient();
+    await admin
+      .from("profiles")
+      .update({
+        verified: true,
+        verification_status: "approved",
+        verified_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
   }
 
   redirect(`/u/${handle}`);

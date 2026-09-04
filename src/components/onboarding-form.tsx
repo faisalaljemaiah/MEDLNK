@@ -9,6 +9,7 @@ import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Avatar } from "@/components/avatar";
 import { AvatarCropper } from "@/components/avatar-cropper";
+import { LICENSE_VERIFICATION_ENABLED } from "@/lib/verification";
 import type { Profile } from "@/lib/database.types";
 
 export function OnboardingForm({
@@ -205,8 +206,9 @@ export function OnboardingForm({
           so re-showing (and requiring) a license number or document on a
           routine profile edit would just be friction. They stay visible for
           first-time onboarding and for a rejected member's resubmission,
-          since both are still verified === false. */}
-      {!profile.verified && (
+          since both are still verified === false. Hidden outright while
+          LICENSE_VERIFICATION_ENABLED is off (see src/lib/verification.ts). */}
+      {LICENSE_VERIFICATION_ENABLED && !profile.verified && (
         <>
           <TextField
             label="License number"

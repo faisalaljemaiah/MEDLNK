@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { ArrowLeftIcon } from "@/components/icons";
-import { getVerificationAttemptStatus } from "@/lib/verification";
+import { getVerificationAttemptStatus, LICENSE_VERIFICATION_ENABLED } from "@/lib/verification";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -34,8 +34,9 @@ export default async function OnboardingPage() {
 
   // Only matters once rejected — a pending or approved member has nothing
   // to resubmit yet, so there's no attempt count worth a query for them.
+  // Skipped outright while verification is switched off: nothing reads it.
   const attemptStatus =
-    profile.verification_status === "rejected"
+    LICENSE_VERIFICATION_ENABLED && profile.verification_status === "rejected"
       ? await getVerificationAttemptStatus(supabase, user.id)
       : null;
 
@@ -66,18 +67,20 @@ export default async function OnboardingPage() {
         <p className="text-sm text-muted">
           {isEdit
             ? "Update your picture, details, and specialty."
-            : "We manually review every license before you can post a case. You can browse Asyashare while you wait."}
+            : LICENSE_VERIFICATION_ENABLED
+              ? "We manually review every license before you can post a case. You can browse Asyashare while you wait."
+              : "Fill in your details to start using Asyashare."}
         </p>
       </div>
 
-      {profile.verification_status === "pending" && (
+      {LICENSE_VERIFICATION_ENABLED && profile.verification_status === "pending" && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
           Verification pending — you can read and save cases now; posting
           unlocks once we approve your license.
         </div>
       )}
 
-      {profile.verification_status === "rejected" && attemptStatus && (
+      {LICENSE_VERIFICATION_ENABLED && profile.verification_status === "rejected" && attemptStatus && (
         <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
           {attemptStatus.attemptsRemaining > 0 ? (
             <>
