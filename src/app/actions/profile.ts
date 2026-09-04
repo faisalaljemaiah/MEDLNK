@@ -40,13 +40,17 @@ export async function updateProfileAction(
   const role = String(formData.get("role") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
-  const license_number = String(formData.get("license_number") ?? "").trim();
+  // Verified members no longer see this field at all (onboarding-form.tsx),
+  // so nothing is submitted for it on a routine edit — fall back to whatever
+  // is already on file rather than reading that absence as "clear it out."
+  const submittedLicenseNumber = String(formData.get("license_number") ?? "").trim();
+  const license_number = submittedLicenseNumber || existing?.license_number || "";
   const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
   const country_code = COUNTRIES.some((c) => c.code === rawCountry)
     ? rawCountry
     : null;
 
-  if (!full_name || !handle || !role || !license_number) {
+  if (!full_name || !handle || !role || (!existing?.verified && !license_number)) {
     return {
       error: "Full name, handle, role, and license number are required.",
     };
@@ -112,7 +116,11 @@ export async function updateProfileAction(
     if (!uploadError) {
       license_document_path = path;
     }
-  } else if (documentFeatureLive && !existing?.license_document_path) {
+  } else if (
+    documentFeatureLive &&
+    !existing?.verified &&
+    !existing?.license_document_path
+  ) {
     return {
       error: "Upload your license or proof of study to continue.",
     };
