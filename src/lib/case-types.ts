@@ -20,7 +20,13 @@ export type CaseTypeMeta = {
   badgeClass: string;
   /** Structured Near Miss prompts instead of the standard case body. */
   usesNearMiss?: boolean;
-  /** Author attaches a multiple-choice question readers answer before reveal. */
+  /**
+   * Only affects the composer's initial state, not what's allowed — every
+   * format can optionally attach a multiple-choice question (compose-form.tsx's
+   * own toggle decides that per post, and the case page renders one off
+   * whether a question actually exists, not off case_type). This just starts
+   * the toggle switched on for the format built around asking one.
+   */
   usesQuestion?: boolean;
   /** Closing sections stay hidden until the reader reveals them. */
   usesStagedReveal?: boolean;

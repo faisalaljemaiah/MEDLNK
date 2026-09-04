@@ -160,6 +160,21 @@ export function ComposeForm({
   const [bodySections, setBodySections] = useState<string[]>([]);
   const [nearMissSections, setNearMissSections] = useState<string[]>([]);
   const [mediaPlacement, setMediaPlacement] = useState("top");
+  // Any format can carry an interactive question now — the case page already
+  // renders one off whether a case_questions row exists, not off case_type
+  // (src/lib/cases.ts). "What would you do?" just starts with this switched
+  // on, as a convenience matching what that format is for — reapplied by
+  // handleTypeChange below on every format switch, not just this initial
+  // mount, so picking it from the on-page pills gets the same default a
+  // deep link like /compose?type=what_would_you_do does.
+  const [includeQuestion, setIncludeQuestion] = useState<boolean>(
+    () => caseTypeMeta(initialType).usesQuestion === true,
+  );
+
+  function handleTypeChange(value: string) {
+    setCaseType(value);
+    setIncludeQuestion(caseTypeMeta(value).usesQuestion === true);
+  }
 
   // The minimal video composer (below) has no visible title field — the
   // server still requires one (every case needs a headline elsewhere in the
@@ -406,6 +421,7 @@ export function ComposeForm({
       <input type="hidden" name="acknowledge_warning" ref={acknowledgeRef} defaultValue="false" />
 
       <input type="hidden" name="case_type" value={caseType} />
+      <input type="hidden" name="include_question" value={includeQuestion ? "true" : "false"} />
 
       {/* The four groups below share one continuous connecting line — Case →
           Clinical Context → Global Exchange → Supporting Material, the same
@@ -430,7 +446,7 @@ export function ComposeForm({
                 <button
                   key={t.value}
                   type="button"
-                  onClick={() => setCaseType(t.value)}
+                  onClick={() => handleTypeChange(t.value)}
                   aria-pressed={caseType === t.value}
                   className={clsx(
                     "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
@@ -598,12 +614,24 @@ export function ComposeForm({
             </div>
           )}
 
-          {typeMeta.usesQuestion && (
-            <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
-              <p className="font-label mb-3 text-xs uppercase tracking-wide text-accent">
-                The question
-              </p>
-              <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-label mb-1 text-xs uppercase tracking-wide text-accent">
+                  The question (optional)
+                </p>
+                <p className="text-xs text-muted">
+                  Readers commit to an answer before they see the rest of the case.
+                </p>
+              </div>
+              <SectionChip
+                label={includeQuestion ? "Remove" : "+ Add"}
+                active={includeQuestion}
+                onClick={() => setIncludeQuestion((v) => !v)}
+              />
+            </div>
+            {includeQuestion && (
+              <div className="mt-4 flex flex-col gap-4">
                 <Textarea
                   label="What are you asking?"
                   name="question_prompt"
@@ -653,8 +681,8 @@ export function ComposeForm({
                   Let readers change their answer after seeing the results
                 </label>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </FormSection>
 
         <FormSection number="02" title="Clinical Context">

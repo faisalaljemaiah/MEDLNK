@@ -109,8 +109,12 @@ export async function createCaseAction(
     String(formData.get(`option_${i}`) ?? "").trim(),
   );
   const correctIndex = Number(formData.get("correct_option") ?? -1);
+  // Any format can carry a question now, not just "What would you do?" — the
+  // author's own toggle (compose-form.tsx), not the post type, decides
+  // whether one gets attached.
+  const includeQuestion = formData.get("include_question") === "true";
 
-  if (typeMeta.usesQuestion) {
+  if (includeQuestion) {
     const filled = optionBodies.filter(Boolean);
     if (!questionPrompt) {
       return { error: "An interactive case needs a question." };
@@ -363,7 +367,7 @@ export async function createCaseAction(
     return { error: error?.message ?? "Could not save the case." };
   }
 
-  if (typeMeta.usesQuestion) {
+  if (includeQuestion) {
     const { data: question, error: questionError } = await supabase
       .from("case_questions")
       .insert({
