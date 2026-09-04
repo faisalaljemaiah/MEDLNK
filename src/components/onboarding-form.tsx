@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
-import { updateProfileAction } from "@/app/actions/profile";
+import { useState, useTransition } from "react";
+import { updateProfileAction, type ProfileFormState } from "@/app/actions/profile";
 import { ROLES } from "@/lib/roles";
 import { COUNTRIES } from "@/lib/countries";
 import { toUploadableImage } from "@/lib/heic";
@@ -28,14 +28,17 @@ export function OnboardingForm({
    *  (name, handle, specialty, photo) stays editable. */
   resubmissionLocked?: boolean;
 }) {
-  const [state, action] = useActionState(updateProfileAction, undefined);
+  const [state, setState] = useState<ProfileFormState>(undefined);
+  const [isPending, startTransition] = useTransition();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  // The actual cropped photo to upload, held directly rather than pushed
+  // back into the file input's own .files — see handleSubmit for why.
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [convertingAvatar, setConvertingAvatar] = useState(false);
   // Set the moment a photo is picked (post-HEIC-conversion), cleared once the
   // crop step finishes or is cancelled — this is what tells the cropper
   // modal to open, and what it crops.
   const [cropSource, setCropSource] = useState<string | null>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -53,28 +56,40 @@ export function OnboardingForm({
   }
 
   function handleCropped(file: File) {
-    const input = avatarInputRef.current;
-    if (input) {
-      const transfer = new DataTransfer();
-      transfer.items.add(file);
-      input.files = transfer.files;
-    }
+    setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
     if (cropSource) URL.revokeObjectURL(cropSource);
     setCropSource(null);
   }
 
   function handleCropCancel() {
-    // Nothing was picked, as far as the form is concerned — clearing the
-    // input means a cancelled crop doesn't leave a stale file behind that
-    // would silently upload on submit despite showing the old avatar.
-    if (avatarInputRef.current) avatarInputRef.current.value = "";
     if (cropSource) URL.revokeObjectURL(cropSource);
     setCropSource(null);
   }
 
+  // A plain function passed as the form's action, not useActionState — the
+  // picked-and-cropped photo has to override whatever the hidden file
+  // input's own .files holds, and that input's .files can only be set two
+  // ways: the browser's own picker, or reassigning it via a DataTransfer.
+  // The DataTransfer route is exactly what the HEIC-conversion step already
+  // did before this, and it's what silently broke a real photo upload on at
+  // least one device — WebKit's support for writing to .files this way is
+  // inconsistent, so the safer fix is to never touch the input's .files at
+  // all and instead override the "avatar" entry directly on the FormData
+  // this function already receives (every other field's current value is
+  // still read the normal way, straight off the DOM).
+  function handleSubmit(formData: FormData) {
+    if (avatarFile) {
+      formData.set("avatar", avatarFile, avatarFile.name);
+    }
+    startTransition(async () => {
+      const result = await updateProfileAction(state, formData);
+      setState(result);
+    });
+  }
+
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col items-center gap-2">
         <Avatar
           avatarUrl={avatarPreview ?? profile.avatar_url}
@@ -82,15 +97,16 @@ export function OnboardingForm({
           size="lg"
         />
         <label
-          htmlFor="avatar"
+          htmlFor="avatar-picker"
           className="cursor-pointer text-sm font-medium text-accent"
         >
           {profile.avatar_url ? "Change photo" : "Add a photo"}
         </label>
+        {/* No name/required — this only ever feeds the crop step. The file
+            that actually gets submitted is whatever handleSubmit sets on
+            the FormData above, not this input's own value. */}
         <input
-          ref={avatarInputRef}
-          id="avatar"
-          name="avatar"
+          id="avatar-picker"
           type="file"
           accept="image/*,.heic,.heif"
           className="hidden"
@@ -231,7 +247,9 @@ export function OnboardingForm({
           {state.error}
         </p>
       )}
-      <SubmitButton disabled={convertingAvatar}>Save profile</SubmitButton>
+      <SubmitButton disabled={convertingAvatar} pending={isPending}>
+        Save profile
+      </SubmitButton>
     </form>
   );
 }

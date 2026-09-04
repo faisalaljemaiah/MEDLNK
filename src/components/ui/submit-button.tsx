@@ -7,13 +7,24 @@ export function SubmitButton({
   children,
   className,
   disabled,
+  pending: pendingOverride,
 }: {
   children: React.ReactNode;
   className?: string;
   /** Extra condition to disable on, beyond the form's own pending state — e.g. an async step still running client-side before submit makes sense. */
   disabled?: boolean;
+  /**
+   * Overrides useFormStatus's own read below. That hook only reflects a
+   * form submitted through the native action-prop wiring; a caller that
+   * rewrites FormData and calls the action manually inside its own
+   * transition (see onboarding-form.tsx) isn't submitting that way, so
+   * useFormStatus would report `pending: false` throughout — this lets such
+   * a caller supply the real pending state instead.
+   */
+  pending?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const formStatus = useFormStatus();
+  const pending = pendingOverride ?? formStatus.pending;
 
   return (
     <button
