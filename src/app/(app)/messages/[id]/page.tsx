@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { getConversationThread } from "@/lib/messages";
 import { Avatar } from "@/components/avatar";
+import { BackButton } from "@/components/back-button";
 import { MessageComposer } from "@/components/message-composer";
 
 export default async function ConversationPage({
@@ -22,8 +23,15 @@ export default async function ConversationPage({
   if (!thread) notFound();
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cancels the shared layout's pb-24 (reserved for the floating bottom
+    // nav) on mobile only — this page hides that nav itself (see
+    // bottom-nav.tsx's onChatThread check) precisely so the composer isn't
+    // sharing the bottom of the screen with it, so the reserved gap below
+    // the composer would otherwise just be dead space. Desktop never had
+    // that nav to begin with (sidebar instead), so its pb-10 is untouched.
+    <div className="-mb-24 flex flex-1 flex-col md:mb-0">
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+        <BackButton />
         <Link
           href={
             thread.otherUser?.handle ? `/u/${thread.otherUser.handle}` : "#"

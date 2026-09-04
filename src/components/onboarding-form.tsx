@@ -8,6 +8,7 @@ import { toUploadableImage } from "@/lib/heic";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Avatar } from "@/components/avatar";
+import { AvatarCropper } from "@/components/avatar-cropper";
 import type { Profile } from "@/lib/database.types";
 
 export function OnboardingForm({
@@ -30,27 +31,46 @@ export function OnboardingForm({
   const [state, action] = useActionState(updateProfileAction, undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [convertingAvatar, setConvertingAvatar] = useState(false);
+  // Set the moment a photo is picked (post-HEIC-conversion), cleared once the
+  // crop step finishes or is cancelled — this is what tells the cropper
+  // modal to open, and what it crops.
+  const [cropSource, setCropSource] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    const input = avatarInputRef.current;
-    if (!file || !input) return;
+    if (!file) return;
 
     setConvertingAvatar(true);
     try {
       const uploadable = await toUploadableImage(file);
-      if (uploadable !== file) {
-        const transfer = new DataTransfer();
-        transfer.items.add(uploadable);
-        input.files = transfer.files;
-      }
-      setAvatarPreview(URL.createObjectURL(uploadable));
+      setCropSource(URL.createObjectURL(uploadable));
     } catch {
-      setAvatarPreview(URL.createObjectURL(file));
+      setCropSource(URL.createObjectURL(file));
     } finally {
       setConvertingAvatar(false);
     }
+  }
+
+  function handleCropped(file: File) {
+    const input = avatarInputRef.current;
+    if (input) {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      input.files = transfer.files;
+    }
+    setAvatarPreview(URL.createObjectURL(file));
+    if (cropSource) URL.revokeObjectURL(cropSource);
+    setCropSource(null);
+  }
+
+  function handleCropCancel() {
+    // Nothing was picked, as far as the form is concerned — clearing the
+    // input means a cancelled crop doesn't leave a stale file behind that
+    // would silently upload on submit despite showing the old avatar.
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+    if (cropSource) URL.revokeObjectURL(cropSource);
+    setCropSource(null);
   }
 
   return (
@@ -78,6 +98,13 @@ export function OnboardingForm({
         />
         {convertingAvatar && (
           <p className="text-xs text-muted">Converting photo…</p>
+        )}
+        {cropSource && (
+          <AvatarCropper
+            imageSrc={cropSource}
+            onCancel={handleCropCancel}
+            onCropped={handleCropped}
+          />
         )}
       </div>
       <TextField

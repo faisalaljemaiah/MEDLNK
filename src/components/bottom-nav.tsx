@@ -60,6 +60,13 @@ function useShrinkOnScrollDown() {
 export function BottomNav({ profile }: { profile: NavProfile | null }) {
   const pathname = usePathname();
   const shrunk = useShrinkOnScrollDown();
+  // A conversation thread wants its message composer flush against the real
+  // bottom of the screen — sharing that space with a floating nav pill means
+  // either one covers the other, especially once the on-screen keyboard is
+  // up and shrinks the visible viewport. /messages itself (the thread list)
+  // keeps the nav; only a specific thread hides it. The page cancels the
+  // layout's reserved nav padding to match (see messages/[id]/page.tsx).
+  const onChatThread = pathname.startsWith("/messages/");
 
   const profileHref = profile
     ? profile.handle
@@ -69,6 +76,8 @@ export function BottomNav({ profile }: { profile: NavProfile | null }) {
   const isProfileActive = profile?.handle
     ? pathname === `/u/${profile.handle}`
     : pathname === "/onboarding" || pathname === "/welcome" || pathname === "/login";
+
+  if (onChatThread) return null;
 
   return (
     <nav className="animate-enter pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
