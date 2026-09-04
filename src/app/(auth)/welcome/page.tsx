@@ -2,15 +2,21 @@ import Link from "next/link";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { WelcomeSplash } from "@/components/welcome-splash";
 import { LogoMark, Wordmark } from "@/components/brand";
+import { browseAsGuestAction } from "@/app/actions/guest";
 
 /**
- * The signed-out entry point: a brief, animated welcome before the sign-in/
- * sign-up forms rather than dropping a new visitor straight into one.
+ * The signed-out entry point: a first-time, signed-out visit to the bare
+ * domain lands here (the root feed page redirects to it — see the
+ * medlnk_guest check in src/app/(app)/page.tsx) rather than straight into
+ * the app shell, so someone who just searched the name meets the pitch
+ * before the product.
  *
- * Deliberately not a gate — the feed already works signed out (RLS lets
- * anon read cases), and this screen must not take that away. "Browse
- * without an account" keeps that path exactly as discoverable as the two
- * that lead to a form.
+ * Not a permanent gate, though — the feed still works signed out (RLS lets
+ * anon read cases), and "Browse without an account" below is a real,
+ * one-time opt-out: it sets the same cookie the redirect checks
+ * (browseAsGuestAction, src/app/actions/guest.ts), so choosing it once
+ * means never landing back here again on this browser, same as signing up
+ * or signing in would.
  */
 export default function WelcomePage() {
   return (
@@ -50,9 +56,14 @@ export default function WelcomePage() {
         >
           Sign in
         </Link>
-        <Link href="/" className="mt-1 text-xs text-muted hover:text-text">
-          Browse without an account →
-        </Link>
+        <form action={browseAsGuestAction} className="mt-1">
+          <button
+            type="submit"
+            className="text-xs text-muted hover:text-text"
+          >
+            Browse without an account →
+          </button>
+        </form>
       </div>
 
       <p
