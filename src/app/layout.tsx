@@ -16,6 +16,14 @@ export const metadata: Metadata = {
   title: "Asyashare",
   description:
     "A clinical knowledge network for verified medical professionals.",
+  // favicon.ico itself is served via the src/app/favicon.ico file convention
+  // (Next injects that link automatically) — these add the sharper SVG mark
+  // and the icon Apple actually uses for "Add to Home Screen".
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {
