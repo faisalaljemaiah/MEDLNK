@@ -58,6 +58,18 @@ export async function searchAllUsers(
     .slice(0, 50);
 }
 
+/**
+ * The true member count, independent of searchAllUsers' own 50-row display
+ * cap — an admin scanning the directory has no other way to tell "50 rows
+ * because that's everyone" from "50 rows because that's the cap."
+ */
+export async function getTotalUserCount(supabase: Client): Promise<number | null> {
+  const { count, error } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true });
+  return error ? null : (count ?? 0);
+}
+
 export type DirectoryCase = {
   id: string;
   title: string;

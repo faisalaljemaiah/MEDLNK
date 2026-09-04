@@ -14,7 +14,7 @@ import {
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
 import { getPlatformAnalytics, getFeatureUsage, getOnboardingFunnel } from "@/lib/analytics";
 import { FEATURE_USAGE_LABELS, FUNNEL_STEP_LABELS } from "@/lib/analytics-events";
-import { searchAllUsers, searchAllCases } from "@/lib/admin-directory";
+import { searchAllUsers, searchAllCases, getTotalUserCount } from "@/lib/admin-directory";
 import { REPORT_REASON_LABELS, REPORT_STATUS_META } from "@/lib/report-reasons";
 import { getSupportMessages } from "@/lib/support";
 import { SUPPORT_REASON_LABELS } from "@/lib/support-reasons";
@@ -246,7 +246,10 @@ async function UsersDirectory({
   basePath: string;
   viewerHandle: string | null;
 }) {
-  const users = await searchAllUsers(supabase, query);
+  const [users, totalCount] = await Promise.all([
+    searchAllUsers(supabase, query),
+    getTotalUserCount(supabase),
+  ]);
 
   // Signed, not public — same as the Requests queue — so a member's
   // document stays reviewable from here at any point, not just while
@@ -263,6 +266,16 @@ async function UsersDirectory({
 
   return (
     <div className="mt-5">
+      <p className="mb-3 text-sm text-muted">
+        {totalCount === null ? (
+          "Member count unavailable"
+        ) : (
+          <>
+            <span className="font-medium text-text">{totalCount}</span>{" "}
+            {totalCount === 1 ? "member" : "members"} total
+          </>
+        )}
+      </p>
       <form action={basePath} className="flex gap-2">
         <input type="hidden" name="tab" value="users" />
         {/* Same rim as every other search bar in the app (.ai-glow

@@ -185,14 +185,20 @@ export default async function ProfilePage({
         </div>
 
         <div className="mt-3 flex gap-2">
-          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
+          <Link
+            href={`${path}/followers`}
+            className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted transition-colors duration-150 hover:text-text"
+          >
             <span className="font-medium text-text">{followerCount}</span>{" "}
             {t(locale, "profile.followers")}
-          </span>
-          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
+          </Link>
+          <Link
+            href={`${path}/following`}
+            className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted transition-colors duration-150 hover:text-text"
+          >
             <span className="font-medium text-text">{followingCount}</span>{" "}
             {t(locale, "profile.following")}
-          </span>
+          </Link>
         </div>
       </div>
 

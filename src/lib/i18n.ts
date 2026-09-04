@@ -118,6 +118,10 @@ const en = {
   "profile.emptySaved": "No saved cases yet.",
   "profile.emptyPosts": "No cases shared yet.",
   "profile.noNameYet": "(no name yet)",
+  "profile.followersTitle": "Followers",
+  "profile.followingTitle": "Following",
+  "profile.emptyFollowersList": "No followers yet.",
+  "profile.emptyFollowingList": "Not following anyone yet.",
 
   "exchange.title": "Global Case Exchange",
   "exchange.subtitle": "Cases clinicians chose to share beyond their own country. Country only — never a hospital, unit or region.",
@@ -389,6 +393,10 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "profile.emptySaved": "لا توجد حالات محفوظة بعد.",
   "profile.emptyPosts": "لم تتم مشاركة أي حالات بعد.",
   "profile.noNameYet": "(لا يوجد اسم بعد)",
+  "profile.followersTitle": "المتابِعون",
+  "profile.followingTitle": "المتابَعون",
+  "profile.emptyFollowersList": "لا يوجد متابِعون بعد.",
+  "profile.emptyFollowingList": "لا تتابع أحداً بعد.",
 
   "exchange.title": "شبكة تبادل الحالات العالمية",
   "exchange.subtitle": "حالات اختار الأطباء مشاركتها خارج بلدهم. الدولة فقط — لا يُذكر المستشفى أو القسم أو المنطقة أبداً.",
