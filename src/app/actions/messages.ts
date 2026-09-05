@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateConversation } from "@/lib/messages";
+import { sendPushToUsers } from "@/lib/web-push";
 
 export async function startConversationAction(otherUserId: string) {
   const supabase = await createClient();
@@ -64,6 +65,26 @@ export async function sendMessageAction(
       };
     }
     return { error: error.message };
+  }
+
+  try {
+    const { data: recipientId } = await supabase.rpc("notify_new_message", {
+      p_conversation_id: conversationId,
+    });
+    if (recipientId) {
+      const { data: actor } = await supabase
+        .from("profiles")
+        .select("full_name,handle")
+        .eq("id", user.id)
+        .single();
+      await sendPushToUsers(supabase, [recipientId], {
+        title: actor?.full_name || `@${actor?.handle}` || "New message",
+        body,
+        url: `/messages/${conversationId}`,
+      });
+    }
+  } catch {
+    // Message is saved; notifying the recipient is not worth failing it for.
   }
 
   revalidatePath(`/messages/${conversationId}`);

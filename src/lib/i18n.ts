@@ -172,6 +172,14 @@ const en = {
   "twoFactor.codePlaceholder": "6-digit code",
   "twoFactor.confirmCta": "Confirm",
 
+  "pushNotifications.title": "Push notifications",
+  "pushNotifications.onBody": "On — you'll get an alert on this device for follows, replies, messages, and case activity.",
+  "pushNotifications.offBody": "Get an alert on this device the moment something happens, even when the app is closed.",
+  "pushNotifications.enable": "Turn on",
+  "pushNotifications.disable": "Turn off",
+  "pushNotifications.unsupported": "This browser doesn't support push notifications.",
+  "pushNotifications.blocked": "Notifications are blocked for this site in your browser settings.",
+
   "common.cancel": "Cancel",
 
   "caseType.clinicalCase.label": "Clinical case",
@@ -467,6 +475,14 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "twoFactor.manualEntry": "أو أدخل هذا الرمز يدوياً:",
   "twoFactor.codePlaceholder": "رمز مكوّن من 6 أرقام",
   "twoFactor.confirmCta": "تأكيد",
+
+  "pushNotifications.title": "الإشعارات الفورية",
+  "pushNotifications.onBody": "مفعّلة — ستصلك تنبيهات على هذا الجهاز عند المتابعة والردود والرسائل ونشاط الحالات.",
+  "pushNotifications.offBody": "احصل على تنبيه على هذا الجهاز فور حدوث أي شيء، حتى عندما يكون التطبيق مغلقاً.",
+  "pushNotifications.enable": "تفعيل",
+  "pushNotifications.disable": "إيقاف",
+  "pushNotifications.unsupported": "هذا المتصفح لا يدعم الإشعارات الفورية.",
+  "pushNotifications.blocked": "الإشعارات محظورة لهذا الموقع في إعدادات متصفحك.",
 
   "common.cancel": "إلغاء",
 

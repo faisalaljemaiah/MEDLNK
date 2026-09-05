@@ -377,6 +377,19 @@ export type UserBlock = {
   created_at: string;
 };
 
+/** Mirrors the kind check constraint in 0036_push_notifications.sql. */
+export type PushSubscriptionKind = "web" | "fcm";
+
+export type PushSubscription = {
+  id: string;
+  user_id: string;
+  kind: PushSubscriptionKind;
+  endpoint: string;
+  p256dh: string | null;
+  auth_key: string | null;
+  created_at: string;
+};
+
 /** Mirrors the scope check constraint in 0031_communities.sql. */
 export type CommunityScope = "global" | "country";
 /** Mirrors the status check constraint on community_members in 0031_communities.sql. */
@@ -484,6 +497,12 @@ export type Database = {
         Row: Follow;
         Insert: Partial<Follow> & { follower_id: string; followee_id: string };
         Update: Partial<Follow>;
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: PushSubscription;
+        Insert: Partial<PushSubscription> & { user_id: string; endpoint: string };
+        Update: Partial<PushSubscription>;
         Relationships: [];
       };
       user_blocks: {
@@ -682,10 +701,14 @@ export type Database = {
         Args: { p_question_id: string };
         Returns: { option_id: string; votes: number }[];
       };
-      /** Notifies a case's followers. Security definer — clients can't insert. */
+      /**
+       * Notifies a case's followers. Security definer — clients can't insert.
+       * Returns the ids of everyone actually notified (0036), so a caller can
+       * dispatch a push to the same set without a second lookup.
+       */
       fan_out_case_update: {
         Args: { p_case_id: string; p_type: string; p_body: string };
-        Returns: undefined;
+        Returns: string[];
       };
       /** True when the caller is a verified, unsuspended member of that specialty. */
       is_specialist_in: {
@@ -695,12 +718,12 @@ export type Database = {
       /** Notifies that specialty a question is waiting. Security definer. */
       fan_out_specialist_request: {
         Args: { p_request_id: string };
-        Returns: undefined;
+        Returns: string[];
       };
       /** Notifies the requester and the case's followers. Security definer. */
       fan_out_specialist_answer: {
         Args: { p_request_id: string };
-        Returns: undefined;
+        Returns: string[];
       };
       /**
        * The one deliberately platform-wide fan-out. Refuses to fire for a post
@@ -708,7 +731,22 @@ export type Database = {
        */
       fan_out_safety_alert: {
         Args: { p_case_id: string };
-        Returns: undefined;
+        Returns: string[];
+      };
+      /** Notifies a followee of a new follower. Returns their id, or null if skipped. */
+      notify_new_follower: {
+        Args: { p_followee_id: string };
+        Returns: string | null;
+      };
+      /** Notifies a case's author of a new reply. Returns their id, or null if skipped. */
+      notify_new_comment: {
+        Args: { p_case_id: string };
+        Returns: string | null;
+      };
+      /** Notifies the other side of a conversation. Returns their id, or null if skipped. */
+      notify_new_message: {
+        Args: { p_conversation_id: string };
+        Returns: string | null;
       };
     };
   };

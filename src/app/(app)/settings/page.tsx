@@ -7,6 +7,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { UnblockButton } from "@/components/block-button";
 import { DeleteAccount } from "@/components/delete-account";
 import { TwoFactorSettings } from "@/components/two-factor-settings";
+import { PushNotificationToggle } from "@/components/push-notification-toggle";
 import { signOutAction } from "@/app/actions/auth";
 import { t } from "@/lib/i18n";
 
@@ -28,8 +29,11 @@ export default async function SettingsPage() {
       <h1 className="font-headline text-xl text-text">{t(locale, "settings.title")}</h1>
 
       <SettingsGroupLabel>{t(locale, "settings.preferences")}</SettingsGroupLabel>
-      <section className="rounded-2xl border border-line bg-surface p-4">
+      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4">
         <LanguageSwitcher current={locale} />
+        <div className="border-t border-line pt-4">
+          <PushNotificationToggle locale={locale} />
+        </div>
       </section>
 
       <SettingsGroupLabel>{t(locale, "settings.security")}</SettingsGroupLabel>

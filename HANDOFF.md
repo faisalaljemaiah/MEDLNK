@@ -1491,6 +1491,19 @@ part of the product. `scripts/seed.ts`'s fixture email domain became
 effect). Verified live: page titles, the welcome screen wordmark, and a
 full `tsc`/`lint`/`build` all reflect the new name.
 
+**Real (Web Push) push notifications**, on top of the in-app inbox from
+0008. A member turns it on from Settings; the follow/reply/message/case-
+update/safety-alert/specialist-Q&A events that already wrote an in-app
+notification row now also try to put a real OS-level notification on the
+member's device via `sendPushToUsers` (`src/lib/web-push.ts`, the `web-push`
+npm package). Native app-store push (FCM/APNs) is explicitly out of scope —
+that needs the owner's own Firebase project and Apple push credentials;
+Web Push needs no external account at all, just the self-generated VAPID
+keypair in `.env.example`, and the `push_subscriptions` schema's `kind`
+column is already shaped (`'web' | 'fcm'`) to add FCM later without a
+migration rewrite. Full detail, including what's verified vs. what
+this sandbox couldn't exercise, in "0036" under "Blocking manual steps".
+
 ## Security review
 
 Full pass over RLS policies, Server Actions, storage/upload paths, and
@@ -1823,6 +1836,57 @@ to the hosted project** — same manual step as every migration before it.
 Until it's applied, `handle_new_user` stays on its 0003 definition and
 every new signup gets the default `'en'` regardless of what they picked on
 the signup page — no error, the choice is just silently not persisted yet.
+
+**Update, this session:** 0036 (`push_subscriptions`) landed — real browser
+push notifications (Web Push/VAPID), not just the in-app inbox from 0008.
+A member turns it on from Settings ("Push notifications" under Preferences),
+which registers `public/sw.js` and a `PushManager` subscription; the row
+lands in the new `push_subscriptions` table. Follows, replies, messages, and
+the four existing `fan_out_*` events (case updates, safety alerts, specialist
+requests/answers) now also fire a push via `sendPushToUsers`
+(`src/lib/web-push.ts`), on top of — not instead of — the existing in-app
+notification row. Adds three checklist rows. The four `fan_out_*` functions
+change return type (`void` -> `setof uuid`, so a Server Action knows exactly
+who to push to without a second query) — `create or replace` can't do that,
+so each one in `APPLY_TO_HOSTED.sql` is now a `drop function if exists` +
+`create function` pair, including their *original* (0008/0012/0015) sections
+earlier in the paste file, otherwise a second full paste would error trying
+to `create or replace` a `setof uuid` function back down to `void`. Verified
+locally (`supabase/tests/run.sh` and `apply-file.sh`, both green, including
+the double-apply check) but **not applied to the hosted project** — same
+manual step as every migration before it. Until it's applied: every
+`notify_new_*` RPC call and the push-dispatch branch of every `fan_out_*`
+call fails inside a `try/catch` that already existed for exactly this
+reason ("notifying is not worth failing the write for") — follows, replies,
+messages, case updates, safety alerts, and specialist Q&A all keep working
+exactly as before, verified live against the real hosted project's current
+pre-migration state (a follow still completes and the button still flips to
+"Following", no error surfaces). The Settings push toggle itself doesn't
+depend on this table at all until the moment it calls `subscribeToPushAction`
+— point that at 0036 being applied, not the schema.
+
+Also needs `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` set on the deployment (Vercel) — see
+`.env.example`. Without them, `sendPushToUsers` no-ops silently (checked
+before touching the network); nothing else is affected. Generate a
+production keypair with `npx web-push generate-vapid-keys` — don't reuse the
+one in this repo's own `.env.local`, that one's for local dev only.
+
+**Known sandbox limitation, not a product bug:** the actual "does a real
+notification pop up on a real device" leg of this couldn't be exercised in
+this dev sandbox — Chromium's own push-subscription negotiation talks to
+Google's FCM registration endpoints (`android.clients.google.com`,
+`accounts.google.com`), and this sandbox's outbound proxy can't complete
+those connections (`ws_closed_mid_exchange`), so `PushManager.subscribe()`
+hangs indefinitely in a Playwright session here. Confirmed instead, live,
+that our half of the mechanism is correct: pointed a real `web-push`
+`sendNotification()` call (using this repo's actual VAPID keys) at a local
+HTTPS mock endpoint and confirmed a correctly-formed request — valid VAPID
+JWT (`aud`/`sub` matching the endpoint and `VAPID_SUBJECT`), `Content-
+Encoding: aes128gcm`, a real encrypted body — is what actually leaves the
+server. The unverified leg is purely "does Chromium's FCM handshake succeed
+in this sandbox," which has nothing to do with the app; it uses normal
+internet access on a real device or in Vercel's environment.
 
 Once 0017 is confirmed applied, the `42703` fallback tiers in
 `createCaseAction` (`src/app/actions/case.ts`) can be collapsed to a single

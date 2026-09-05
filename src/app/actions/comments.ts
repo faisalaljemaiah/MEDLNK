@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isCommentLabel } from "@/lib/comment-labels";
 import { scanForIdentifiersAction } from "@/app/actions/ai";
+import { sendPushToUsers } from "@/lib/web-push";
 
 export type CommentResult =
   | { error: string }
@@ -89,6 +90,31 @@ export async function addCommentAction(
       };
     }
     return { error: error.message };
+  }
+
+  try {
+    const { data: authorId } = await supabase.rpc("notify_new_comment", {
+      p_case_id: caseId,
+    });
+    if (authorId) {
+      const { data: caseRow } = await supabase
+        .from("cases")
+        .select("case_number")
+        .eq("id", caseId)
+        .single();
+      const { data: actor } = await supabase
+        .from("profiles")
+        .select("handle,full_name")
+        .eq("id", user.id)
+        .single();
+      await sendPushToUsers(supabase, [authorId], {
+        title: "New reply",
+        body: `${actor?.full_name || `@${actor?.handle}` || "Someone"} replied to your case`,
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+      });
+    }
+  } catch {
+    // Reply is saved; notifying the author is not worth failing it for.
   }
 
   revalidatePath(path);

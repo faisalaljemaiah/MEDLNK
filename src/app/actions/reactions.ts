@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { trackEventAction } from "@/app/actions/analytics";
+import { sendPushToUsers } from "@/lib/web-push";
 import type { ReactionType } from "@/lib/database.types";
 
 export type ReactionActionResult = { error: string } | { ok: true };
@@ -112,6 +113,29 @@ export async function toggleFollowAction(
         };
       }
       return { error: error.message };
+    }
+
+    // Best-effort, same as every other notification dispatch in this
+    // codebase: the follow is saved regardless of whether the push (or even
+    // the in-app notification row behind it) goes through.
+    try {
+      const { data: recipientId } = await supabase.rpc("notify_new_follower", {
+        p_followee_id: followeeId,
+      });
+      if (recipientId) {
+        const { data: actor } = await supabase
+          .from("profiles")
+          .select("handle,full_name")
+          .eq("id", user.id)
+          .single();
+        await sendPushToUsers(supabase, [recipientId], {
+          title: "New follower",
+          body: `${actor?.full_name || `@${actor?.handle}` || "Someone"} started following you`,
+          url: actor?.handle ? `/u/${actor.handle}` : "/",
+        });
+      }
+    } catch {
+      // Follow is saved; notifying the followee is not worth failing it for.
     }
   }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendPushToUsers } from "@/lib/web-push";
 
 /**
  * Marks a safety alert as seen, which takes it off this reader's banner.
@@ -41,7 +42,21 @@ export async function acknowledgeSafetyAlertAction(caseId: string) {
 export async function broadcastSafetyAlertAction(caseId: string) {
   const supabase = await createClient();
   try {
-    await supabase.rpc("fan_out_safety_alert", { p_case_id: caseId });
+    const { data: recipientIds } = await supabase.rpc("fan_out_safety_alert", {
+      p_case_id: caseId,
+    });
+    if (recipientIds && recipientIds.length > 0) {
+      const { data: caseRow } = await supabase
+        .from("cases")
+        .select("case_number,title")
+        .eq("id", caseId)
+        .single();
+      await sendPushToUsers(supabase, recipientIds, {
+        title: "Safety alert",
+        body: caseRow?.title || "A new safety alert was posted",
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+      });
+    }
   } catch {
     // The alert is posted; the broadcast can be re-fired.
   }

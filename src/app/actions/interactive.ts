@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendPushToUsers } from "@/lib/web-push";
 
 /** The author's write-up, released only once an attempt exists. */
 export type QuestionReveal = {
@@ -194,11 +195,23 @@ export async function publishCaseUpdateAction(
   }
 
   try {
-    await supabase.rpc("fan_out_case_update", {
+    const { data: recipientIds } = await supabase.rpc("fan_out_case_update", {
       p_case_id: caseId,
       p_type: "case_update",
       p_body: `New update on a case you follow: ${stage}`,
     });
+    if (recipientIds && recipientIds.length > 0) {
+      const { data: caseRow } = await supabase
+        .from("cases")
+        .select("case_number,title")
+        .eq("id", caseId)
+        .single();
+      await sendPushToUsers(supabase, recipientIds, {
+        title: caseRow?.title || "Case update",
+        body: `New update: ${stage}`,
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+      });
+    }
   } catch {
     // Update is saved; notifying followers is not worth failing the write for.
   }

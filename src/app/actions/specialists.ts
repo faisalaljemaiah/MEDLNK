@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { scanForIdentifiersAction } from "@/app/actions/ai";
+import { sendPushToUsers } from "@/lib/web-push";
 
 export type SpecialistResult =
   | { error: string }
@@ -84,9 +85,21 @@ export async function askSpecialistAction(
 
   if (data?.id) {
     try {
-      await supabase.rpc("fan_out_specialist_request", {
+      const { data: recipientIds } = await supabase.rpc("fan_out_specialist_request", {
         p_request_id: data.id,
       });
+      if (recipientIds && recipientIds.length > 0) {
+        const { data: caseRow } = await supabase
+          .from("cases")
+          .select("case_number")
+          .eq("id", caseId)
+          .single();
+        await sendPushToUsers(supabase, recipientIds, {
+          title: "Specialist request",
+          body: `A case is waiting for a ${specialty} opinion`,
+          url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+        });
+      }
     } catch {
       // Question is saved; telling the specialty is not worth failing it for.
     }
@@ -154,9 +167,32 @@ export async function answerSpecialistAction(
   // open until the person who asked closes it; "has answers" is read from the
   // answers themselves.
   try {
-    await supabase.rpc("fan_out_specialist_answer", {
+    const { data: recipientIds } = await supabase.rpc("fan_out_specialist_answer", {
       p_request_id: requestId,
     });
+    if (recipientIds && recipientIds.length > 0) {
+      const { data: req } = await supabase
+        .from("specialist_requests")
+        .select("specialty,case_id")
+        .eq("id", requestId)
+        .single();
+      const caseRow = req?.case_id
+        ? (
+            await supabase
+              .from("cases")
+              .select("case_number")
+              .eq("id", req.case_id)
+              .single()
+          ).data
+        : null;
+      await sendPushToUsers(supabase, recipientIds, {
+        title: "Specialist answer",
+        body: req?.specialty
+          ? `A ${req.specialty} specialist answered a question`
+          : "A specialist answered a question",
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+      });
+    }
   } catch {
     // Answer is saved; the notification is not worth failing it for.
   }
