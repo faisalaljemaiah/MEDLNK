@@ -293,32 +293,19 @@ export async function getCountryBreakdown(
 
 export type DailyCount = { date: string; count: number };
 
-/**
- * New members per day for the last `days` days. This is a signup trend, not
- * a login/session metric — there is no last-sign-in or session tracking
- * anywhere in this app yet (Supabase Auth records it internally, but nothing
- * here reads it), so this is the honest "activity over time" signal that
- * actually exists. Every day in the window appears even at zero, so a quiet
- * day reads as "no signups" rather than a missing bar.
- */
-export async function getSignupTrend(
-  supabase: Client,
-  days = 30,
-): Promise<DailyCount[] | null> {
+function daysAgo(days: number): Date {
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - (days - 1));
   since.setUTCHours(0, 0, 0, 0);
+  return since;
+}
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("created_at")
-    .gte("created_at", since.toISOString());
-
-  if (error) return null;
-
+/** Every day in `[since, since+days)` appears even at zero, so a quiet day
+ *  reads as "nothing happened" rather than a missing point on the line. */
+function buildDailySeries(timestamps: string[], since: Date, days: number): DailyCount[] {
   const counts = new Map<string, number>();
-  for (const row of data ?? []) {
-    const day = row.created_at.slice(0, 10);
+  for (const ts of timestamps) {
+    const day = ts.slice(0, 10);
     counts.set(day, (counts.get(day) ?? 0) + 1);
   }
 
@@ -330,4 +317,58 @@ export async function getSignupTrend(
     result.push({ date: key, count: counts.get(key) ?? 0 });
   }
   return result;
+}
+
+/**
+ * New members per day for the last `days` days. This is a signup trend, not
+ * a login/session metric — there is no last-sign-in or session tracking
+ * anywhere in this app yet (Supabase Auth records it internally, but nothing
+ * here reads it), so this is the honest "activity over time" signal that
+ * actually exists.
+ */
+export async function getSignupTrend(
+  supabase: Client,
+  days = 30,
+): Promise<DailyCount[] | null> {
+  const since = daysAgo(days);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("created_at")
+    .gte("created_at", since.toISOString());
+
+  if (error) return null;
+  return buildDailySeries(data?.map((r) => r.created_at) ?? [], since, days);
+}
+
+/** Cases posted per day — the other half of "is the platform growing," not
+ *  just who's joining but whether they're actually using it. */
+export async function getCasesTrend(
+  supabase: Client,
+  days = 30,
+): Promise<DailyCount[] | null> {
+  const since = daysAgo(days);
+  const { data, error } = await supabase
+    .from("cases")
+    .select("created_at")
+    .gte("created_at", since.toISOString());
+
+  if (error) return null;
+  return buildDailySeries(data?.map((r) => r.created_at) ?? [], since, days);
+}
+
+/** Reactions (0010's clinical-value reactions) per day — engagement with what's
+ *  already posted, the third leg alongside growth (signups) and output (cases). */
+export async function getReactionsTrend(
+  supabase: Client,
+  days = 30,
+): Promise<DailyCount[] | null> {
+  const since = daysAgo(days);
+  const { data, error } = await supabase
+    .from("analytics_events")
+    .select("created_at")
+    .eq("event_type", "reaction_toggled")
+    .gte("created_at", since.toISOString());
+
+  if (error) return null;
+  return buildDailySeries(data?.map((r) => r.created_at) ?? [], since, days);
 }

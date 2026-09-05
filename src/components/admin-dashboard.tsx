@@ -21,6 +21,8 @@ import {
   getSpecialtyBreakdown,
   getCountryBreakdown,
   getSignupTrend,
+  getCasesTrend,
+  getReactionsTrend,
   type CategoryCount,
   type DailyCount,
 } from "@/lib/analytics";
@@ -822,29 +824,48 @@ async function AuditLog({ supabase }: { supabase: Client }) {
 }
 
 async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
-  const [data, featureUsage, funnel, signupTrend, practitionerTypes, specialties, countries] =
-    await Promise.all([
-      getPlatformAnalytics(supabase),
-      getFeatureUsage(supabase),
-      getOnboardingFunnel(supabase),
-      getSignupTrend(supabase),
-      getPractitionerTypeBreakdown(supabase),
-      getSpecialtyBreakdown(supabase),
-      getCountryBreakdown(supabase),
-    ]);
+  const [
+    data,
+    featureUsage,
+    funnel,
+    signupTrend,
+    casesTrend,
+    reactionsTrend,
+    practitionerTypes,
+    specialties,
+    countries,
+  ] = await Promise.all([
+    getPlatformAnalytics(supabase),
+    getFeatureUsage(supabase),
+    getOnboardingFunnel(supabase),
+    getSignupTrend(supabase),
+    getCasesTrend(supabase),
+    getReactionsTrend(supabase),
+    getPractitionerTypeBreakdown(supabase),
+    getSpecialtyBreakdown(supabase),
+    getCountryBreakdown(supabase),
+  ]);
 
   if (data === null) return <UnavailableNotice feature="Analytics" />;
 
+  const trendSeries: TrendSeries[] = [
+    signupTrend && { label: "New members", color: "var(--accent)", data: signupTrend },
+    casesTrend && { label: "Cases posted", color: "var(--accent-2)", data: casesTrend },
+    reactionsTrend && { label: "Reactions", color: "var(--positive)", data: reactionsTrend },
+  ].filter((s): s is TrendSeries => Boolean(s));
+
   return (
     <div className="mt-5 flex flex-col gap-5">
-      {signupTrend && <SignupTrendChart data={signupTrend} />}
-
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Members" value={data.totalUsers} />
-        <StatCard label="Verified" value={data.verifiedUsers} />
-        <StatCard label="Cases posted" value={data.totalCases} />
-        <StatCard label="Open reports" value={data.openReports} />
+        <StatCard label="Members" value={data.totalUsers} tone="accent" />
+        <StatCard label="Verified" value={data.verifiedUsers} tone="positive" />
+        <StatCard label="Cases posted" value={data.totalCases} tone="accent-2" />
+        <StatCard label="Open reports" value={data.openReports} tone="danger" />
       </div>
+
+      {trendSeries.length > 0 && (
+        <TrendChart title="Last 30 days" series={trendSeries} />
+      )}
 
       {/* Who's actually on the platform — role, specialty, country all come
           straight off profiles, the same fields onboarding collects. No
@@ -956,48 +977,121 @@ function BarBreakdown({ title, data }: { title: string; data: CategoryCount[] })
   );
 }
 
-/**
- * New members per day, last 30 days — plain CSS columns rather than an SVG
- * path (no curve math needed for daily counts, and it stays server-rendered
- * with zero client JS, consistent with the rest of this app). The native
- * `title` attribute gives each bar a hover value for free without needing a
- * "use client" tooltip component for an internal admin chart.
- */
-function SignupTrendChart({ data }: { data: DailyCount[] }) {
-  const max = Math.max(1, ...data.map((d) => d.count));
-  const first = data[0];
-  const last = data[data.length - 1];
+function shortDate(iso: string) {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
 
-  function shortDate(iso: string) {
-    return new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      timeZone: "UTC",
-    });
+export type TrendSeries = { label: string; color: string; data: DailyCount[] };
+
+/**
+ * Three real daily counts (new members, cases posted, reactions) on one
+ * shared axis — deliberately not the reference screenshot's four metrics on
+ * mixed scales (clicks/impressions/CTR%/position): a dual-axis or
+ * mixed-unit line chart is the one thing this project's dataviz conventions
+ * rule out outright, so every series plotted together here is a plain daily
+ * count and genuinely comparable. A CSS-column sparkline (the previous
+ * version of this chart) can't overlay series, hence the move to inline SVG
+ * — still zero client JS: a `<title>` inside each end-marker gives a native
+ * hover tooltip without a "use client" component.
+ */
+function TrendChart({ title, series }: { title: string; series: TrendSeries[] }) {
+  const width = 600;
+  const height = 180;
+  const padding = { top: 8, right: 8, bottom: 4, left: 8 };
+  const innerW = width - padding.left - padding.right;
+  const innerH = height - padding.top - padding.bottom;
+
+  const days = series[0]?.data.length ?? 0;
+  const max = Math.max(1, ...series.flatMap((s) => s.data.map((d) => d.count)));
+
+  function x(i: number) {
+    return padding.left + (days <= 1 ? 0 : (i / (days - 1)) * innerW);
   }
+  function y(v: number) {
+    return padding.top + innerH - (v / max) * innerH;
+  }
+
+  const gridFractions = [0, 0.5, 1];
+  const first = series[0]?.data[0];
+  const last = series[0]?.data[days - 1];
 
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <p className="font-label text-xs uppercase tracking-wide text-muted">
-          New members, last 30 days
-        </p>
-        <p className="shrink-0 text-xs text-muted">
-          Peak <span className="font-medium tabular-nums text-text">{max}</span>/day
-        </p>
+        <p className="font-label text-xs uppercase tracking-wide text-muted">{title}</p>
       </div>
-      <div className="mt-3 flex h-20 items-end gap-[3px]" role="img" aria-label="New members per day over the last 30 days">
-        {data.map((d) => (
-          <div
-            key={d.date}
-            title={`${shortDate(d.date)}: ${d.count} new ${d.count === 1 ? "member" : "members"}`}
-            className="min-w-[3px] flex-1 rounded-t bg-accent"
-            style={{ height: `${Math.max(4, Math.round((d.count / max) * 100))}%` }}
-          />
+
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+        {series.map((s) => (
+          <span key={s.label} className="flex items-center gap-1.5 text-xs text-muted">
+            <span
+              aria-hidden
+              className="size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: s.color }}
+            />
+            {s.label}
+          </span>
         ))}
       </div>
+
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        className="mt-2 h-36 w-full"
+        role="img"
+        aria-label={`${title}: ${series.map((s) => s.label).join(", ")}`}
+      >
+        {gridFractions.map((f) => {
+          const gy = padding.top + innerH * (1 - f);
+          return (
+            <line
+              key={f}
+              x1={padding.left}
+              x2={width - padding.right}
+              y1={gy}
+              y2={gy}
+              stroke="var(--line)"
+              strokeWidth={1}
+            />
+          );
+        })}
+
+        {series.map((s) => {
+          const points = s.data.map((d, i) => `${x(i)},${y(d.count)}`).join(" ");
+          const lastPoint = s.data[s.data.length - 1];
+          return (
+            <g key={s.label}>
+              <polyline
+                points={points}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {lastPoint && (
+                <circle
+                  cx={x(s.data.length - 1)}
+                  cy={y(lastPoint.count)}
+                  r={4}
+                  fill={s.color}
+                  stroke="var(--surface)"
+                  strokeWidth={2}
+                >
+                  <title>{`${s.label}, ${shortDate(lastPoint.date)}: ${lastPoint.count}`}</title>
+                </circle>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
       {first && last && (
-        <div className="mt-1.5 flex justify-between font-label text-xs text-muted">
+        <div className="flex justify-between font-label text-xs text-muted">
           <span>{shortDate(first.date)}</span>
           <span>{shortDate(last.date)}</span>
         </div>
@@ -1006,11 +1100,26 @@ function SignupTrendChart({ data }: { data: DailyCount[] }) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+const STAT_TONE_CLASS = {
+  accent: "bg-accent text-accent-foreground",
+  positive: "bg-positive text-white",
+  "accent-2": "bg-accent-2 text-white",
+  danger: "bg-danger text-white",
+} as const;
+
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: keyof typeof STAT_TONE_CLASS;
+}) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-3.5">
-      <p className="text-xl font-semibold tabular-nums text-text">{value}</p>
-      <p className="font-label text-xs text-muted">{label}</p>
+    <div className={clsx("rounded-xl p-3.5", STAT_TONE_CLASS[tone])}>
+      <p className="text-xl font-semibold tabular-nums">{value}</p>
+      <p className="font-label text-xs opacity-80">{label}</p>
     </div>
   );
 }
