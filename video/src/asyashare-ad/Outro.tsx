@@ -1,5 +1,6 @@
 import { AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors } from "./tokens";
+import { Grain } from "./Grain";
 
 export function Outro() {
   const frame = useCurrentFrame();
@@ -70,6 +71,7 @@ export function Outro() {
           A clinical knowledge network for verified medical professionals.
         </div>
       </div>
+      <Grain opacity={0.05} />
     </AbsoluteFill>
   );
 }

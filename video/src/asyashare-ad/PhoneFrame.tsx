@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { colors } from "./tokens";
+import { ScreenGlare } from "./Handheld";
 
 /**
  * A stylized phone bezel, not a literal device screenshot — this ad has no
@@ -21,9 +22,10 @@ export function PhoneFrame({
         width,
         height,
         borderRadius: 56,
-        background: colors.accent,
+        background: `linear-gradient(155deg, #4a4038 0%, ${colors.accent} 40%, #1a1512 100%)`,
         padding: 14,
-        boxShadow: "0 60px 120px -30px rgba(16, 32, 58, 0.45)",
+        boxShadow:
+          "0 80px 140px -30px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255,255,255,0.15)",
       }}
     >
       <div
@@ -36,6 +38,8 @@ export function PhoneFrame({
           position: "relative",
         }}
       >
+        {children}
+        <ScreenGlare />
         {/* Notch */}
         <div
           style={{
@@ -50,7 +54,6 @@ export function PhoneFrame({
             zIndex: 20,
           }}
         />
-        {children}
       </div>
     </div>
   );
