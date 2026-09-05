@@ -13,6 +13,11 @@ const bodyFont = Inter({
 });
 
 export const metadata: Metadata = {
+  // Needed so file-based images (opengraph-image.tsx, twitter-image.tsx)
+  // resolve to an absolute og:image/twitter:image URL — without it Next
+  // emits one relative to the request, which most link-unfurlers won't
+  // fetch. Same env var and fallback sitemap.ts/robots.ts already use.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "Asyashare",
   description:
     "A clinical knowledge network for verified medical professionals.",

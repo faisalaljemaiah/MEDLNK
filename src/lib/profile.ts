@@ -1,10 +1,58 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Profile } from "@/lib/database.types";
+import type { BadgeTier, Database, Profile } from "@/lib/database.types";
 import { getFeedCases, type FeedCase } from "@/lib/cases";
 import { isClinicalReaction } from "@/lib/reaction-types";
 import { getHomeStats, getHomeStreak, type HomeStats } from "@/lib/home";
 
 type Client = SupabaseClient<Database>;
+
+export type ProfileCardData = {
+  full_name: string | null;
+  handle: string;
+  avatar_url: string | null;
+  role: string | null;
+  specialty: string | null;
+  verified: boolean;
+  badge_tier: BadgeTier | null;
+  followerCount: number;
+};
+
+/**
+ * Just enough to render a shareable profile card (opengraph-image.tsx and
+ * the /api/profile-card route the Share button fetches) — a handful of
+ * columns plus a follower count, not the full page's cases/stats/weekly
+ * activity. Admins have no public profile at all (same rule the profile
+ * page itself enforces), so this returns null for one the same as a handle
+ * that doesn't exist — a card is not the place to leak that distinction.
+ */
+export async function getProfileCardData(
+  supabase: Client,
+  handle: string,
+): Promise<ProfileCardData | null> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id,full_name,handle,avatar_url,role,specialty,verified,badge_tier,is_admin")
+    .eq("handle", handle)
+    .maybeSingle();
+
+  if (!profile || !profile.handle || profile.is_admin) return null;
+
+  const { count: followerCount } = await supabase
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("followee_id", profile.id);
+
+  return {
+    full_name: profile.full_name,
+    handle: profile.handle,
+    avatar_url: profile.avatar_url,
+    role: profile.role,
+    specialty: profile.specialty,
+    verified: profile.verified,
+    badge_tier: profile.badge_tier,
+    followerCount: followerCount ?? 0,
+  };
+}
 
 /**
  * What this clinician has contributed (spec §12).

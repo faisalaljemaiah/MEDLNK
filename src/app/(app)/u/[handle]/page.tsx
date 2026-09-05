@@ -1,9 +1,10 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
-import { getProfileByHandle } from "@/lib/profile";
+import { getProfileByHandle, getProfileCardData } from "@/lib/profile";
 import { t } from "@/lib/i18n";
 import { Avatar } from "@/components/avatar";
 import { SettingsIcon } from "@/components/icons";
@@ -26,6 +27,35 @@ const TABS = [
   { key: "marked", labelKey: "profile.tabMarked" },
   { key: "saved", labelKey: "profile.tabSaved" },
 ] as const;
+
+/**
+ * Title/description for the rich preview a shared profile link unfurls
+ * into; the image half of that preview is opengraph-image.tsx /
+ * twitter-image.tsx in this same route segment (file-based, so it composes
+ * with this automatically rather than needing to be set here too).
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}): Promise<Metadata> {
+  const { handle } = await params;
+  const supabase = await createClient();
+  const data = await getProfileCardData(supabase, handle);
+
+  if (!data) return {};
+
+  const name = data.full_name || `@${data.handle}`;
+  const title = `${name} (@${data.handle})`;
+  const description = `Follow ${name} on Asyashare — the clinical case-sharing network for healthcare professionals.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function ProfilePage({
   params,
