@@ -15,6 +15,7 @@ export async function signUpAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const rawLocale = String(formData.get("locale") ?? "");
@@ -25,6 +26,9 @@ export async function signUpAction(
   // own error path.
   const locale = LOCALES.some((l) => l.value === rawLocale) ? rawLocale : "en";
 
+  if (!fullName) {
+    return { error: "Your name is required." };
+  }
   if (!email || !password) {
     return { error: "Email and password are required." };
   }
@@ -36,7 +40,7 @@ export async function signUpAction(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { locale } },
+    options: { data: { locale, full_name: fullName } },
   });
 
   if (error) {

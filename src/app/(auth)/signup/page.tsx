@@ -64,6 +64,13 @@ export default function SignUpPage() {
           </div>
         </div>
         <TextField
+          label="Full name"
+          name="full_name"
+          type="text"
+          autoComplete="name"
+          required
+        />
+        <TextField
           label="Email"
           name="email"
           type="email"
