@@ -15,6 +15,7 @@ import { computeReputationTier } from "@/lib/reputation";
 import { startConversationAction } from "@/app/actions/messages";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { ProfileOverflowMenu } from "@/components/profile-overflow-menu";
+import { ShareProfileButton } from "@/components/share-profile-button";
 import { StreakCard } from "@/components/home/streak-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 
@@ -142,6 +143,7 @@ export default async function ProfilePage({
                 >
                   {t(locale, "profile.editProfile")}
                 </Link>
+                <ShareProfileButton handle={handle} locale={locale} />
                 <Link
                   href="/settings"
                   aria-label="Settings"

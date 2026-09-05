@@ -117,6 +117,9 @@ const en = {
   "search.peopleNoResults": "No one matches that search.",
 
   "profile.editProfile": "Edit profile",
+  "profile.share": "Share profile",
+  "profile.shareText": "Follow me on Asyashare — the clinical case-sharing network for healthcare professionals.",
+  "profile.shareCopied": "Link copied!",
   "profile.message": "Message",
   "profile.blocked": "You've blocked this account.",
   "profile.followers": "followers",
@@ -421,6 +424,9 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "search.peopleNoResults": "لا يوجد أحد يطابق هذا البحث.",
 
   "profile.editProfile": "تعديل الملف الشخصي",
+  "profile.share": "مشاركة الملف الشخصي",
+  "profile.shareText": "تابعني على Asyashare — شبكة مشاركة الحالات السريرية للكوادر الصحية.",
+  "profile.shareCopied": "تم نسخ الرابط!",
   "profile.message": "مراسلة",
   "profile.blocked": "لقد حظرت هذا الحساب.",
   "profile.followers": "متابِعون",
