@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { getFeedCases, type FeedCase } from "@/lib/cases";
+import { countryName } from "@/lib/countries";
 import {
   FEATURE_USAGE_EVENTS,
   ONBOARDING_FUNNEL_STEPS,
@@ -192,4 +193,141 @@ export async function getOnboardingFunnel(supabase: Client): Promise<OnboardingF
     })),
     loginScreenReached: counts.get("login_viewed") ?? 0,
   };
+}
+
+export type CategoryCount = { label: string; count: number };
+
+const OTHER_LABEL = "Other";
+
+/**
+ * Collapses a normalized-key -> count map into the top N plus a single
+ * "Other" bucket for the rest — the >~7-classes-that-carry-meaning rule: past
+ * a handful, more slices stop being readable and folding the tail in is more
+ * honest than a legend nobody can match to a sliver.
+ */
+function bucketTopN(counts: Map<string, number>, topN: number): CategoryCount[] {
+  const sorted = [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+
+  if (sorted.length <= topN) return sorted;
+
+  const otherCount = sorted.slice(topN).reduce((sum, c) => sum + c.count, 0);
+  return [...sorted.slice(0, topN), { label: OTHER_LABEL, count: otherCount }];
+}
+
+/**
+ * role/specialty are free text (the onboarding form's own "Other" option
+ * falls back to it, same as profiles.city) rather than an enum, so this
+ * groups by a trimmed/lowercased key — the same lower(trim(...)) matching
+ * Ask a Specialist (0012) already relies on for the same reason — and
+ * displays the first-seen original casing for that key.
+ */
+async function groupByTextColumn(
+  supabase: Client,
+  column: "role" | "specialty",
+  topN: number,
+): Promise<CategoryCount[] | null> {
+  // Selects both columns regardless of which one is asked for — a dynamic
+  // column-name select loses its row typing in supabase-js (the return type
+  // becomes a union it can't safely index by a variable key), and role +
+  // specialty are two small text columns, cheap enough to over-fetch.
+  const { data, error } = await supabase.from("profiles").select("role, specialty");
+  if (error) return null;
+
+  const counts = new Map<string, number>();
+  const display = new Map<string, string>();
+  for (const row of data ?? []) {
+    const raw = column === "role" ? row.role : row.specialty;
+    if (!raw || !raw.trim()) continue;
+    const key = raw.trim().toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (!display.has(key)) display.set(key, raw.trim());
+  }
+
+  return bucketTopN(counts, topN).map((c) => ({
+    label: c.label === OTHER_LABEL ? OTHER_LABEL : (display.get(c.label) ?? c.label),
+    count: c.count,
+  }));
+}
+
+/** What kind of clinician is actually on the platform (profiles.role). */
+export async function getPractitionerTypeBreakdown(
+  supabase: Client,
+  topN = 8,
+): Promise<CategoryCount[] | null> {
+  return groupByTextColumn(supabase, "role", topN);
+}
+
+/** Which specialties are represented (profiles.specialty). */
+export async function getSpecialtyBreakdown(
+  supabase: Client,
+  topN = 8,
+): Promise<CategoryCount[] | null> {
+  return groupByTextColumn(supabase, "specialty", topN);
+}
+
+/**
+ * Where members practice (profiles.country_code, 0026) — the only location
+ * this app ever collects; there is no city/region-level tracking to break
+ * down further than this.
+ */
+export async function getCountryBreakdown(
+  supabase: Client,
+  topN = 8,
+): Promise<CategoryCount[] | null> {
+  const { data, error } = await supabase.from("profiles").select("country_code");
+  if (error) return null;
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    if (!row.country_code) continue;
+    counts.set(row.country_code, (counts.get(row.country_code) ?? 0) + 1);
+  }
+
+  return bucketTopN(counts, topN).map((c) => ({
+    label: c.label === OTHER_LABEL ? OTHER_LABEL : (countryName(c.label) ?? c.label),
+    count: c.count,
+  }));
+}
+
+export type DailyCount = { date: string; count: number };
+
+/**
+ * New members per day for the last `days` days. This is a signup trend, not
+ * a login/session metric — there is no last-sign-in or session tracking
+ * anywhere in this app yet (Supabase Auth records it internally, but nothing
+ * here reads it), so this is the honest "activity over time" signal that
+ * actually exists. Every day in the window appears even at zero, so a quiet
+ * day reads as "no signups" rather than a missing bar.
+ */
+export async function getSignupTrend(
+  supabase: Client,
+  days = 30,
+): Promise<DailyCount[] | null> {
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - (days - 1));
+  since.setUTCHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("created_at")
+    .gte("created_at", since.toISOString());
+
+  if (error) return null;
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const day = row.created_at.slice(0, 10);
+    counts.set(day, (counts.get(day) ?? 0) + 1);
+  }
+
+  const result: DailyCount[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since);
+    d.setUTCDate(d.getUTCDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    result.push({ date: key, count: counts.get(key) ?? 0 });
+  }
+  return result;
 }

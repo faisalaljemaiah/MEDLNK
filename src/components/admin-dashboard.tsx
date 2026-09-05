@@ -13,7 +13,17 @@ import {
   resetMemberMfaAction,
 } from "@/app/actions/admin";
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
-import { getPlatformAnalytics, getFeatureUsage, getOnboardingFunnel } from "@/lib/analytics";
+import {
+  getPlatformAnalytics,
+  getFeatureUsage,
+  getOnboardingFunnel,
+  getPractitionerTypeBreakdown,
+  getSpecialtyBreakdown,
+  getCountryBreakdown,
+  getSignupTrend,
+  type CategoryCount,
+  type DailyCount,
+} from "@/lib/analytics";
 import { FEATURE_USAGE_LABELS, FUNNEL_STEP_LABELS } from "@/lib/analytics-events";
 import { searchAllUsers, searchAllCases, getTotalUserCount } from "@/lib/admin-directory";
 import { REPORT_REASON_LABELS, REPORT_STATUS_META } from "@/lib/report-reasons";
@@ -812,16 +822,23 @@ async function AuditLog({ supabase }: { supabase: Client }) {
 }
 
 async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
-  const [data, featureUsage, funnel] = await Promise.all([
-    getPlatformAnalytics(supabase),
-    getFeatureUsage(supabase),
-    getOnboardingFunnel(supabase),
-  ]);
+  const [data, featureUsage, funnel, signupTrend, practitionerTypes, specialties, countries] =
+    await Promise.all([
+      getPlatformAnalytics(supabase),
+      getFeatureUsage(supabase),
+      getOnboardingFunnel(supabase),
+      getSignupTrend(supabase),
+      getPractitionerTypeBreakdown(supabase),
+      getSpecialtyBreakdown(supabase),
+      getCountryBreakdown(supabase),
+    ]);
 
   if (data === null) return <UnavailableNotice feature="Analytics" />;
 
   return (
     <div className="mt-5 flex flex-col gap-5">
+      {signupTrend && <SignupTrendChart data={signupTrend} />}
+
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Members" value={data.totalUsers} />
         <StatCard label="Verified" value={data.verifiedUsers} />
@@ -829,22 +846,30 @@ async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
         <StatCard label="Open reports" value={data.openReports} />
       </div>
 
-      <div>
-        <p className="font-label text-xs uppercase tracking-wide text-muted">
-          Cases by format
-        </p>
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {data.casesByType.map(({ type, count }) => (
-            <li
-              key={type}
-              className="flex items-center justify-between text-sm text-text"
-            >
-              <span>{caseTypeMeta(type).label}</span>
-              <span className="tabular-nums text-muted">{count}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Who's actually on the platform — role, specialty, country all come
+          straight off profiles, the same fields onboarding collects. No
+          login/session breakdown here: this app doesn't track sign-in
+          activity anywhere (Supabase Auth keeps it internally, but nothing
+          reads it), so getSignupTrend above — new members over time — is the
+          honest stand-in for "who's showing up," not a number this section
+          invents. */}
+      {practitionerTypes && practitionerTypes.length > 0 && (
+        <BarBreakdown title="Practitioner types" data={practitionerTypes} />
+      )}
+      {specialties && specialties.length > 0 && (
+        <BarBreakdown title="Specialties" data={specialties} />
+      )}
+      {countries && countries.length > 0 && (
+        <BarBreakdown title="Locations" data={countries} />
+      )}
+
+      <BarBreakdown
+        title="Cases by format"
+        data={data.casesByType.map(({ type, count }) => ({
+          label: caseTypeMeta(type).label,
+          count,
+        }))}
+      />
 
       {/* How far a new visitor gets before dropping off (0032_analytics_events).
           Bar width is relative to the first step, not each step's own
@@ -886,25 +911,95 @@ async function PlatformAnalyticsPanel({ supabase }: { supabase: Client }) {
       )}
 
       {featureUsage && (
-        <div>
-          <p className="font-label text-xs uppercase tracking-wide text-muted">
-            Feature usage
-          </p>
-          <ul className="mt-2 flex flex-col gap-1.5">
-            {featureUsage.map(({ event_type, count }) => (
-              <li
-                key={event_type}
-                className="flex items-center justify-between text-sm text-text"
-              >
-                <span>
-                  {FEATURE_USAGE_LABELS[
-                    event_type as keyof typeof FEATURE_USAGE_LABELS
-                  ] ?? event_type}
-                </span>
-                <span className="tabular-nums text-muted">{count}</span>
-              </li>
-            ))}
-          </ul>
+        <BarBreakdown
+          title="Feature usage"
+          data={featureUsage.map(({ event_type, count }) => ({
+            label:
+              FEATURE_USAGE_LABELS[event_type as keyof typeof FEATURE_USAGE_LABELS] ??
+              event_type,
+            count,
+          }))}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * One consistent bar treatment for every "count per category" breakdown in
+ * this panel — sequential (one hue) per the data's job here (comparing
+ * magnitude across categories, not telling series apart), bar length
+ * relative to the top row so the biggest category always reads as full.
+ */
+function BarBreakdown({ title, data }: { title: string; data: CategoryCount[] }) {
+  const top = data[0]?.count || 1;
+  return (
+    <div>
+      <p className="font-label text-xs uppercase tracking-wide text-muted">{title}</p>
+      <ul className="mt-2 flex flex-col gap-2.5">
+        {data.map((d) => {
+          const pct = Math.min(100, Math.round((d.count / top) * 100));
+          return (
+            <li key={d.label}>
+              <div className="flex items-center justify-between gap-2 text-sm text-text">
+                <span className="truncate">{d.label}</span>
+                <span className="shrink-0 tabular-nums text-muted">{d.count}</span>
+              </div>
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * New members per day, last 30 days — plain CSS columns rather than an SVG
+ * path (no curve math needed for daily counts, and it stays server-rendered
+ * with zero client JS, consistent with the rest of this app). The native
+ * `title` attribute gives each bar a hover value for free without needing a
+ * "use client" tooltip component for an internal admin chart.
+ */
+function SignupTrendChart({ data }: { data: DailyCount[] }) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  const first = data[0];
+  const last = data[data.length - 1];
+
+  function shortDate(iso: string) {
+    return new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-label text-xs uppercase tracking-wide text-muted">
+          New members, last 30 days
+        </p>
+        <p className="shrink-0 text-xs text-muted">
+          Peak <span className="font-medium tabular-nums text-text">{max}</span>/day
+        </p>
+      </div>
+      <div className="mt-3 flex h-20 items-end gap-[3px]" role="img" aria-label="New members per day over the last 30 days">
+        {data.map((d) => (
+          <div
+            key={d.date}
+            title={`${shortDate(d.date)}: ${d.count} new ${d.count === 1 ? "member" : "members"}`}
+            className="min-w-[3px] flex-1 rounded-t bg-accent"
+            style={{ height: `${Math.max(4, Math.round((d.count / max) * 100))}%` }}
+          />
+        ))}
+      </div>
+      {first && last && (
+        <div className="mt-1.5 flex justify-between font-label text-xs text-muted">
+          <span>{shortDate(first.date)}</span>
+          <span>{shortDate(last.date)}</span>
         </div>
       )}
     </div>
