@@ -32,6 +32,7 @@ import { TrendingCommunities } from "@/components/home/trending-communities";
 import { ActiveDiscussions } from "@/components/home/active-discussions";
 import { RecommendedPeople } from "@/components/home/recommended-people";
 import { ProfilePhotoNudge } from "@/components/home/profile-photo-nudge";
+import { NameNudge } from "@/components/home/name-nudge";
 import { TargetIcon } from "@/components/icons";
 import { t } from "@/lib/i18n";
 
@@ -141,8 +142,10 @@ export default async function FeedPage({
           be hidden behind whichever tab or chip they last picked. */}
       <SafetyAlertBanner alerts={alerts} />
 
-      {user && profile && !profile.avatar_url && (
-        <ProfilePhotoNudge locale={locale} />
+      {user && profile && !profile.full_name ? (
+        <NameNudge locale={locale} />
+      ) : (
+        user && profile && !profile.avatar_url && <ProfilePhotoNudge locale={locale} />
       )}
 
       <div className="animate-enter stagger-1">

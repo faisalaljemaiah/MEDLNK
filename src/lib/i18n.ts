@@ -56,6 +56,9 @@ const en = {
   "activity.comments": "Comments",
   "activity.reactions": "Reactions given",
 
+  "nudge.addNameTitle": "Add your name",
+  "nudge.addNameBody": "Your profile is missing a name — other clinicians can't tell who you are yet.",
+  "nudge.addNameCta": "Add name",
   "nudge.addPhotoTitle": "Add a profile photo",
   "nudge.addPhotoBody": "Clinicians with a photo are easier to recognize and get more follows.",
   "nudge.addPhotoCta": "Add photo",
@@ -364,6 +367,9 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "activity.comments": "تعليقات",
   "activity.reactions": "تفاعلات",
 
+  "nudge.addNameTitle": "أضف اسمك",
+  "nudge.addNameBody": "ملفك الشخصي بلا اسم — لا يستطيع الأطباء الآخرون معرفة من أنت بعد.",
+  "nudge.addNameCta": "أضف اسمك",
   "nudge.addPhotoTitle": "أضف صورة شخصية",
   "nudge.addPhotoBody": "يسهل التعرف على الأطباء الذين لديهم صورة، ويحصلون على متابعين أكثر.",
   "nudge.addPhotoCta": "أضف صورة",
