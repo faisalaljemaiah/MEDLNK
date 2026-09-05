@@ -147,6 +147,7 @@ const en = {
   "settings.consults": "Consults",
   "settings.myAnalytics": "My Analytics",
   "settings.learn": "Learn",
+  "settings.security": "Security",
   "settings.account": "Account",
   "settings.editProfile": "Edit profile",
   "settings.termsOfService": "Terms of Service",
@@ -160,6 +161,16 @@ const en = {
   "settings.deleteAccountConfirmSuffix": "to confirm",
   "settings.deleteAccountDeleting": "Deleting…",
   "settings.deleteAccountPermanently": "Permanently delete",
+
+  "twoFactor.title": "Two-factor authentication",
+  "twoFactor.onBody": "Enabled — signing in requires a code from your authenticator app.",
+  "twoFactor.offBody": "Add an extra layer of security with an authenticator app.",
+  "twoFactor.setUp": "Set up",
+  "twoFactor.turnOff": "Turn off",
+  "twoFactor.scanTitle": "Scan this with your authenticator app",
+  "twoFactor.manualEntry": "Or enter this code manually:",
+  "twoFactor.codePlaceholder": "6-digit code",
+  "twoFactor.confirmCta": "Confirm",
 
   "common.cancel": "Cancel",
 
@@ -432,6 +443,7 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "settings.consults": "الاستشارات",
   "settings.myAnalytics": "تحليلاتي",
   "settings.learn": "تعلّم",
+  "settings.security": "الأمان",
   "settings.account": "الحساب",
   "settings.editProfile": "تعديل الملف الشخصي",
   "settings.termsOfService": "شروط الخدمة",
@@ -445,6 +457,16 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "settings.deleteAccountConfirmSuffix": "للتأكيد",
   "settings.deleteAccountDeleting": "جارٍ الحذف…",
   "settings.deleteAccountPermanently": "حذف نهائي",
+
+  "twoFactor.title": "المصادقة الثنائية",
+  "twoFactor.onBody": "مفعّلة — يتطلب تسجيل الدخول رمزاً من تطبيق المصادقة الخاص بك.",
+  "twoFactor.offBody": "أضف طبقة أمان إضافية باستخدام تطبيق مصادقة.",
+  "twoFactor.setUp": "تفعيل",
+  "twoFactor.turnOff": "إيقاف",
+  "twoFactor.scanTitle": "امسح هذا الرمز بتطبيق المصادقة الخاص بك",
+  "twoFactor.manualEntry": "أو أدخل هذا الرمز يدوياً:",
+  "twoFactor.codePlaceholder": "رمز مكوّن من 6 أرقام",
+  "twoFactor.confirmCta": "تأكيد",
 
   "common.cancel": "إلغاء",
 

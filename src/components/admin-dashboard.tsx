@@ -10,6 +10,7 @@ import {
   restoreCaseAction,
   toggleSuspensionAction,
   setBadgeTierAction,
+  resetMemberMfaAction,
 } from "@/app/actions/admin";
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
 import { getPlatformAnalytics, getFeatureUsage, getOnboardingFunnel } from "@/lib/analytics";
@@ -378,26 +379,41 @@ async function UsersDirectory({
                     </form>
                   )}
                 </div>
-                <form
-                  action={toggleSuspensionAction.bind(
-                    null,
-                    u.id,
-                    !u.suspended_at,
-                    viewerHandle,
-                  )}
-                >
-                  <button
-                    type="submit"
-                    className={clsx(
-                      "rounded-lg border px-3.5 py-2 text-sm font-medium",
-                      u.suspended_at
-                        ? "border-positive/50 text-positive"
-                        : "border-danger/50 text-danger",
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <form
+                    action={toggleSuspensionAction.bind(
+                      null,
+                      u.id,
+                      !u.suspended_at,
+                      viewerHandle,
                     )}
                   >
-                    {u.suspended_at ? "Unsuspend" : "Suspend"}
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      className={clsx(
+                        "rounded-lg border px-3.5 py-2 text-sm font-medium",
+                        u.suspended_at
+                          ? "border-positive/50 text-positive"
+                          : "border-danger/50 text-danger",
+                      )}
+                    >
+                      {u.suspended_at ? "Unsuspend" : "Suspend"}
+                    </button>
+                  </form>
+                  {/* Safe to show unconditionally — a no-op for a member who
+                      never turned 2FA on, and the only way to recover one
+                      who did and lost their authenticator device (their own
+                      disableMfaAction only ever reaches their own account).
+                      See resetMemberMfaAction, src/app/actions/admin.ts. */}
+                  <form action={resetMemberMfaAction.bind(null, u.id, viewerHandle)}>
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-line px-3.5 py-2 text-sm font-medium text-text hover:border-accent"
+                    >
+                      Reset 2FA
+                    </button>
+                  </form>
+                </div>
               </div>
             </li>
           ))}

@@ -76,6 +76,16 @@ export async function signInAction(
     return { error: error.message };
   }
 
+  // A password alone only ever reaches aal1 — an account with 2FA enrolled
+  // (nextLevel "aal2") still needs the authenticator-app code before it's
+  // actually signed in, so this sends them to that step instead of the
+  // feed. The (app) layout enforces the same check on every page under it,
+  // so this redirect is a better first landing, not the only gate.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.nextLevel === "aal2" && aal.nextLevel !== aal.currentLevel) {
+    redirect("/verify-2fa");
+  }
+
   redirect("/");
 }
 

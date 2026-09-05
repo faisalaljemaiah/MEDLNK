@@ -130,6 +130,29 @@ export async function setBadgeTierAction(
 }
 
 /**
+ * The support path for a member locked out of their own account by 2FA —
+ * lost their authenticator device, uninstalled the app before turning it
+ * off, whatever the reason. Only the service-role client can remove a
+ * factor on someone else's account (the member's own `disableMfaAction`,
+ * src/app/actions/mfa.ts, only ever touches the caller's own factors), so
+ * this is deliberately admin-only rather than something support could
+ * trigger any other way. Safe to click on an account with no factors at
+ * all — nothing to delete, so it's a no-op rather than an error.
+ */
+export async function resetMemberMfaAction(
+  profileId: string,
+  viewerHandle: string | null,
+) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { data } = await admin.auth.admin.mfa.listFactors({ userId: profileId });
+  for (const factor of data?.factors ?? []) {
+    await admin.auth.admin.mfa.deleteFactor({ userId: profileId, id: factor.id });
+  }
+  revalidateAdminViews(viewerHandle);
+}
+
+/**
  * Void-returning wrapper around `setSuspensionAction` for the Users
  * directory's plain suspend/unsuspend toggle — a bare `<form
  * action={...}>` with no client-side error display, same shape as every

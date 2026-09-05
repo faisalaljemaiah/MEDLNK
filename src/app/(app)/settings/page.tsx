@@ -6,6 +6,7 @@ import { getBlockedByViewer } from "@/lib/blocks";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { UnblockButton } from "@/components/block-button";
 import { DeleteAccount } from "@/components/delete-account";
+import { TwoFactorSettings } from "@/components/two-factor-settings";
 import { signOutAction } from "@/app/actions/auth";
 import { t } from "@/lib/i18n";
 
@@ -16,7 +17,11 @@ export default async function SettingsPage() {
   const profile = await getViewerProfile();
   const locale = profile?.locale ?? "en";
   const supabase = await createClient();
-  const blockedAccounts = await getBlockedByViewer(supabase, user.id);
+  const [blockedAccounts, { data: mfaFactors }] = await Promise.all([
+    getBlockedByViewer(supabase, user.id),
+    supabase.auth.mfa.listFactors(),
+  ]);
+  const mfaEnabled = Boolean(mfaFactors?.totp && mfaFactors.totp.length > 0);
 
   return (
     <div className="px-4 py-6">
@@ -25,6 +30,11 @@ export default async function SettingsPage() {
       <SettingsGroupLabel>{t(locale, "settings.preferences")}</SettingsGroupLabel>
       <section className="rounded-2xl border border-line bg-surface p-4">
         <LanguageSwitcher current={locale} />
+      </section>
+
+      <SettingsGroupLabel>{t(locale, "settings.security")}</SettingsGroupLabel>
+      <section className="rounded-2xl border border-line bg-surface p-4">
+        <TwoFactorSettings enabled={mfaEnabled} locale={locale} />
       </section>
 
       {blockedAccounts.length > 0 && (

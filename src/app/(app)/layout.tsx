@@ -1,10 +1,27 @@
+import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/bottom-nav";
 import { TopHeader } from "@/components/top-header";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
-import { getViewerProfile } from "@/lib/auth";
+import { getViewer, getViewerProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const profile = await getViewerProfile();
+  const [viewer, profile] = await Promise.all([getViewer(), getViewerProfile()]);
+
+  // A password-only sign-in on an account with 2FA enrolled leaves the
+  // session at aal1 — a real, cookie-valid session, just not yet cleared to
+  // actually use the app. Every page under this layout is gated on
+  // completing that challenge first, not just the sign-in redirect
+  // (signInAction, src/app/actions/auth.ts) — someone who closes the tab
+  // mid-challenge and reopens any app URL directly must still land back on
+  // /verify-2fa rather than straight into their feed.
+  if (viewer) {
+    const supabase = await createClient();
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.nextLevel !== aal.currentLevel) {
+      redirect("/verify-2fa");
+    }
+  }
 
   return (
     // Mobile shell (single centered column, floating bottom nav) is
