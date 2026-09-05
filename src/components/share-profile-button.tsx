@@ -51,11 +51,15 @@ export function ShareProfileButton({
   async function share() {
     const url = `${window.location.origin}/u/${handle}`;
     const text = t(locale, "profile.shareText");
+    // A share target that gets `files` doesn't reliably also surface a
+    // separate `url` field (some drop it entirely) — folding the link into
+    // `text` is what actually survives everywhere, image or not.
+    const caption = `${text}\n${url}`;
     const file = await getCardFile();
 
     if (file && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ title: "Asyashare", text, files: [file] });
+        await navigator.share({ title: "Asyashare", text: caption, files: [file] });
         return;
       } catch {
         // User cancelled the native share sheet — nothing to fall back to.
@@ -81,11 +85,15 @@ export function ShareProfileButton({
       a.click();
       a.remove();
       URL.revokeObjectURL(objectUrl);
+      // No share sheet to hand the link to alongside the image, so it goes
+      // to the clipboard instead — the download alone would otherwise lose
+      // the link entirely on desktop.
+      await navigator.clipboard.writeText(caption);
       flash("downloaded");
       return;
     }
 
-    await navigator.clipboard.writeText(`${text} ${url}`);
+    await navigator.clipboard.writeText(caption);
     flash("copied");
   }
 
