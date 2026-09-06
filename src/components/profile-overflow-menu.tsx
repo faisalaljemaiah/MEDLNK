@@ -1,13 +1,56 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { clsx } from "clsx";
+import { animate, type AnimationPlaybackControlsWithThen } from "motion";
 import { MoreIcon } from "@/components/icons";
 import { blockUserAction, unblockUserAction } from "@/app/actions/blocks";
 import { reportProfileAction } from "@/app/actions/reports";
 import { REPORT_REASONS } from "@/lib/report-reasons";
 
 type View = "menu" | "report" | "reported";
+
+/** A handful of recent {time, y} samples, enough to estimate release velocity
+ *  without old, stale movement skewing it. */
+type DragSample = { t: number; y: number };
+type DragState = {
+  startY: number;
+  lastY: number;
+  /** The exact px offset last written to the sheet's transform — animating
+   *  off of this (rather than letting Motion guess a "current" value it
+   *  never saw, since the drag wrote to style.transform directly) is what
+   *  keeps the post-release spring starting from where the sheet actually
+   *  is on screen instead of snapping or freezing mid-drag. */
+  lastAppliedPx: number;
+  samples: DragSample[];
+} | null;
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/**
+ * Real objects resist progressively past a boundary instead of stopping
+ * dead — Apple's rubber-band formula (WWDC18 "Designing Fluid Interfaces"),
+ * applied when the sheet is dragged up past its resting position.
+ */
+function rubberband(overshoot: number, dimension: number, constant = 0.55) {
+  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+}
+
+/** Velocity (px/s) from the drag's last couple of samples — recent movement
+ *  only, so a pause-then-flick reads as the flick, not the whole gesture's
+ *  average speed. */
+function releaseVelocity(samples: DragSample[]): number {
+  if (samples.length < 2) return 0;
+  const last = samples[samples.length - 1];
+  const first = samples[0];
+  const dt = (last.t - first.t) / 1000;
+  return dt > 0 ? (last.y - first.y) / dt : 0;
+}
 
 /**
  * Replaces the profile page's old loose "Block" text link with a single
@@ -30,12 +73,137 @@ export function ProfileOverflowMenu({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLButtonElement>(null);
+  const controlsRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
+  const dragRef = useRef<DragState>(null);
+
+  // Rises in on open with a critically damped spring (no bounce — the sheet
+  // was tapped open, not flicked, so nothing here carries momentum yet).
+  useEffect(() => {
+    if (!open) return;
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    if (prefersReducedMotion()) {
+      sheet.style.opacity = "1";
+      if (backdropRef.current) backdropRef.current.style.opacity = "1";
+      return;
+    }
+
+    controlsRef.current?.stop();
+    controlsRef.current = animate(
+      sheet,
+      { y: ["100%", "0%"], opacity: [0, 1] },
+      { type: "spring", bounce: 0, duration: 0.4 },
+    );
+    const backdrop = backdropRef.current;
+    if (backdrop) animate(backdrop, { opacity: [0, 1] }, { duration: 0.2 });
+  }, [open]);
+
+  // Plays the sheet out before actually unmounting, instead of the instant
+  // disappearance a plain `{open && ...}` unmount would give it — an exit
+  // that mirrors the entrance, per the same "spatial consistency" this
+  // sheet's rise already follows. `velocity` is 0 for every non-drag close
+  // (buttons, backdrop tap); the drag handler passes the real release
+  // velocity so a downward flick keeps moving instead of restarting slow.
+  function playExit(velocity = 0, fromPx?: number) {
+    const sheet = sheetRef.current;
+    if (!sheet || prefersReducedMotion()) {
+      setOpen(false);
+      setView("menu");
+      return;
+    }
+    controlsRef.current?.stop();
+    controlsRef.current = animate(
+      sheet,
+      { y: fromPx !== undefined ? [`${fromPx}px`, "100%"] : "100%" },
+      { type: "spring", bounce: 0, duration: 0.4, velocity },
+    );
+    const backdrop = backdropRef.current;
+    if (backdrop) animate(backdrop, { opacity: 0 }, { duration: 0.2 });
+    controlsRef.current.then(() => {
+      setOpen(false);
+      // Reset to the menu view after the close animation actually finished,
+      // so reopening later doesn't land back on a stale report form.
+      setView("menu");
+    });
+  }
 
   function close() {
-    setOpen(false);
-    // Reset to the menu view after the close animation would have finished,
-    // so reopening later doesn't land back on a stale report form.
-    setTimeout(() => setView("menu"), 200);
+    playExit(0);
+  }
+
+  // Drag-to-dismiss on the handle only (not the whole sheet) — the report
+  // form below has its own radio buttons and a textarea, which would fight
+  // a sheet-wide drag surface for the same pointer.
+  function onHandlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (prefersReducedMotion()) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    // Grab from the sheet's live on-screen position, not mid-spring target —
+    // the same "animate from the presentation value" rule the entrance and
+    // exit springs above already follow.
+    controlsRef.current?.stop();
+    dragRef.current = {
+      startY: e.clientY,
+      lastY: e.clientY,
+      lastAppliedPx: 0,
+      samples: [{ t: performance.now(), y: e.clientY }],
+    };
+  }
+
+  function onHandlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const sheet = sheetRef.current;
+    if (!drag || !sheet) return;
+
+    const rawDelta = e.clientY - drag.startY;
+    const height = sheet.offsetHeight || 1;
+    // Dragging down tracks the finger 1:1; dragging up past the resting
+    // position resists progressively instead of stopping dead.
+    const delta = rawDelta < 0 ? -rubberband(-rawDelta, height) : rawDelta;
+    sheet.style.transform = `translateY(${delta}px)`;
+    drag.lastAppliedPx = delta;
+
+    const backdrop = backdropRef.current;
+    if (backdrop) {
+      const progress = Math.min(Math.max(rawDelta / height, 0), 1);
+      backdrop.style.opacity = String(1 - progress * 0.85);
+    }
+
+    drag.lastY = e.clientY;
+    drag.samples.push({ t: performance.now(), y: e.clientY });
+    if (drag.samples.length > 6) drag.samples.shift();
+  }
+
+  function onHandlePointerUp() {
+    const drag = dragRef.current;
+    const sheet = sheetRef.current;
+    dragRef.current = null;
+    if (!drag || !sheet) return;
+
+    const height = sheet.offsetHeight || 1;
+    const rawDelta = drag.lastY - drag.startY;
+    const velocity = releaseVelocity(drag.samples);
+
+    // Either signal alone is enough to commit: dragged nearly a third of the
+    // sheet's own height, or flicked fast even if it didn't travel far —
+    // deciding by velocity's sign/magnitude, not position alone, is what
+    // makes a quick flick dismiss without needing a full drag to the edge.
+    const shouldDismiss = rawDelta > height * 0.3 || velocity > 600;
+
+    if (shouldDismiss) {
+      playExit(velocity, drag.lastAppliedPx);
+      return;
+    }
+
+    controlsRef.current = animate(
+      sheet,
+      { y: [`${drag.lastAppliedPx}px`, "0%"] },
+      { type: "spring", bounce: 0, duration: 0.35, velocity },
+    );
+    const backdrop = backdropRef.current;
+    if (backdrop) animate(backdrop, { opacity: 1 }, { duration: 0.2 });
   }
 
   function toggleBlock() {
@@ -97,13 +265,28 @@ export function ProfileOverflowMenu({
           className="fixed inset-0 z-30 flex items-end justify-center"
         >
           <button
+            ref={backdropRef}
             type="button"
             aria-label="Close"
             onClick={close}
-            className="animate-enter absolute inset-0 bg-[rgb(var(--shadow-tint)/0.4)] backdrop-blur-sm"
+            style={{ opacity: 0 }}
+            className="absolute inset-0 bg-[rgb(var(--shadow-tint)/0.4)] backdrop-blur-sm"
           />
-          <div className="animate-sheet-rise relative w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-4 pb-8 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]">
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line" aria-hidden="true" />
+          <div
+            ref={sheetRef}
+            style={{ opacity: 0 }}
+            className="relative w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-4 pb-8 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]"
+          >
+            <div
+              onPointerDown={onHandlePointerDown}
+              onPointerMove={onHandlePointerMove}
+              onPointerUp={onHandlePointerUp}
+              onPointerCancel={onHandlePointerUp}
+              style={{ touchAction: "none" }}
+              className="-mx-3 -mt-1 flex cursor-grab justify-center px-3 pb-3 pt-1 active:cursor-grabbing"
+            >
+              <div className="h-1 w-10 rounded-full bg-line" aria-hidden="true" />
+            </div>
 
             {view === "menu" && (
               <div className="flex flex-col gap-1">
