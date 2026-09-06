@@ -13,7 +13,46 @@ import type { Locale } from "@/lib/database.types";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AIButton } from "@/components/ui/ai-button";
-import { ReelIcon } from "@/components/icons";
+import {
+  ReelIcon,
+  FileIcon,
+  QuestionIcon,
+  MutedIcon,
+  TrendingUpIcon,
+  TargetIcon,
+  AlertTriangleIcon,
+  CompassIcon,
+  StarIcon,
+  LearnIcon,
+  ClipboardIcon,
+  FilePlusIcon,
+  ImageIcon,
+  CommentIcon,
+} from "@/components/icons";
+import type { CaseType } from "@/lib/database.types";
+
+/** One icon per post type, for the swipeable picker below — a closer match
+ *  to its meaning than a plain text pill, and what actually turns 13 options
+ *  into something that reads as a strip of choices rather than a wall of
+ *  text. Kept local to the composer rather than on CaseTypeMeta itself,
+ *  since the feed/case-page code that also reads case-types.ts has no use
+ *  for a component reference. */
+const TYPE_ICONS: Record<CaseType, (props: React.SVGProps<SVGSVGElement>) => React.ReactElement> = {
+  clinical_case: FileIcon,
+  what_would_you_do: QuestionIcon,
+  blind_case: MutedIcon,
+  case_evolution: TrendingUpIcon,
+  near_miss: TargetIcon,
+  safety_alert: AlertTriangleIcon,
+  saw_this_today: CompassIcon,
+  clinical_pearl: StarIcon,
+  things_i_wish_i_knew: LearnIcon,
+  case_vs_case: ClipboardIcon,
+  research_finding: FilePlusIcon,
+  photo_post: ImageIcon,
+  quote_post: CommentIcon,
+  video_post: ReelIcon,
+};
 
 /** Longest title auto-derived from a video's caption — long enough to read
  *  as a real headline wherever the case is shown, short enough to stay a
@@ -94,32 +133,128 @@ function SectionChip({
 }
 
 /**
- * One of the four numbered groups the form is organized into — Case,
- * Clinical Context, Global Exchange, Supporting Material. The connecting
- * line between them is a single element drawn by the parent (not one per
- * section), so it reads as one continuous thread rather than four
- * separately-aligned segments; each circle just needs an opaque background
- * to visually sit "on" that line, which is why it's --color-surface rather
- * than the accent-soft wash used elsewhere.
+ * One of the form's groups — Case, Clinical Context, Global Exchange,
+ * Supporting Material. Just a label over its fields, no per-section box:
+ * the numbered-circle-and-connecting-line treatment this replaced read as
+ * a "journey" worth announcing on a form most formats only spend two of
+ * these groups on — chrome the type picker above now does the job of
+ * (choosing a format already tells you what's coming), not a bigger frame
+ * around every group regardless of format.
  */
 function FormSection({
-  number,
   title,
   children,
 }: {
-  number: string;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative pl-10">
-      <div className="relative z-[1] mb-3 flex items-center gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-surface font-label text-xs font-semibold text-accent shadow-[0_1px_2px_rgb(var(--shadow-tint)/0.08)]">
-          {number}
-        </span>
-        <p className="font-label text-xs uppercase tracking-wide text-muted">{title}</p>
-      </div>
+    <div>
+      <p className="mb-3 font-label text-xs uppercase tracking-wide text-muted">{title}</p>
       <div className="flex flex-col gap-4">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Swipeable, one-per-card picker — the actual "toggle to choose a type of
+ * post" this composer needed instead of 13 wrapped pills eating the top of
+ * the form across four lines. Native CSS scroll-snap does the swipe
+ * physics (momentum, settling) for free; the IntersectionObserver below
+ * just watches which card the scroll settles closest to and selects it, so
+ * swiping and tapping both work as ways to choose.
+ */
+function TypePicker({
+  value,
+  onChange,
+  locale,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  locale: Locale;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef(new Map<string, HTMLButtonElement>());
+  // A tap's own recenter (below) is itself a scroll — without this, the
+  // observer reads the cards passing through center *during* that smooth
+  // scroll and overwrites the tap with whatever card the animation happened
+  // to be passing when a frame fired, before it reaches the one actually
+  // tapped.
+  const isSettlingRef = useRef(false);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isSettlingRef.current) return;
+        const mostVisible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const type = mostVisible?.target.getAttribute("data-type");
+        if (type) onChange(type);
+      },
+      { root: track, threshold: [0.6, 0.9] },
+    );
+
+    for (const card of cardRefs.current.values()) observer.observe(card);
+    return () => observer.disconnect();
+    // Re-observe only when the set of cards changes, not on every value
+    // change — re-running this on every selection would fight the settle
+    // it's supposed to be reading.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keeps the active card centered when the type changes some other way —
+  // the initial type from a deep link, or a tap that lands on a card the
+  // swipe hasn't scrolled to yet. Guarded by isSettlingRef above for exactly
+  // as long as the smooth scroll takes, so this recenter can't be read back
+  // by the observer as a swipe to somewhere else.
+  useEffect(() => {
+    const card = cardRefs.current.get(value);
+    if (!card) return;
+    isSettlingRef.current = true;
+    card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const timeout = setTimeout(() => {
+      isSettlingRef.current = false;
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [value]);
+
+  return (
+    <div
+      ref={trackRef}
+      className="no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1"
+    >
+      {CASE_TYPES.map((ct) => {
+        const Icon = TYPE_ICONS[ct.value];
+        const active = value === ct.value;
+        return (
+          <button
+            key={ct.value}
+            type="button"
+            data-type={ct.value}
+            ref={(el) => {
+              if (el) cardRefs.current.set(ct.value, el);
+              else cardRefs.current.delete(ct.value);
+            }}
+            onClick={() => onChange(ct.value)}
+            aria-pressed={active}
+            className={clsx(
+              "flex w-[4.75rem] shrink-0 snap-center flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 text-center transition-[border-color,background-color,transform] duration-150 ease-out active:scale-95",
+              active
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-line text-muted hover:border-text/30 hover:text-text",
+            )}
+          >
+            <Icon width={20} height={20} strokeWidth={2} />
+            <span className="line-clamp-2 text-[11px] font-medium leading-tight">
+              {caseTypeLabel(locale, ct.value)}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -321,6 +456,17 @@ export function ComposeForm({
         <input type="hidden" name="case_type" value={caseType} />
         <input type="hidden" name="title" ref={videoTitleRef} defaultValue="Video" />
 
+        {/* The type picker stays even on this otherwise-minimal video form —
+            without it, swiping (not just tapping) onto "Video" would strand
+            the author here with no way back to another format. */}
+        <div className="flex flex-col gap-1.5">
+          <span className="font-label text-xs uppercase tracking-wide text-muted">
+            {t(locale, "compose.postTypeLabel")}
+          </span>
+          <TypePicker value={caseType} onChange={handleTypeChange} locale={locale} />
+          <p className="mt-1 text-xs text-muted">{caseTypeHint(locale, typeMeta.value)}</p>
+        </div>
+
         <label
           htmlFor="video"
           className="relative flex aspect-[9/16] max-h-[65vh] w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-line bg-surface-2 text-center transition-colors duration-150 hover:border-accent"
@@ -425,45 +571,19 @@ export function ComposeForm({
       <input type="hidden" name="case_type" value={caseType} />
       <input type="hidden" name="include_question" value={includeQuestion ? "true" : "false"} />
 
-      {/* The four groups below share one continuous connecting line — Case →
-          Clinical Context → Global Exchange → Supporting Material, the same
-          order the AI features and the profile page already imply: the raw
-          case becomes something searchable and shareable in stages. The line
-          is one absolutely-positioned element behind all four circles rather
-          than one per section, so it reads as a single thread. Plain accent,
-          not the AI-hue sweep — composing a case isn't an AI feature. */}
-      <div className="relative flex flex-col gap-8">
-        <span
-          aria-hidden
-          className="absolute left-[13px] top-3.5 bottom-3.5 w-px bg-accent opacity-30"
-        />
+      {/* Choosing a format is its own moment up front — a swipeable strip,
+          not one more field inside "The Case" — since which format is
+          picked here decides which of the groups below even show up. */}
+      <div className="flex flex-col gap-1.5">
+        <span className="font-label text-xs uppercase tracking-wide text-muted">
+          {t(locale, "compose.postTypeLabel")}
+        </span>
+        <TypePicker value={caseType} onChange={handleTypeChange} locale={locale} />
+        <p className="mt-1 text-xs text-muted">{caseTypeHint(locale, typeMeta.value)}</p>
+      </div>
 
-        <FormSection number="01" title={t(locale, "compose.sectionTheCase")}>
-          <div className="flex flex-col gap-1.5">
-            <span className="font-label text-xs uppercase tracking-wide text-muted">
-              {t(locale, "compose.postTypeLabel")}
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {CASE_TYPES.map((ct) => (
-                <button
-                  key={ct.value}
-                  type="button"
-                  onClick={() => handleTypeChange(ct.value)}
-                  aria-pressed={caseType === ct.value}
-                  className={clsx(
-                    "rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
-                    caseType === ct.value
-                      ? "border-accent bg-accent/10 font-medium text-accent"
-                      : "border-line text-muted hover:text-text",
-                  )}
-                >
-                  {caseTypeLabel(locale, ct.value)}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1 text-xs text-muted">{caseTypeHint(locale, typeMeta.value)}</p>
-          </div>
-
+      <div className="flex flex-col gap-8">
+        <FormSection title={t(locale, "compose.sectionTheCase")}>
           <p className="rounded-lg border border-line bg-surface-2/60 px-3.5 py-3 text-xs leading-relaxed text-muted">
             <span className="font-medium text-text">{t(locale, "compose.deidentifyLabel")}</span>{" "}
             {t(locale, "compose.deidentifyBody")}
@@ -690,7 +810,7 @@ export function ComposeForm({
           </div>
         </FormSection>
 
-        <FormSection number="02" title={t(locale, "compose.sectionClinicalContext")}>
+        <FormSection title={t(locale, "compose.sectionClinicalContext")}>
           <TextField
             label={t(locale, "compose.specialtyLabel")}
             name="specialty"
@@ -705,7 +825,7 @@ export function ComposeForm({
           />
         </FormSection>
 
-        <FormSection number="03" title={t(locale, "compose.sectionGlobalExchange")}>
+        <FormSection title={t(locale, "compose.sectionGlobalExchange")}>
           <div className="flex flex-col gap-1.5">
             <span className="font-label text-xs uppercase tracking-wide text-muted">
               {t(locale, "compose.countryLabel")}
@@ -727,7 +847,7 @@ export function ComposeForm({
           </div>
         </FormSection>
 
-        <FormSection number="04" title={t(locale, "compose.sectionSupportingMaterial")}>
+        <FormSection title={t(locale, "compose.sectionSupportingMaterial")}>
           {typeMeta.requiresVideo ? (
             <div className="flex flex-col gap-1.5">
               <label
