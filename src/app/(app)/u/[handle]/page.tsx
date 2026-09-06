@@ -213,7 +213,20 @@ export default async function ProfilePage({
                 />
               </div>
             </div>
-          ) : null}
+          ) : (
+            // A signed-out visitor — most commonly someone who followed a
+            // shared profile link. There's no account yet to follow with, so
+            // this goes to /welcome (sign up or sign in) instead of toggling
+            // a follow.
+            <div className="flex min-w-0 flex-col items-end gap-2">
+              <Link
+                href="/welcome"
+                className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+              >
+                {t(locale, "common.follow")}
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="mt-3 flex gap-2">

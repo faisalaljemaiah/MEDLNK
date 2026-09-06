@@ -2,21 +2,13 @@ import Link from "next/link";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { WelcomeSplash } from "@/components/welcome-splash";
 import { LogoMark, Wordmark } from "@/components/brand";
-import { browseAsGuestAction } from "@/app/actions/guest";
 
 /**
- * The signed-out entry point: a first-time, signed-out visit to the bare
- * domain lands here (the root feed page redirects to it — see the
- * medlnk_guest check in src/app/(app)/page.tsx) rather than straight into
- * the app shell, so someone who just searched the name meets the pitch
- * before the product.
- *
- * Not a permanent gate, though — the feed still works signed out (RLS lets
- * anon read cases), and "Browse without an account" below is a real,
- * one-time opt-out: it sets the same cookie the redirect checks
- * (browseAsGuestAction, src/app/actions/guest.ts), so choosing it once
- * means never landing back here again on this browser, same as signing up
- * or signing in would.
+ * The signed-out entry point: every signed-out visit to the bare domain
+ * lands here (the root feed page redirects to it — see src/app/(app)/page.tsx)
+ * rather than straight into the app shell, so anyone without an account
+ * meets the pitch before the product. There's no guest opt-out — creating
+ * an account or signing in are the only ways past this page.
  */
 export default function WelcomePage() {
   return (
@@ -56,14 +48,6 @@ export default function WelcomePage() {
         >
           Sign in
         </Link>
-        <form action={browseAsGuestAction} className="mt-1">
-          <button
-            type="submit"
-            className="text-xs text-muted hover:text-text"
-          >
-            Browse without an account →
-          </button>
-        </form>
       </div>
 
       <p

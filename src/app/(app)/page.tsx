@@ -1,5 +1,4 @@
 import { ViewTransition } from "react";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
@@ -51,17 +50,15 @@ export default async function FeedPage({
 }: {
   searchParams: Promise<{ filter?: string; view?: string }>;
 }) {
-  const [{ filter: rawFilter, view: rawView }, supabase, user, cookieStore] =
-    await Promise.all([searchParams, createClient(), getViewer(), cookies()]);
+  const [{ filter: rawFilter, view: rawView }, supabase, user] =
+    await Promise.all([searchParams, createClient(), getViewer()]);
 
-  // A first-time, signed-out visit to the bare domain (someone searching
-  // "Asyashare" and clicking through, not a deep link to a specific case)
-  // lands on the marketing splash instead of straight into the feed shell.
-  // The signed-out feed itself is unchanged and still reachable — /welcome's
-  // own "Browse without an account" sets this cookie (browseAsGuestAction,
-  // src/app/actions/guest.ts) precisely so this redirect only ever fires
-  // once per browser, not on every page after that choice is made.
-  if (!user && cookieStore.get("medlnk_guest")?.value !== "1") {
+  // Signed-out visitors always land on the marketing splash instead of the
+  // feed shell — there's no "browse without an account" opt-out anymore, so
+  // this fires on every signed-out visit to the bare domain, not just the
+  // first. Shared links (e.g. /u/[handle]) are unaffected: this redirect
+  // only guards the root feed.
+  if (!user) {
     redirect("/welcome");
   }
 
