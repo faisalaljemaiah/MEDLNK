@@ -102,7 +102,7 @@ export function ProfileOverflowMenu({
             onClick={close}
             className="animate-enter absolute inset-0 bg-[rgb(var(--shadow-tint)/0.4)] backdrop-blur-sm"
           />
-          <div className="animate-enter relative w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-4 pb-8 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]">
+          <div className="animate-sheet-rise relative w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-4 pb-8 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line" aria-hidden="true" />
 
             {view === "menu" && (

@@ -56,6 +56,49 @@ body {
 }
 
 /*
+ * Floating surfaces (centered dialogs, bottom sheets) materialize instead of
+ * just fading — a real object arriving, not a plain opacity crossfade (Apple
+ * WWDC18 "Designing Fluid Interfaces": glass/blur surfaces should animate
+ * scale together with opacity). The backdrop scrim behind them keeps the
+ * plain .animate-enter fade above — a dimming layer shouldn't scale, only
+ * the object floating in front of it should.
+ */
+@keyframes medlnk-materialize {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-materialize {
+  animation: medlnk-materialize 220ms var(--ease-spring) both;
+}
+
+/*
+ * Bottom sheets rise from the edge they're anchored to (spatial consistency:
+ * an object should emerge from — and return to — the same path), not fade in
+ * place 4px above where it lands like page content does.
+ */
+@keyframes medlnk-sheet-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-sheet-rise {
+  animation: medlnk-sheet-rise 280ms var(--ease-spring) both;
+}
+
+/*
  * The welcome/auth screens are a one-time (or rare) moment, not a routine
  * navigation, so these run longer than animate-enter above — that one is
  * deliberately kept short "so it never reads as lag" on every page change;

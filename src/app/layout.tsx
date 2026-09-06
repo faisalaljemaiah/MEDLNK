@@ -1,16 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { getViewerProfile } from "@/lib/auth";
 import { localeDir } from "@/lib/i18n";
 import { NativeBootstrap } from "@/components/native-bootstrap";
-
-// Single clean sans-serif for the whole app — see theme.css for how this
-// maps to --font-headline / --font-body / --font-label.
-const bodyFont = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   // Needed so file-based images (opengraph-image.tsx, twitter-image.tsx)
@@ -59,7 +51,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={locale}
       dir={localeDir(locale)}
-      className={`${bodyFont.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col bg-bg text-text">
         <NativeBootstrap />

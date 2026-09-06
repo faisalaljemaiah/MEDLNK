@@ -119,11 +119,27 @@
      symmetric acceleration in and out rather than ease-out's fast start. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Apple's own drawer/sheet curve — a CSS approximation of a critically
+     damped spring (no true velocity-aware interruptibility without a JS
+     spring library, but the shape reads the same: fast away from rest,
+     settling smoothly with no overshoot). Used for floating surfaces that
+     materialize — dialogs, bottom sheets — never for page content. */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* --- Font tokens (single clean sans-serif, Instagram-style) --- */
-  --font-headline: var(--font-inter, system-ui, sans-serif);
-  --font-body: var(--font-inter, system-ui, sans-serif);
-  --font-label: var(--font-inter, system-ui, sans-serif);
+  /* --- Font tokens ---
+   * The platform's own system font, not a downloaded webfont: San Francisco
+   * on iOS/macOS (this app also ships as a Capacitor-wrapped native app, so
+   * this renders literal SF Pro there, not an approximation), Segoe UI on
+   * Windows, Roboto on Android. Every OS already ships optical sizing and
+   * legibility tuning for its own font that a webfont can't replicate, and
+   * it's what makes an interface feel native to whatever it's running on
+   * instead of "a website" — which is the whole point given verified
+   * feedback that the previous single-webfont-everywhere look (Inter, the
+   * same choice most social feeds default to) read as generic.
+   */
+  --font-headline: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-label: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   /* Lets native form controls (date pickers, etc.) pick a dark variant on
      their own instead of staying stuck with light chrome on a dark page. */

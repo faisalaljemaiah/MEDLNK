@@ -69,7 +69,7 @@ export function CommunityJoinModal({
         onClick={onClose}
         className="animate-enter absolute inset-0 bg-[rgb(var(--shadow-tint)/0.4)] backdrop-blur-sm"
       />
-      <div className="animate-enter relative w-full max-w-sm rounded-2xl border border-line bg-surface p-5 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]">
+      <div className="animate-materialize relative w-full max-w-sm rounded-2xl border border-line bg-surface p-5 shadow-[0_-4px_32px_rgb(var(--shadow-tint)/0.2)]">
         <div className="flex items-center gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-soft font-headline text-lg text-accent">
             {community.name.charAt(0).toUpperCase()}
