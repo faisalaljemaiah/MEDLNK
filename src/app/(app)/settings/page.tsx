@@ -77,6 +77,7 @@ export default async function SettingsPage() {
         <SettingsLink href="/consults">{t(locale, "settings.consults")}</SettingsLink>
         <SettingsLink href="/analytics">{t(locale, "settings.myAnalytics")}</SettingsLink>
         <SettingsLink href="/learn">{t(locale, "settings.learn")}</SettingsLink>
+        <SettingsLink href="/recap">{t(locale, "settings.recap")}</SettingsLink>
         <SettingsLink href="/notifications">{t(locale, "nav.notifications")}</SettingsLink>
       </section>
 
