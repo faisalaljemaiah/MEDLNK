@@ -23,6 +23,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
+  // A session exists the moment signup completes, before onboarding is ever
+  // touched — handle_new_user (0003/0035) inserts the profile row with only
+  // full_name and locale set, and profiles.handle stays null until
+  // onboarding itself sets it (OnboardingForm; see also the isEdit check on
+  // that page). So a null handle here means exactly one thing: this account
+  // was created and then abandoned before finishing setup. Every route
+  // under this layout requires that setup be done, the same way every route
+  // already requires being signed in at all — someone who closes the tab
+  // mid-onboarding and reopens any app URL directly must land back on
+  // /onboarding, not into a feed they never actually set up for.
+  if (viewer && !profile?.handle) {
+    redirect("/onboarding");
+  }
+
   return (
     // Mobile shell (single centered column, floating bottom nav) is
     // untouched below `md:` — this is purely additive, the app's first
