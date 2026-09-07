@@ -85,6 +85,9 @@ export type ProfilePageData = {
   /** Cases the viewer gave any clinical-value reaction to (0010 replaced likes). */
   markedCases: FeedCase[];
   savedCases: FeedCase[];
+  /** Cases the viewer follows (CaseFollowButton on the case page) — for
+   *  updates as a case evolves, not the same thing as marking/saving one. */
+  followedCases: FeedCase[];
   stats: ContributionStats;
   /** The Home dashboard's weekly-activity dial + streak — personal metrics
    *  computed from the viewer's own activity, so only ever fetched (and
@@ -126,6 +129,7 @@ export async function getProfileByHandle(
     replyCountRes,
     weeklyStats,
     streak,
+    followedCaseRows,
   ] = await Promise.all([
     supabase
       .from("follows")
@@ -163,6 +167,10 @@ export async function getProfileByHandle(
     // (and only ever shown) on the viewer's own profile.
     isOwnProfile ? getHomeStats(supabase, profile.id) : Promise.resolve(null),
     isOwnProfile ? getHomeStreak(supabase, profile.id) : Promise.resolve(null),
+    // Only meaningful on the viewer's own profile, same as marked/saved below.
+    isOwnProfile
+      ? supabase.from("case_followers").select("case_id").eq("user_id", profile.id)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const cases = allCases.filter((c) => c.author_id === profile.id);
@@ -175,6 +183,12 @@ export async function getProfileByHandle(
     : [];
   const savedCases = isOwnProfile
     ? allCases.filter((c) => c.viewerReactions.includes("save"))
+    : [];
+  const followedCaseIds = new Set(
+    (followedCaseRows.data ?? []).map((r) => r.case_id),
+  );
+  const followedCases = isOwnProfile
+    ? allCases.filter((c) => followedCaseIds.has(c.id))
     : [];
 
   // Everything but the reply count falls out of the case list already in hand.
@@ -207,6 +221,7 @@ export async function getProfileByHandle(
     cases,
     markedCases,
     savedCases,
+    followedCases,
     stats,
     weeklyStats,
     streakDays: streak?.days ?? null,

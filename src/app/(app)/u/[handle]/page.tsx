@@ -26,6 +26,9 @@ const TABS = [
   // clinical-value reactions, and this tab collects all of them.
   { key: "marked", labelKey: "profile.tabMarked" },
   { key: "saved", labelKey: "profile.tabSaved" },
+  // Case-level following (CaseFollowButton, for updates as a case evolves)
+  // — distinct from marking/saving, and from following a person.
+  { key: "following", labelKey: "profile.tabFollowing" },
 ] as const;
 
 /**
@@ -86,6 +89,7 @@ export default async function ProfilePage({
     cases,
     markedCases,
     savedCases,
+    followedCases,
     stats,
     weeklyStats,
     streakDays,
@@ -124,13 +128,21 @@ export default async function ProfilePage({
 
   const tab = TABS.some((tb) => tb.key === rawTab) ? rawTab! : "posts";
   const visibleCases =
-    tab === "marked" ? markedCases : tab === "saved" ? savedCases : cases;
+    tab === "marked"
+      ? markedCases
+      : tab === "saved"
+        ? savedCases
+        : tab === "following"
+          ? followedCases
+          : cases;
   const emptyMessage =
     tab === "marked"
       ? t(locale, "profile.emptyMarked")
       : tab === "saved"
         ? t(locale, "profile.emptySaved")
-        : t(locale, "profile.emptyPosts");
+        : tab === "following"
+          ? t(locale, "profile.emptyFollowing")
+          : t(locale, "profile.emptyPosts");
 
   return (
     <div>
