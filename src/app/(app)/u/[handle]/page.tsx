@@ -288,6 +288,36 @@ export default async function ProfilePage({
           <p className="px-4 py-10 text-center text-sm text-muted">
             {emptyMessage}
           </p>
+        ) : !user ? (
+          // A signed-out visitor (most often someone who followed a shared
+          // link) can see that cases exist here — good for the page still
+          // being worth indexing — but not read them without an account.
+          // blur + pointer-events-none rather than hiding the list outright:
+          // the markup (and its text) is still there for a crawler, a real
+          // visitor just can't read or click through it.
+          <div className="relative">
+            <div
+              aria-hidden
+              className="pointer-events-none max-h-[70vh] select-none overflow-hidden blur-md"
+            >
+              {visibleCases.map((c) => (
+                <CaseCard key={c.id} feedCase={c} path={path} viewerId={null} locale={locale} />
+              ))}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-transparent via-bg/40 to-bg px-6">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <p className="max-w-[26ch] text-sm font-medium text-text">
+                  {t(locale, "profile.signedOutGateBody")}
+                </p>
+                <Link
+                  href="/welcome"
+                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+                >
+                  {t(locale, "profile.signedOutGateCta")}
+                </Link>
+              </div>
+            </div>
+          </div>
         ) : (
           visibleCases.map((c) => (
             <CaseCard key={c.id} feedCase={c} path={path} viewerId={user?.id ?? null} locale={locale} />

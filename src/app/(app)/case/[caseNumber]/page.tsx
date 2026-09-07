@@ -161,6 +161,12 @@ export default async function CasePage({
         />
       </div>
 
+      {/* Everything below is the actual case — visible in full to a signed-in
+          viewer, blurred behind a gate for anyone else. The header above
+          (case number, title, author) stays crawlable/readable either way,
+          same as the profile page's own signed-out gate. */}
+      <div className={clsx("relative", !user && "max-h-[70vh] overflow-hidden")}>
+        <div className={clsx(!user && "pointer-events-none select-none blur-md")}>
       {typeMeta.isQuote ? (
         <p className="mt-4 border-l-2 border-accent-2/40 pl-4 font-headline text-xl italic leading-snug text-text">
           {feedCase.short_caption}
@@ -347,6 +353,24 @@ export default async function CasePage({
           </ul>
         )}
       </section>
+        </div>
+
+        {!user && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-transparent via-bg/40 to-bg px-6">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="max-w-[26ch] text-sm font-medium text-text">
+                {t(locale, "caseDetail.signedOutGateBody")}
+              </p>
+              <Link
+                href="/welcome"
+                className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+              >
+                {t(locale, "caseDetail.signedOutGateCta")}
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
