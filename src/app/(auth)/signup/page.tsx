@@ -21,48 +21,29 @@ export default function SignUpPage() {
   const [locale, setLocale] = useState<Locale>("en");
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
+    <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-10 px-6 py-12">
       <AnalyticsPageView event="signup_viewed" />
       <Link
         href="/welcome"
-        className="animate-welcome-logo flex flex-col items-center gap-3 text-center"
+        className="animate-welcome-logo flex flex-col items-center gap-4 text-center"
       >
-        <LogoMark size={40} />
-        <h1 className="font-headline text-2xl text-text">Join Asyashare</h1>
-        <p className="text-sm text-muted">
-          A clinical knowledge network for verified medical professionals.
-        </p>
+        <LogoMark size={48} />
+        <div>
+          <h1 className="font-headline text-3xl tracking-tight text-text">
+            Create your account
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">
+            A clinical knowledge network for verified medical professionals.
+          </p>
+        </div>
       </Link>
 
       <form
         action={action}
-        className="animate-welcome-rise flex flex-col gap-4"
+        className="animate-welcome-rise flex flex-col gap-5"
         style={{ animationDelay: "120ms" }}
       >
         <input type="hidden" name="locale" value={locale} />
-        <div className="flex flex-col gap-1.5">
-          <span className="font-label text-xs uppercase tracking-wide text-muted">
-            Preferred language
-          </span>
-          <div className="flex gap-2">
-            {LOCALES.map((l) => (
-              <button
-                key={l.value}
-                type="button"
-                onClick={() => setLocale(l.value)}
-                aria-pressed={locale === l.value}
-                className={clsx(
-                  "flex-1 rounded-lg border px-3.5 py-2.5 text-sm transition-colors duration-150",
-                  locale === l.value
-                    ? "border-accent bg-accent/10 font-medium text-accent"
-                    : "border-line text-muted hover:text-text",
-                )}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-        </div>
         <TextField
           label="Full name"
           name="full_name"
@@ -77,14 +58,18 @@ export default function SignUpPage() {
           autoComplete="email"
           required
         />
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          required
-        />
+        <div className="flex flex-col gap-1.5">
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+          <p className="text-xs text-muted">Must be at least 8 characters.</p>
+        </div>
+
         {state && "error" in state && (
           <p className="text-sm text-danger" role="alert">
             {state.error}
@@ -95,6 +80,7 @@ export default function SignUpPage() {
             {state.message}
           </p>
         )}
+
         <label className="flex items-start gap-2.5 text-xs leading-relaxed text-muted">
           <input
             type="checkbox"
@@ -119,15 +105,45 @@ export default function SignUpPage() {
         <SubmitButton disabled={!agreed}>Create account</SubmitButton>
       </form>
 
-      <p
-        className="animate-welcome-rise text-center text-sm text-muted"
+      <div
+        className="animate-welcome-rise flex flex-col items-center gap-3"
         style={{ animationDelay: "220ms" }}
       >
-        Already have an account?{" "}
-        <Link href="/login" className="text-accent hover:underline">
-          Sign in
-        </Link>
-      </p>
+        <p className="text-center text-sm text-muted">
+          Already have an account?{" "}
+          <Link href="/login" className="text-accent hover:underline">
+            Sign in
+          </Link>
+        </p>
+
+        {/* A quiet utility control, not a decision the page leads with —
+            the language itself is what a signed-out visitor needs to read
+            everything above, so it only needs to be findable, not prominent. */}
+        <div
+          role="group"
+          aria-label="Preferred language"
+          className="flex items-center gap-3 text-xs text-muted"
+        >
+          {LOCALES.map((l, i) => (
+            <span key={l.value} className="flex items-center gap-3">
+              {i > 0 && <span aria-hidden="true">·</span>}
+              <button
+                type="button"
+                onClick={() => setLocale(l.value)}
+                aria-pressed={locale === l.value}
+                className={clsx(
+                  "transition-colors duration-150",
+                  locale === l.value
+                    ? "font-medium text-text"
+                    : "hover:text-text",
+                )}
+              >
+                {l.label}
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
