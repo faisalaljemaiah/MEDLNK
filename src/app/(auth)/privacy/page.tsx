@@ -118,8 +118,8 @@ export default function PrivacyPage() {
             of your data, can be sent through our{" "}
             <Link href="/contact" className="text-accent hover:underline">
               contact form
-            </Link>
-            .
+            </Link>{" "}
+            once you&apos;re signed in.
           </p>
         </Section>
       </div>

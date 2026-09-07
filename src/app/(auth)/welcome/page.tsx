@@ -60,10 +60,6 @@ export default function WelcomePage() {
         ·{" "}
         <Link href="/privacy" className="hover:text-text">
           Privacy
-        </Link>{" "}
-        ·{" "}
-        <Link href="/contact" className="hover:text-text">
-          Contact
         </Link>
       </p>
     </div>

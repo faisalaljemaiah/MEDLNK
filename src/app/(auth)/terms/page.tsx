@@ -119,8 +119,8 @@ export default function TermsPage() {
             content, can be sent through our{" "}
             <Link href="/contact" className="text-accent hover:underline">
               contact form
-            </Link>
-            .
+            </Link>{" "}
+            once you&apos;re signed in.
           </p>
         </Section>
       </div>
