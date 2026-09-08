@@ -10,6 +10,7 @@ export const ONBOARDING_FUNNEL_STEPS = [
   "welcome_viewed",
   "signup_viewed",
   "signup_completed",
+  "verify_email_viewed",
   "onboarding_viewed",
   "onboarding_completed",
 ] as const;
@@ -40,6 +41,7 @@ export const FUNNEL_STEP_LABELS: Record<(typeof ONBOARDING_FUNNEL_STEPS)[number]
   welcome_viewed: "Viewed welcome screen",
   signup_viewed: "Viewed sign-up form",
   signup_completed: "Created an account",
+  verify_email_viewed: "Viewed email code entry",
   onboarding_viewed: "Viewed profile setup",
   onboarding_completed: "Completed profile setup",
 };

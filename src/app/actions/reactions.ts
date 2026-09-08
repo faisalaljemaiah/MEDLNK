@@ -43,9 +43,11 @@ export async function toggleReactionAction(
       type,
     });
     if (error) {
+      // Only a suspended account fails is_active() at this point — reacting
+      // no longer waits on license verification (0038).
       if (error.code === "42501") {
         return {
-          error: "Only verified members can react — finish verification first.",
+          error: "Your account can't do that right now.",
         };
       }
       // 23514 is a check-constraint violation, which for this table means one
@@ -107,9 +109,12 @@ export async function toggleFollowAction(
       followee_id: followeeId,
     });
     if (error) {
+      // A suspended account, or a block between the two profiles
+      // (is_blocked_pair, 0029) — following no longer waits on license
+      // verification (0038).
       if (error.code === "42501") {
         return {
-          error: "Only verified members can follow — finish verification first.",
+          error: "You can't follow this account right now.",
         };
       }
       return { error: error.message };

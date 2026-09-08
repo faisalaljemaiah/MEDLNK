@@ -65,14 +65,67 @@ export async function signUpAction(
 
   await trackEventAction("signup_completed");
 
+  // No session yet means "Confirm email" is on for this project — the
+  // account exists but can't do anything until the code emailed to them
+  // (the "Confirm signup" template, sent as {{ .Token }} rather than a
+  // link — see /verify-email) is entered back here.
   if (!data.session) {
-    return {
-      message:
-        "Check your email to confirm your account, then sign in to finish setting up your profile.",
-    };
+    redirect(`/verify-email?email=${encodeURIComponent(email)}`);
   }
 
   redirect("/onboarding");
+}
+
+export type VerifyEmailFormState = { error: string } | undefined;
+
+/**
+ * The code from the "Confirm signup" email. type: "signup" is what tells
+ * Supabase Auth this token is a signup confirmation rather than a
+ * recovery/magic-link/email-change code — same token value the classic
+ * confirmation-link flow uses, just entered by hand instead of clicked.
+ * Success returns a session the same way clicking the link would, and this
+ * server client (createClient(), src/lib/supabase/server.ts) persists it
+ * into cookies the same way signInAction's signInWithPassword already does.
+ */
+export async function verifySignupOtpAction(
+  _prevState: VerifyEmailFormState,
+  formData: FormData,
+): Promise<VerifyEmailFormState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const token = String(formData.get("code") ?? "").trim();
+
+  if (!email || !token) {
+    return { error: "Enter the code we emailed you." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "signup",
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/onboarding");
+}
+
+export type ResendCodeResult = { error: string } | { message: string };
+
+export async function resendSignupOtpAction(email: string): Promise<ResendCodeResult> {
+  if (!email) {
+    return { error: "Missing email address." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { message: "We sent a new code." };
 }
 
 export async function signInAction(
@@ -93,6 +146,12 @@ export async function signInAction(
   });
 
   if (error) {
+    // Signed up but never entered the code from the confirmation email (or
+    // closed that tab) — send them back to finish that instead of a dead
+    // end error, same as signUpAction sends a brand-new signup there.
+    if (error.code === "email_not_confirmed") {
+      redirect(`/verify-email?email=${encodeURIComponent(email)}`);
+    }
     return { error: error.message };
   }
 

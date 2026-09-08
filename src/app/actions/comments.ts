@@ -66,9 +66,11 @@ export async function addCommentAction(
   });
 
   if (error) {
+    // Only a suspended account fails is_active() at this point — replying
+    // no longer waits on license verification (0038).
     if (error.code === "42501") {
       return {
-        error: "Only verified members can reply — finish verification first.",
+        error: "Your account can't do that right now.",
       };
     }
     if (error.code === "42703") {
