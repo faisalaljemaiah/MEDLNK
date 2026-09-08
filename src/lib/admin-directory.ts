@@ -40,6 +40,12 @@ export async function searchAllUsers(
       "id, handle, full_name, role, specialty, verified, verification_status, badge_tier, " +
         "is_admin, suspended_at, created_at, license_document_path",
     )
+    // A null handle means onboarding was never finished (OnboardingForm is
+    // the only thing that sets it) — someone who created an account and
+    // walked away mid-signup, not an actual member. Excluded here rather
+    // than just hidden in the UI so getTotalUserCount's "members total"
+    // figure matches what this list actually shows.
+    .not("handle", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -66,7 +72,8 @@ export async function searchAllUsers(
 export async function getTotalUserCount(supabase: Client): Promise<number | null> {
   const { count, error } = await supabase
     .from("profiles")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .not("handle", "is", null);
   return error ? null : (count ?? 0);
 }
 

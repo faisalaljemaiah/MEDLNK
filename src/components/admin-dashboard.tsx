@@ -2,6 +2,7 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsIcon } from "@/components/icons";
+import { RemoveUserButtons } from "@/components/remove-user-buttons";
 import { signOutAction } from "@/app/actions/auth";
 import {
   approveUserAction,
@@ -425,6 +426,11 @@ async function UsersDirectory({
                       Reset 2FA
                     </button>
                   </form>
+                  <RemoveUserButtons
+                    profileId={u.id}
+                    viewerHandle={viewerHandle}
+                    displayName={u.full_name || `@${u.handle ?? "unknown"}`}
+                  />
                 </div>
               </div>
             </li>

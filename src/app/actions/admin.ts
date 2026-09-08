@@ -223,3 +223,74 @@ export async function restoreCaseAction(
   });
   revalidateAdminViews(viewerHandle);
 }
+
+export type AdminActionResult = { error: string } | undefined;
+
+/**
+ * Permanently deletes the account — profiles.id references auth.users(id)
+ * on delete cascade, and every other table cascades from profiles in turn,
+ * so this is the same complete deletion `deleteAccountAction`
+ * (src/app/actions/account.ts) gives a member over their own account, just
+ * triggered by an admin instead. For the lesser cases (a fake name, an
+ * obvious duplicate) where the person should still be free to sign up
+ * again under a real identity — no entry goes on the blocklist.
+ */
+export async function removeUserAction(
+  profileId: string,
+  viewerHandle: string | null,
+): Promise<AdminActionResult> {
+  const { supabase, userId } = await requireAdmin();
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.deleteUser(profileId);
+  if (error) {
+    return { error: "Something went wrong removing this account. Please try again." };
+  }
+
+  await supabase.from("moderation_events").insert({
+    actor_id: userId,
+    action: "user_removed",
+    target_kind: "profile",
+    target_id: profileId,
+    note: "Removed from the admin Users directory",
+  });
+  revalidateAdminViews(viewerHandle);
+}
+
+/**
+ * Same deletion as removeUserAction, plus the email goes on the permanent
+ * signup blocklist (blocked_emails, 0037) so `signUpAction` refuses to let
+ * it create a new account. The email lives in auth.users, not profiles, so
+ * it has to be read before deleteUser removes that row.
+ */
+export async function removeAndBlockUserAction(
+  profileId: string,
+  viewerHandle: string | null,
+): Promise<AdminActionResult> {
+  const { supabase, userId } = await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: authUser } = await admin.auth.admin.getUserById(profileId);
+  const email = authUser?.user?.email?.trim().toLowerCase();
+
+  const { error } = await admin.auth.admin.deleteUser(profileId);
+  if (error) {
+    return { error: "Something went wrong removing this account. Please try again." };
+  }
+
+  if (email) {
+    await admin
+      .from("blocked_emails")
+      .upsert({ email, blocked_by: userId, reason: "Removed from the admin Users directory" });
+  }
+
+  await supabase.from("moderation_events").insert({
+    actor_id: userId,
+    action: "user_removed_and_blocked",
+    target_kind: "profile",
+    target_id: profileId,
+    note: email
+      ? `Removed and blocked ${email} from signing up again`
+      : "Removed from the admin Users directory",
+  });
+  revalidateAdminViews(viewerHandle);
+}

@@ -377,6 +377,16 @@ export type UserBlock = {
   created_at: string;
 };
 
+/** 0037_blocked_emails.sql — permanent signup blocklist, keyed on the
+ *  lowercased email rather than a profile id since the whole point is that
+ *  the account it belonged to no longer exists. */
+export type BlockedEmail = {
+  email: string;
+  reason: string | null;
+  blocked_by: string | null;
+  created_at: string;
+};
+
 /** Mirrors the kind check constraint in 0036_push_notifications.sql. */
 export type PushSubscriptionKind = "web" | "fcm";
 
@@ -509,6 +519,12 @@ export type Database = {
         Row: UserBlock;
         Insert: Partial<UserBlock> & { blocker_id: string; blocked_id: string };
         Update: Partial<UserBlock>;
+        Relationships: [];
+      };
+      blocked_emails: {
+        Row: BlockedEmail;
+        Insert: Partial<BlockedEmail> & { email: string };
+        Update: Partial<BlockedEmail>;
         Relationships: [];
       };
       communities: {

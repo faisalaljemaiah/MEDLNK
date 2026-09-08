@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { trackEventAction } from "@/app/actions/analytics";
 import { LOCALES } from "@/lib/i18n";
 
@@ -34,6 +35,21 @@ export async function signUpAction(
   }
   if (password.length < 8) {
     return { error: "Password must be at least 8 characters." };
+  }
+
+  // Checked with the service-role client, not the anon session — the RLS
+  // policy on blocked_emails is admin-select-only, so an unauthenticated
+  // signup request would just see no rows either way. This is the only
+  // gate: someone an admin has removed-and-blocked (blocked_emails, 0037)
+  // never reaches supabase.auth.signUp at all.
+  const admin = createAdminClient();
+  const { data: blocked } = await admin
+    .from("blocked_emails")
+    .select("email")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
+  if (blocked) {
+    return { error: "You have been blocked from our app." };
   }
 
   const supabase = await createClient();
