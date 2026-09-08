@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { removeUserAction, removeAndBlockUserAction } from "@/app/actions/admin";
 
 /**
@@ -18,6 +19,7 @@ export function RemoveUserButtons({
   viewerHandle: string | null;
   displayName: string;
 }) {
+  const router = useRouter();
   const [removed, setRemoved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -37,7 +39,14 @@ export function RemoveUserButtons({
       if (result && "error" in result) {
         setError(result.error);
       } else {
+        // Only this button strip is client-side state — the rest of the
+        // card (name, badges, document link) is server-rendered by the
+        // parent UsersDirectory, so hiding just this component would leave
+        // a now-buttonless ghost card behind. revalidateAdminViews already
+        // invalidated /admin server-side; router.refresh() is what
+        // actually re-fetches it so the whole row disappears.
         setRemoved(true);
+        router.refresh();
       }
     });
   }
