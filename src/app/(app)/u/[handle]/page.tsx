@@ -7,7 +7,7 @@ import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getProfileByHandle, getProfileCardData } from "@/lib/profile";
 import { t } from "@/lib/i18n";
 import { Avatar } from "@/components/avatar";
-import { SettingsIcon } from "@/components/icons";
+import { SettingsIcon, FilePlusIcon } from "@/components/icons";
 import { FollowButton } from "@/components/follow-button";
 import { CaseCard } from "@/components/case-card";
 import { ProfileStats } from "@/components/profile-stats";
@@ -297,9 +297,24 @@ export default async function ProfilePage({
         )}
       >
         {visibleCases.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-muted">
-            {emptyMessage}
-          </p>
+          // A blank page with one line of gray text is a dead end, not a
+          // state — worst on the tab someone is most likely to hit first
+          // (their own, brand-new profile's Posts tab), so that one gets an
+          // actual call to action rather than just a friendlier icon.
+          <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-surface text-muted">
+              <FilePlusIcon width={22} height={22} />
+            </div>
+            <p className="max-w-[22rem] text-sm text-muted">{emptyMessage}</p>
+            {isOwnProfile && tab === "posts" && (
+              <Link
+                href="/compose"
+                className="mt-1 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
+              >
+                Share your first case
+              </Link>
+            )}
+          </div>
         ) : !user ? (
           // A signed-out visitor (most often someone who followed a shared
           // link) can see that cases exist here — good for the page still
