@@ -4,20 +4,20 @@ import type { Database } from "@/lib/database.types";
 type Client = SupabaseClient<Database>;
 
 /**
- * Off again: paused for further testing before launch. While off, the
- * onboarding/profile-edit flow never asks for a license number or
- * document, and everyone who completes their profile is auto-approved
- * instead of sitting in the admin's manual verification queue.
+ * On: the onboarding/profile-edit flow requires a license number and a
+ * proof-of-license document, and a new member sits in verification_status
+ * 'pending' until an admin approves it from the admin Requests queue —
+ * nothing auto-verifies. Unrelated to public.is_active() (0038): browsing,
+ * following, reacting, and commenting stay open to an unverified member
+ * regardless of this flag — only posting a case (public.is_verified())
+ * waits on approval.
  *
- * Flip back to true to restore the full flow (license fields required,
- * manual admin approval, verification_status stays 'pending' until an
- * admin acts) — every place that reads this flag already has both
- * behaviors implemented, so this one line is the whole rollback either
- * way. Unrelated to public.is_active() (0038): browsing, following,
- * reacting, and commenting stay open to an unverified member regardless
- * of this flag — only posting a case waits on public.is_verified().
+ * Flip to false to pause the whole flow again (license fields hidden,
+ * everyone auto-approved on onboarding) — every place that reads this
+ * flag already has both behaviors implemented, so this one line is the
+ * whole rollback either way.
  */
-export const LICENSE_VERIFICATION_ENABLED = false;
+export const LICENSE_VERIFICATION_ENABLED = true;
 
 const MAX_ATTEMPTS = 3;
 const WINDOW_DAYS = 30;
