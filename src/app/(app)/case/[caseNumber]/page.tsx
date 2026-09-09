@@ -158,13 +158,7 @@ export default async function CasePage({
         </span>
       )}
 
-      <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
-        <h1 className="font-headline text-2xl text-text">{feedCase.title}</h1>
-        {/* Signed-in only — the write-up below is blurred for a signed-out
-            visitor (see the gated wrapper further down), and a button that
-            reads the content aloud has to respect that same gate. */}
-        {user && <ReadAloudButton text={readAloudText} />}
-      </div>
+      <h1 className="mt-1 font-headline text-2xl text-text">{feedCase.title}</h1>
 
       {feedCase.moderation_status === "removed" && (
         <p className="mt-3 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-2.5 text-sm text-danger">
@@ -189,14 +183,23 @@ export default async function CasePage({
           </span>
         </Link>
 
-        <CaseFollowButton
-          caseId={feedCase.id}
-          initialFollowing={interactive.isFollowing}
-          initialCount={interactive.followerCount}
-          followedFollowers={interactive.followedFollowers}
-          signedIn={Boolean(user)}
-          path={path}
-        />
+        <div className="flex items-center gap-2">
+          <CaseFollowButton
+            caseId={feedCase.id}
+            initialFollowing={interactive.isFollowing}
+            initialCount={interactive.followerCount}
+            followedFollowers={interactive.followedFollowers}
+            signedIn={Boolean(user)}
+            path={path}
+          />
+          {/* Signed-in only — the write-up below is blurred for a
+              signed-out visitor (see the gated wrapper further down), and
+              a button that reads the content aloud has to respect that
+              same gate. Grouped with Follow case (not the title row above)
+              so the two wrap together on a narrow screen instead of this
+              one being orphaned on its own line. */}
+          {user && <ReadAloudButton text={readAloudText} />}
+        </div>
       </div>
 
       {/* Everything below is the actual case — visible in full to a signed-in
