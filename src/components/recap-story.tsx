@@ -167,7 +167,6 @@ export function RecapStory({
           className="flex w-full shrink-0 snap-center flex-col items-center justify-center gap-5 px-8 text-center"
         >
           <RecapLogo size={56} />
-          <p className="text-lg text-white/70">Your Asyashare recap</p>
           <h1 className="font-headline text-4xl text-white">{name}</h1>
         </div>
 
