@@ -56,10 +56,7 @@ export function ReadAloudButton({ text }: { text: string }) {
       aria-pressed={speaking}
       aria-label={speaking ? "Stop reading aloud" : "Read case aloud"}
       className={clsx(
-        // border color comes from .audio-pulse/.audio-pulse-active
-        // (globals.css), not a border-audio utility — see the comment
-        // there for why a Tailwind border-color utility can't win here.
-        "flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-medium text-audio transition-transform duration-150 ease-out active:scale-95",
+        "flex items-center gap-1.5 rounded-full border-2 border-audio px-3 py-1.5 text-sm font-medium text-audio transition-transform duration-150 ease-out active:scale-95",
         speaking ? "audio-pulse-active" : "audio-pulse",
       )}
     >
