@@ -30,9 +30,6 @@ import { CaseComparison } from "@/components/case-comparison";
 import { SpecialistThreads } from "@/components/specialist-threads";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { ReadAloudButton } from "@/components/read-aloud-button";
-import { ReadAloudProvider } from "@/components/read-aloud-context";
-import { HighlightSentence } from "@/components/highlight-sentence";
-import { splitSentences, buildSpokenText, type SpokenSegment } from "@/lib/text-segments";
 
 export default async function CasePage({
   params,
@@ -80,70 +77,36 @@ export default async function CasePage({
   const locale = viewerProfile?.locale ?? "en";
   const staged = feedCase.reveal_mode === "staged";
 
-  // What ReadAloudButton actually speaks, and — via the sentence ids
-  // threaded through here — what HighlightSentence lights up as it goes.
-  // Assembled server-side so it can pull in section labels (translated)
-  // the same way the page itself renders them, and so a staged case's
-  // lesson is left out entirely rather than spoken before the reader has
-  // chosen to reveal it (the whole point of "staged" is that they tap to
-  // reveal it themselves) — with nothing to highlight there either, since
-  // it's simply never part of the spoken text.
-  //
-  // Each prose block's sentences do double duty: pushed into
-  // readAloudSegments (trimmed, for speech) and kept as-is (original
-  // whitespace intact) for the matching HighlightSentence spans below, so
-  // splitting into sentences never changes how the block actually renders.
-  const readAloudSegments: SpokenSegment[] = [
-    { id: "title", text: feedCase.title },
-    { id: "caption", text: feedCase.short_caption },
-  ];
-  const nearMissSentences: Record<string, { id: string; text: string }[]> = {};
-  let presentationSentences: { id: string; text: string }[] = [];
-  let trickySentences: { id: string; text: string }[] = [];
-  let lessonSentences: { id: string; text: string }[] = [];
-
+  // What ReadAloudButton actually speaks — assembled server-side so it can
+  // pull in section labels (translated) the same way the page itself
+  // renders them, and so a staged case's lesson is left out entirely
+  // rather than spoken before the reader has chosen to reveal it (the
+  // whole point of "staged" is that they tap to reveal it themselves).
+  const readAloudSections = [feedCase.title, feedCase.short_caption];
   if (feedCase.near_miss) {
     for (const prompt of NEAR_MISS_PROMPTS) {
       const value = feedCase.near_miss[prompt.name];
-      if (!value) continue;
-      readAloudSegments.push({ id: null, text: nearMissPromptLabel(locale, prompt.name) });
-      const sentences = splitSentences(value).map((s, i) => ({ id: `nm-${prompt.name}-${i}`, text: s }));
-      nearMissSentences[prompt.name] = sentences;
-      sentences.forEach((s) => readAloudSegments.push(s));
+      if (value) readAloudSections.push(`${nearMissPromptLabel(locale, prompt.name)}. ${value}`);
     }
   } else {
     if (feedCase.full_body.presentation) {
-      readAloudSegments.push({ id: null, text: t(locale, "compose.sectionPresentation") });
-      presentationSentences = splitSentences(feedCase.full_body.presentation).map((s, i) => ({
-        id: `pres-${i}`,
-        text: s,
-      }));
-      presentationSentences.forEach((s) => readAloudSegments.push(s));
+      readAloudSections.push(
+        `${t(locale, "compose.sectionPresentation")}. ${feedCase.full_body.presentation}`,
+      );
     }
     if (feedCase.full_body.tricky) {
-      readAloudSegments.push({ id: null, text: t(locale, "compose.sectionTricky") });
-      trickySentences = splitSentences(feedCase.full_body.tricky).map((s, i) => ({
-        id: `tricky-${i}`,
-        text: s,
-      }));
-      trickySentences.forEach((s) => readAloudSegments.push(s));
+      readAloudSections.push(`${t(locale, "compose.sectionTricky")}. ${feedCase.full_body.tricky}`);
     }
     if (feedCase.full_body.actions.length > 0) {
-      readAloudSegments.push({ id: null, text: t(locale, "compose.sectionActions") });
-      feedCase.full_body.actions.forEach((action, i) =>
-        readAloudSegments.push({ id: `action-${i}`, text: action }),
+      readAloudSections.push(
+        `${t(locale, "compose.sectionActions")}. ${feedCase.full_body.actions.join(". ")}`,
       );
     }
     if (feedCase.full_body.lesson && !staged) {
-      readAloudSegments.push({ id: null, text: t(locale, "compose.sectionLesson") });
-      lessonSentences = splitSentences(feedCase.full_body.lesson).map((s, i) => ({
-        id: `lesson-${i}`,
-        text: s,
-      }));
-      lessonSentences.forEach((s) => readAloudSegments.push(s));
+      readAloudSections.push(`${t(locale, "compose.sectionLesson")}. ${feedCase.full_body.lesson}`);
     }
   }
-  const { text: readAloudText, ranges: readAloudRanges } = buildSpokenText(readAloudSegments);
+  const readAloudText = readAloudSections.join(". ");
 
   // Null (every case posted before 0025) means the same thing "top" does —
   // media above the write-up, exactly where it's always rendered.
@@ -175,7 +138,6 @@ export default async function CasePage({
   ) : null;
 
   return (
-    <ReadAloudProvider text={readAloudText} ranges={readAloudRanges}>
     <div className="px-4 py-6">
       <BackButton />
 
@@ -196,9 +158,7 @@ export default async function CasePage({
         </span>
       )}
 
-      <h1 className="mt-1 font-headline text-2xl text-text">
-        <HighlightSentence id="title">{feedCase.title}</HighlightSentence>
-      </h1>
+      <h1 className="mt-1 font-headline text-2xl text-text">{feedCase.title}</h1>
 
       {feedCase.moderation_status === "removed" && (
         <p className="mt-3 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-2.5 text-sm text-danger">
@@ -238,7 +198,7 @@ export default async function CasePage({
               same gate. Grouped with Follow case (not the title row above)
               so the two wrap together on a narrow screen instead of this
               one being orphaned on its own line. */}
-          {user && <ReadAloudButton />}
+          {user && <ReadAloudButton text={readAloudText} />}
         </div>
       </div>
 
@@ -250,11 +210,11 @@ export default async function CasePage({
         <div className={clsx(!user && "pointer-events-none select-none blur-md")}>
       {typeMeta.isQuote ? (
         <p className="mt-4 border-l-2 border-accent-2/40 pl-4 font-headline text-xl italic leading-snug text-text">
-          <HighlightSentence id="caption">{feedCase.short_caption}</HighlightSentence>
+          {feedCase.short_caption}
         </p>
       ) : (
         <p className="mt-4 text-sm leading-relaxed text-text">
-          <HighlightSentence id="caption">{feedCase.short_caption}</HighlightSentence>
+          {feedCase.short_caption}
         </p>
       )}
 
@@ -286,7 +246,7 @@ export default async function CasePage({
                 <CaseBlock
                   key={prompt.name}
                   label={nearMissPromptLabel(locale, prompt.name)}
-                  sentences={nearMissSentences[prompt.name] ?? []}
+                  text={value}
                 />
               );
             })}
@@ -298,14 +258,14 @@ export default async function CasePage({
             {feedCase.full_body.presentation && (
               <CaseBlock
                 label={t(locale, "compose.sectionPresentation")}
-                sentences={presentationSentences}
+                text={feedCase.full_body.presentation}
                 media={mediaPlacement === "presentation" ? mediaBlock : null}
               />
             )}
             {feedCase.full_body.tricky && (
               <CaseBlock
                 label={t(locale, "compose.sectionTricky")}
-                sentences={trickySentences}
+                text={feedCase.full_body.tricky}
                 media={mediaPlacement === "tricky" ? mediaBlock : null}
               />
             )}
@@ -316,9 +276,7 @@ export default async function CasePage({
                 </p>
                 <ul className="mt-1.5 flex list-disc flex-col gap-1.5 pl-5 text-sm text-text">
                   {feedCase.full_body.actions.map((action, i) => (
-                    <li key={i}>
-                      <HighlightSentence id={`action-${i}`}>{action}</HighlightSentence>
-                    </li>
+                    <li key={i}>{action}</li>
                   ))}
                 </ul>
                 {mediaPlacement === "actions" && mediaBlock}
@@ -340,7 +298,7 @@ export default async function CasePage({
               ) : (
                 <CaseBlock
                   label={t(locale, "compose.sectionLesson")}
-                  sentences={lessonSentences}
+                  text={feedCase.full_body.lesson}
                   media={mediaPlacement === "lesson" ? mediaBlock : null}
                 />
               ))}
@@ -455,22 +413,16 @@ export default async function CasePage({
         )}
       </div>
     </div>
-    </ReadAloudProvider>
   );
 }
 
 function CaseBlock({
   label,
-  sentences,
+  text,
   media,
 }: {
   label: string;
-  /** Pre-split by splitSentences (see the sentence-building block above in
-   *  CasePage) — each chunk keeps its original whitespace, so rendering
-   *  them back to back reproduces the block's text exactly while still
-   *  giving ReadAloudButton/HighlightSentence a per-sentence unit to
-   *  highlight. */
-  sentences: { id: string; text: string }[];
+  text: string;
   /** The author's chosen video/photo, when they placed it under this
    *  section instead of the top of the case (0025). */
   media?: React.ReactNode;
@@ -481,11 +433,7 @@ function CaseBlock({
         {label}
       </p>
       <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-text">
-        {sentences.map((s) => (
-          <HighlightSentence key={s.id} id={s.id}>
-            {s.text}
-          </HighlightSentence>
-        ))}
+        {text}
       </p>
       {media}
     </div>

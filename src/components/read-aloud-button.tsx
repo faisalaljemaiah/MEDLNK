@@ -1,19 +1,53 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { clsx } from "clsx";
 import { SpeakerWaveIcon, StopIcon } from "@/components/icons";
-import { useReadAloud } from "@/components/read-aloud-context";
 
 /**
- * Starts/stops the SpeechSynthesisUtterance that ReadAloudProvider owns —
- * the actual speech lifecycle lives there, not here, since a case page
- * wraps its whole write-up in one provider so every HighlightSentence
- * scattered through it can react to the same state this button toggles.
+ * Text-to-speech via the browser's own SpeechSynthesis API — no server, no
+ * API key, no per-use cost. On the Capacitor-wrapped iOS/Android builds
+ * this reaches the same system voices Siri/Android's assistant use, not a
+ * canned robotic one. Renders nothing when the API isn't available (older
+ * WebViews, some desktop browsers) rather than a button that would just
+ * silently fail on click.
  */
-export function ReadAloudButton() {
-  const { supported, speaking, toggle } = useReadAloud();
+export function ReadAloudButton({ text }: { text: string }) {
+  const [supported, setSupported] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
 
-  if (!supported) return null;
+  useEffect(() => {
+    function check() {
+      setSupported(typeof window !== "undefined" && "speechSynthesis" in window);
+    }
+    check();
+    // Leaving the page (or the case content changing under this button)
+    // must not leave a voice narrating a screen the reader has already
+    // moved past.
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
+
+  if (!supported || !text.trim()) return null;
+
+  function toggle() {
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+
+    // Cancel first — Chrome's queue otherwise stacks a second utterance
+    // behind whatever (if anything) is already speaking instead of
+    // replacing it.
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+    setSpeaking(true);
+  }
 
   return (
     <button
