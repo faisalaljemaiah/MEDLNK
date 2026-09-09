@@ -97,12 +97,19 @@ export function CaseCard({
                   {feedCase.title}
                 </h3>
               </Link>
+              {/* Capped at a paragraph's worth (line-clamp-4) — the
+                  compose form's own placeholder calls this "one or two
+                  sentences," but nothing enforces that length, and an
+                  author who writes several paragraphs here would
+                  otherwise fill the whole feed with one post. "Let's dive
+                  deep" below is the actual read-more: the full text is
+                  never cut off, only this preview. */}
               {typeMeta.isQuote ? (
-                <p className="mt-2 border-l-2 border-accent-2/40 pl-3 font-headline text-lg italic leading-snug text-text">
+                <p className="mt-2 line-clamp-4 border-l-2 border-accent-2/40 pl-3 font-headline text-lg italic leading-snug text-text">
                   {feedCase.short_caption}
                 </p>
               ) : (
-                <p className="mt-1 text-sm leading-relaxed text-muted">
+                <p className="mt-1 line-clamp-4 text-sm leading-relaxed text-muted">
                   {feedCase.short_caption}
                 </p>
               )}
