@@ -29,6 +29,7 @@ import { ReasoningTree } from "@/components/reasoning-tree";
 import { CaseComparison } from "@/components/case-comparison";
 import { SpecialistThreads } from "@/components/specialist-threads";
 import { VerifiedBadge } from "@/components/verified-badge";
+import { ReadAloudButton } from "@/components/read-aloud-button";
 
 export default async function CasePage({
   params,
@@ -75,6 +76,37 @@ export default async function CasePage({
 
   const locale = viewerProfile?.locale ?? "en";
   const staged = feedCase.reveal_mode === "staged";
+
+  // What ReadAloudButton actually speaks — assembled server-side so it can
+  // pull in section labels (translated) the same way the page itself
+  // renders them, and so a staged case's lesson is left out entirely
+  // rather than spoken before the reader has chosen to reveal it (the
+  // whole point of "staged" is that they tap to reveal it themselves).
+  const readAloudSections = [feedCase.title, feedCase.short_caption];
+  if (feedCase.near_miss) {
+    for (const prompt of NEAR_MISS_PROMPTS) {
+      const value = feedCase.near_miss[prompt.name];
+      if (value) readAloudSections.push(`${nearMissPromptLabel(locale, prompt.name)}. ${value}`);
+    }
+  } else {
+    if (feedCase.full_body.presentation) {
+      readAloudSections.push(
+        `${t(locale, "compose.sectionPresentation")}. ${feedCase.full_body.presentation}`,
+      );
+    }
+    if (feedCase.full_body.tricky) {
+      readAloudSections.push(`${t(locale, "compose.sectionTricky")}. ${feedCase.full_body.tricky}`);
+    }
+    if (feedCase.full_body.actions.length > 0) {
+      readAloudSections.push(
+        `${t(locale, "compose.sectionActions")}. ${feedCase.full_body.actions.join(". ")}`,
+      );
+    }
+    if (feedCase.full_body.lesson && !staged) {
+      readAloudSections.push(`${t(locale, "compose.sectionLesson")}. ${feedCase.full_body.lesson}`);
+    }
+  }
+  const readAloudText = readAloudSections.join(". ");
 
   // Null (every case posted before 0025) means the same thing "top" does —
   // media above the write-up, exactly where it's always rendered.
@@ -126,7 +158,13 @@ export default async function CasePage({
         </span>
       )}
 
-      <h1 className="mt-1 font-headline text-2xl text-text">{feedCase.title}</h1>
+      <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
+        <h1 className="font-headline text-2xl text-text">{feedCase.title}</h1>
+        {/* Signed-in only — the write-up below is blurred for a signed-out
+            visitor (see the gated wrapper further down), and a button that
+            reads the content aloud has to respect that same gate. */}
+        {user && <ReadAloudButton text={readAloudText} />}
+      </div>
 
       {feedCase.moderation_status === "removed" && (
         <p className="mt-3 rounded-lg border border-danger/40 bg-danger/5 px-3.5 py-2.5 text-sm text-danger">

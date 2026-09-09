@@ -620,6 +620,47 @@ body {
   }
 }
 
+/*
+ * ReadAloudButton's pulsing ring — a breathing box-shadow halo in --audio,
+ * not a rotating conic-gradient rim like .ai-glow: the point here is "this
+ * button makes sound," not "this is thinking," so a simple expand/fade
+ * pulse (closer to a speaker cone or a sonar ping) reads more honestly than
+ * borrowing the AI-feature motif for an unrelated control. Idle state
+ * pulses slowly as a standing "you can tap this" cue; .audio-pulse-active
+ * (while actually speaking) pulses faster and wider, same
+ * idle-vs-active relationship .ai-glow/.ai-glow-active already use.
+ */
+@keyframes medlnk-audio-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--audio-rgb) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(var(--audio-rgb) / 0);
+  }
+}
+
+/*
+ * border-color set here rather than through the border-audio utility class
+ * Tailwind would otherwise generate: the `* { border-color: var(--line) }`
+ * reset above this in the file is unlayered CSS, and Tailwind wraps its
+ * own utilities in `@layer utilities` — in the CSS cascade-layers spec,
+ * ANY unlayered rule beats ANY layered one regardless of specificity, so
+ * that reset silently wins over every border-{color} utility in the app
+ * (a real, pre-existing bug worth its own fix — flagged separately, not
+ * patched globally here). Written as a plain rule here, it's unlayered
+ * too, and a class selector beats the reset's bare `*`.
+ */
+.audio-pulse {
+  animation: medlnk-audio-pulse 2.2s ease-out infinite;
+  border-color: var(--audio);
+}
+
+.audio-pulse-active {
+  animation: medlnk-audio-pulse 1.1s ease-out infinite;
+  border-color: var(--audio);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

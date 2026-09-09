@@ -323,6 +323,28 @@ export function MutedIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Same speaker body as MutedIcon, with sound-wave arcs instead of the mute
+// X — the read-aloud button's idle/play state (ReadAloudButton).
+export function SpeakerWaveIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M11 5 6 9H3v6h3l5 4Z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </svg>
+  );
+}
+
+// A plain filled square — the read-aloud button's "speaking, tap to stop"
+// state, same shape convention as a physical stop button.
+export function StopIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)} fill="currentColor" stroke="none">
+      <rect x="5" y="5" width="14" height="14" rx="3" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>

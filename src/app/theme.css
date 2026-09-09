@@ -54,6 +54,18 @@
      inline arbitrary hex so it's one value to tune. */
   --silver: #c0c8ce;
 
+  /* Apple's own iOS systemBlue (light-mode value) — reserved for the
+     read-aloud control (ReadAloudButton) specifically, not a general
+     accent. Voice/audio gets its own distinct, recognizable color rather
+     than reusing --accent (ink) or the --ai-hue-* sweep (a different
+     feature's visual language entirely), the same reasoning already
+     applied to those two elsewhere in this file. */
+  --audio: #007aff;
+  /* RGB triplet of --audio, same rgb(var(...) / alpha) convention as
+     --shadow-tint above — used for the pulsing glow around
+     ReadAloudButton, which needs a translucent version of this color. */
+  --audio-rgb: 0 122 255;
+
   /*
    * Verified-checkmark tiers (see VerifiedBadge, src/lib/verification-tier.ts).
    * --badge-verified is the plain check every verified member gets by
@@ -174,6 +186,10 @@
     --badge-verified: #60a5fa;
     --badge-gold: #facc15;
     --badge-platinum: #cbd5e1;
+    /* Apple's dark-mode systemBlue — very slightly lighter than the
+       light-mode value above, same as Apple's own HIG table. */
+    --audio: #0a84ff;
+    --audio-rgb: 10 132 255;
   }
 }
 
@@ -195,6 +211,7 @@
   --color-badge-verified: var(--badge-verified);
   --color-badge-gold: var(--badge-gold);
   --color-badge-platinum: var(--badge-platinum);
+  --color-audio: var(--audio);
 
   --font-headline: var(--font-headline);
   --font-body: var(--font-body);
