@@ -6,7 +6,7 @@ import { signOutAction } from "@/app/actions/auth";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 
-export function TwoFactorVerifyForm() {
+export function TwoFactorVerifyForm({ next }: { next?: string | null }) {
   const [state, action] = useActionState(verifyMfaLoginAction, undefined);
 
   return (
@@ -16,6 +16,7 @@ export function TwoFactorVerifyForm() {
         className="animate-welcome-rise flex flex-col gap-4"
         style={{ animationDelay: "120ms" }}
       >
+        {next && <input type="hidden" name="next" value={next} />}
         <TextField
           label="6-digit code"
           name="code"

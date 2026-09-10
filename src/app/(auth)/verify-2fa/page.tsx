@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
+import { sanitizeNextPath } from "@/lib/redirect-target";
 import { TwoFactorVerifyForm } from "@/components/two-factor-verify-form";
 import { LogoMark } from "@/components/brand";
 
@@ -10,9 +11,16 @@ import { LogoMark } from "@/components/brand";
  * completed this session's challenge — a password alone only reaches
  * aal1, this page is what raises it to aal2.
  */
-export default async function Verify2faPage() {
+export default async function Verify2faPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const user = await getViewer();
   if (!user) redirect("/login");
+
+  const { next: rawNext } = await searchParams;
+  const next = sanitizeNextPath(rawNext ?? null);
 
   const supabase = await createClient();
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -20,7 +28,7 @@ export default async function Verify2faPage() {
   // challenge was already completed (e.g. a refresh right after verifying)
   // — send them on rather than showing a code prompt with nothing behind it.
   if (!aal || aal.currentLevel === aal.nextLevel) {
-    redirect("/");
+    redirect(next ?? "/");
   }
 
   return (
@@ -33,7 +41,7 @@ export default async function Verify2faPage() {
         </p>
       </div>
 
-      <TwoFactorVerifyForm />
+      <TwoFactorVerifyForm next={next} />
     </div>
   );
 }

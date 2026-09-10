@@ -6,11 +6,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { trackEventAction } from "@/app/actions/analytics";
 import { LOCALES } from "@/lib/i18n";
+import { sanitizeNextPath } from "@/lib/redirect-target";
 
 export type AuthFormState =
   | { error: string }
   | { message: string }
   | undefined;
+
 
 export async function signUpAction(
   _prevState: AuthFormState,
@@ -134,6 +136,7 @@ export async function signInAction(
 ): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const next = sanitizeNextPath(formData.get("next"));
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -162,10 +165,10 @@ export async function signInAction(
   // so this redirect is a better first landing, not the only gate.
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal && aal.nextLevel === "aal2" && aal.nextLevel !== aal.currentLevel) {
-    redirect("/verify-2fa");
+    redirect(next ? `/verify-2fa?next=${encodeURIComponent(next)}` : "/verify-2fa");
   }
 
-  redirect("/");
+  redirect(next ?? "/");
 }
 
 export async function signOutAction() {

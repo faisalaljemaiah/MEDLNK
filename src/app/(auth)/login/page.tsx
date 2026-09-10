@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signInAction } from "@/app/actions/auth";
+import { sanitizeNextPath } from "@/lib/redirect-target";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
@@ -11,6 +13,10 @@ import { LogoMark } from "@/components/brand";
 
 export default function LoginPage() {
   const [state, action] = useActionState(signInAction, undefined);
+  // Where a shared case link's signed-out gate sends someone who already
+  // has an account — e.g. /login?next=/case/CASE-1234 — so signing in
+  // lands back on that case instead of the home feed.
+  const next = sanitizeNextPath(useSearchParams().get("next"));
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 py-12">
@@ -29,6 +35,7 @@ export default function LoginPage() {
         className="animate-welcome-rise flex flex-col gap-4"
         style={{ animationDelay: "120ms" }}
       >
+        {next && <input type="hidden" name="next" value={next} />}
         <TextField
           label="Email"
           name="email"

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -5,6 +6,7 @@ import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { getCaseDetailByCaseNumber } from "@/lib/cases";
+import { getCaseCardData } from "@/lib/case-card-data";
 import { getCaseComments } from "@/lib/comments";
 import { getCaseComparison } from "@/lib/comparisons";
 import { getCaseSpecialistThreads } from "@/lib/specialists";
@@ -30,6 +32,35 @@ import { CaseComparison } from "@/components/case-comparison";
 import { SpecialistThreads } from "@/components/specialist-threads";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { ReadAloudButton } from "@/components/read-aloud-button";
+
+/**
+ * Title/description for the rich preview a shared case link unfurls into —
+ * LinkedIn's share dialog included, which scrapes these same og: tags
+ * rather than accepting an attached image. The image half of that preview
+ * is opengraph-image.tsx / twitter-image.tsx in this same route segment
+ * (file-based, so it composes with this automatically).
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ caseNumber: string }>;
+}): Promise<Metadata> {
+  const { caseNumber } = await params;
+  const supabase = await createClient();
+  const data = await getCaseCardData(supabase, caseNumber);
+
+  if (!data) return {};
+
+  const title = data.title;
+  const description = data.short_caption;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function CasePage({
   params,
@@ -341,6 +372,7 @@ export default async function CasePage({
           counts={feedCase.counts}
           viewerReactions={feedCase.viewerReactions}
           path={path}
+          shareHref={path}
           variant="full"
           commentsHref="#comments"
         />
@@ -407,6 +439,17 @@ export default async function CasePage({
                 className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-transform duration-150 ease-out active:scale-95"
               >
                 {t(locale, "caseDetail.signedOutGateCta")}
+              </Link>
+              {/* A shared case link is often followed by someone who
+                  already has an account — the "Create account" CTA above
+                  covers a first-time visitor, this covers that one, and
+                  carries the case back as `next` so signing in lands here
+                  instead of the home feed (signInAction, src/app/actions/auth.ts). */}
+              <Link
+                href={`/login?next=${encodeURIComponent(path)}`}
+                className="text-sm font-medium text-muted hover:text-text hover:underline"
+              >
+                {t(locale, "caseDetail.signedOutGateSignIn")}
               </Link>
             </div>
           </div>

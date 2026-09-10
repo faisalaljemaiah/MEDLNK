@@ -27,6 +27,15 @@ type ReactionBarProps = {
   counts: ReactionCounts;
   viewerReactions: ReactionType[];
   path: string;
+  /**
+   * The case's own permalink (e.g. /case/CASE-1234), for the Share button.
+   * Distinct from `path`, which on the feed is the feed's own path (used to
+   * revalidate the right page after a reaction) rather than a link anyone
+   * outside the app could follow. Falls back to `path` when omitted, which
+   * is only ever correct on the case page itself, where the two are the
+   * same value.
+   */
+  shareHref?: string;
   onOpenComments?: () => void;
   /**
    * Where the comment control goes when there is no onOpenComments handler.
@@ -58,6 +67,7 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
       counts,
       viewerReactions,
       path,
+      shareHref,
       onOpenComments,
       commentsHref,
       tone = "light",
@@ -119,17 +129,23 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
     });
   }
 
-  async function share() {
-    const url = `${window.location.origin}${path}#case-${caseId}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ url });
-        return;
-      } catch {
-        // user cancelled — fall through to clipboard
-      }
-    }
-    await navigator.clipboard.writeText(url);
+  /**
+   * Opens LinkedIn's own share dialog rather than the OS share sheet:
+   * LinkedIn's share-offsite intent takes only a URL, no attached file, and
+   * fetches its own preview by scraping that URL's og:title/description/image
+   * — which is exactly the teaser this case's opengraph-image.tsx renders
+   * (see that file, and generateMetadata in the case page). So the "teaser
+   * image" is a property of the link itself, not something this button
+   * builds or attaches.
+   *
+   * Not `async`: window.open must run synchronously inside the click
+   * handler, or losing the original user-gesture context gets it blocked as
+   * a pop-up in Safari and some other browsers.
+   */
+  function share() {
+    const url = `${window.location.origin}${shareHref ?? path}`;
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+    window.open(linkedInUrl, "_blank", "noopener,noreferrer");
   }
 
   const dark = tone === "dark";
@@ -243,7 +259,8 @@ export const ReactionBar = forwardRef<ReactionBarHandle, ReactionBarProps>(
             "transition-[color,transform] duration-150 ease-out active:scale-90",
             `${mutedClass} hover:text-text`,
           )}
-          aria-label="Share"
+          aria-label="Share to LinkedIn"
+          title="Share to LinkedIn"
         >
           <ShareIcon />
         </button>

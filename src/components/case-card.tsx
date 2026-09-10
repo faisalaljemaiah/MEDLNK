@@ -182,6 +182,7 @@ export function CaseCard({
           counts={feedCase.counts}
           viewerReactions={feedCase.viewerReactions}
           path={path}
+          shareHref={caseHref === "#" ? undefined : caseHref}
           commentsHref={caseHref === "#" ? undefined : `${caseHref}#comments`}
         />
       </div>

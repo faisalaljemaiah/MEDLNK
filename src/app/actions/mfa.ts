@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeNextPath } from "@/lib/redirect-target";
 
 export type MfaEnrollResult =
   | { error: string }
@@ -88,12 +89,13 @@ export async function verifyMfaLoginAction(
   formData: FormData,
 ): Promise<VerifyMfaState> {
   const code = String(formData.get("code") ?? "").trim();
+  const next = sanitizeNextPath(formData.get("next"));
   if (!code) return { error: "Enter the 6-digit code." };
 
   const supabase = await createClient();
   const { data: factors } = await supabase.auth.mfa.listFactors();
   const totp = factors?.totp?.[0];
-  if (!totp) redirect("/");
+  if (!totp) redirect(next ?? "/");
 
   const { error } = await supabase.auth.mfa.challengeAndVerify({
     factorId: totp.id,
@@ -101,5 +103,5 @@ export async function verifyMfaLoginAction(
   });
   if (error) return { error: error.message };
 
-  redirect("/");
+  redirect(next ?? "/");
 }
