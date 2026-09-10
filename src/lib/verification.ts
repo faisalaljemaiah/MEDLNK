@@ -17,7 +17,7 @@ type Client = SupabaseClient<Database>;
  * flag already has both behaviors implemented, so this one line is the
  * whole rollback either way.
  */
-export const LICENSE_VERIFICATION_ENABLED = true;
+export const LICENSE_VERIFICATION_ENABLED = false;
 
 const MAX_ATTEMPTS = 3;
 const WINDOW_DAYS = 30;
