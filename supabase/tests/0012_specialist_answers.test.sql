@@ -33,7 +33,6 @@ values (:'kase', :'author', 'Two ACE inhibitors', 'caption')
   on conflict (id) do nothing;
 
 delete from public.specialist_requests where case_id = :'kase';
-delete from public.notifications where type like 'specialist%';
 
 \echo ''
 \echo '### 1. a verified member asks for a specialty opinion'
@@ -98,45 +97,38 @@ select test.expect_error(
 
 \echo ''
 \echo '### 8. the request fan-out reaches only that specialty'
-reset role;
-delete from public.notifications where type like 'specialist%';
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-select public.fan_out_specialist_request(:'req');
-reset role;
 select test.check(
   '0012.8 request fan-out reaches only that specialty',
   (select coalesce(string_agg(p.handle, ',' order by p.handle), '')
-     from public.notifications n join public.profiles p on p.id = n.user_id
-     where n.type = 'specialist_request'),
+     from public.fan_out_specialist_request(:'req') r
+     join public.profiles p on p.id = r),
   'cardio');
+reset role;
 
 \echo ''
 \echo '### 9. answer fan-out: requester and case followers, never the answerer'
 -- The follower is set up here rather than relied on from another test file, so
 -- this asserts the follower branch instead of accidentally exercising it.
-delete from public.notifications where type like 'specialist%';
+reset role;
 insert into public.case_followers (case_id, user_id) values (:'kase', :'reader')
   on conflict do nothing;
 set role authenticated;
 set request.jwt.claim.sub = '88888888-8888-8888-8888-888888888888';
-select public.fan_out_specialist_answer(:'req');
-reset role;
 select test.check(
   '0012.9 answer fan-out reaches the requester and the follower',
   (select coalesce(string_agg(p.handle, ',' order by p.handle), '')
-     from public.notifications n join public.profiles p on p.id = n.user_id
-     where n.type = 'specialist_answer'),
+     from public.fan_out_specialist_answer(:'req') r
+     join public.profiles p on p.id = r),
   'author,reader');
 select test.check(
   '0012.9 the answerer is never notified of their own answer',
-  (select count(*)::text from public.notifications
-     where type = 'specialist_answer' and user_id = :'cardio'),
+  (select count(*)::text from public.fan_out_specialist_answer(:'req') r where r = :'cardio'),
   '0');
 select test.check(
   '0012.9 the requester is notified exactly once, not once per branch',
-  (select count(*)::text from public.notifications
-     where type = 'specialist_answer' and user_id = :'author'),
+  (select count(*)::text from public.fan_out_specialist_answer(:'req') r where r = :'author'),
   '1');
 
 \echo ''
@@ -153,16 +145,13 @@ select test.expect_error(
 
 \echo ''
 \echo '### 11. ...and is not notified of new asks either'
-reset role;
-delete from public.notifications where type like 'specialist%';
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-select public.fan_out_specialist_request(:'req');
-reset role;
 select test.check(
   '0012.11 suspended specialists are not notified',
-  (select count(*)::text from public.notifications where type = 'specialist_request'),
+  (select count(*)::text from public.fan_out_specialist_request(:'req')),
   '0');
+reset role;
 
 \echo ''
 \echo '### 12. a closed request cannot be answered'

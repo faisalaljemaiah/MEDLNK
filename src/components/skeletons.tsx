@@ -45,7 +45,7 @@ export function FeedSkeleton({ count = 3 }: { count?: number }) {
 }
 
 /** Avatar + one or two text lines — the bones shared by most list rows
- *  (notifications, conversations, consult requests, thread headers). */
+ *  (conversations, consult requests, thread headers). */
 export function AvatarRowSkeleton({ lines = 2 }: { lines?: number }) {
   return (
     <div className="flex items-center gap-3">
@@ -54,18 +54,6 @@ export function AvatarRowSkeleton({ lines = 2 }: { lines?: number }) {
         <div className="h-3 w-2/5 rounded bg-surface-2" />
         {lines > 1 && <div className="h-2.5 w-3/5 rounded bg-surface-2" />}
       </div>
-    </div>
-  );
-}
-
-export function NotificationsSkeleton() {
-  return (
-    <div aria-busy="true" aria-label="Loading" className="animate-pulse">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="border-t border-line px-4 py-3 first:border-t-0">
-          <AvatarRowSkeleton />
-        </div>
-      ))}
     </div>
   );
 }

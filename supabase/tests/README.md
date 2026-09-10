@@ -26,4 +26,5 @@ nothing was ever granted, rather than because we revoked it.
 - One user cannot read another's attempt, while the aggregate distribution
   stays readable.
 - Only a case's author can publish updates to it.
-- Clients cannot insert their own notifications.
+- Publishing an update fans out to that case's followers only, via
+  `fan_out_case_update()`'s return value.

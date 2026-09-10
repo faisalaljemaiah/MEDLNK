@@ -24,7 +24,6 @@ update public.profiles set full_name='Bob', handle='bob', verified=true, suspend
 update public.profiles set full_name='Carol', handle='carol', verified=true, suspended_at=null where id=:'carol';
 
 delete from public.push_subscriptions where user_id in (:'alice', :'bob');
-delete from public.notifications where user_id in (:'alice', :'bob', :'carol');
 delete from public.case_followers where case_id = :'kase';
 delete from public.cases where id = :'kase';
 delete from public.messages where conversation_id = :'conv';
@@ -99,8 +98,7 @@ select test.check(
   '0');
 
 \echo ''
-\echo '### 6. fan_out_case_update now returns who it notified'
-delete from public.notifications where case_id = :'kase';
+\echo '### 6. fan_out_case_update returns who to notify'
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 select test.check(
@@ -110,7 +108,7 @@ select test.check(
 reset role;
 
 \echo ''
-\echo '### 7. notify_new_follower returns the followee, and inserts for them'
+\echo '### 7. notify_new_follower returns the followee'
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 select test.check(
@@ -118,10 +116,6 @@ select test.check(
   (select public.notify_new_follower(:'carol')::text),
   :'carol');
 reset role;
-select test.check(
-  '0036.7 ...and a notification row landed for carol',
-  (select count(*)::text from public.notifications where user_id = :'carol' and type = 'new_follower'),
-  '1');
 
 \echo ''
 \echo '### 8. notify_new_follower refuses to notify yourself'
@@ -142,14 +136,9 @@ select test.check(
   (select public.notify_new_comment(:'kase')::text),
   :'alice');
 reset role;
-select test.check(
-  '0036.9 ...and alice got a notification',
-  (select count(*)::text from public.notifications where user_id = :'alice' and type = 'new_comment'),
-  '1');
 
 \echo ''
 \echo '### 10. notify_new_comment is a no-op when the author replies to their own case'
-delete from public.notifications where type = 'new_comment';
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 select test.check(
@@ -157,10 +146,6 @@ select test.check(
   (select (public.notify_new_comment(:'kase') is null)::text),
   'true');
 reset role;
-select test.check(
-  '0036.10 ...no row inserted',
-  (select count(*)::text from public.notifications where type = 'new_comment'),
-  '0');
 
 \echo ''
 \echo '### 11. notify_new_message notifies the other participant'
@@ -171,14 +156,9 @@ select test.check(
   (select public.notify_new_message(:'conv')::text),
   :'bob');
 reset role;
-select test.check(
-  '0036.11 ...and bob got a notification',
-  (select count(*)::text from public.notifications where user_id = :'bob' and type = 'new_message'),
-  '1');
 
 \echo ''
 \echo '### 12. notify_new_message on a conversation you are not part of returns nothing'
-delete from public.notifications where type = 'new_message';
 set role authenticated;
 set request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 select test.check(
@@ -186,14 +166,9 @@ select test.check(
   (select (public.notify_new_message(:'conv') is null)::text),
   'true');
 reset role;
-select test.check(
-  '0036.12 ...and nothing was inserted',
-  (select count(*)::text from public.notifications where type = 'new_message'),
-  '0');
 
 reset role;
 delete from public.push_subscriptions where user_id in (:'alice', :'bob');
-delete from public.notifications where user_id in (:'alice', :'bob', :'carol');
 delete from public.case_followers where case_id = :'kase';
 delete from public.cases where id = :'kase';
 delete from public.messages where conversation_id = :'conv';

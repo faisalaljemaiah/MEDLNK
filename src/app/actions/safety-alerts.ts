@@ -54,7 +54,7 @@ export async function broadcastSafetyAlertAction(caseId: string) {
       await sendPushToUsers(supabase, recipientIds, {
         title: "Safety alert",
         body: caseRow?.title || "A new safety alert was posted",
-        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
       });
     }
   } catch {

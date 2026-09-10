@@ -14,8 +14,7 @@ export type PushPayload = {
  * Lazily configured and soft-fails when the VAPID env vars aren't set, same
  * shape as src/lib/email.ts's getClient() for Resend: a missing or
  * misconfigured push provider must never be the reason a follow, comment, or
- * message fails to save. In-app notifications (0008) don't depend on this at
- * all — this only adds the OS-level popup on top of them.
+ * message fails to save.
  */
 function isConfigured(): boolean {
   return Boolean(

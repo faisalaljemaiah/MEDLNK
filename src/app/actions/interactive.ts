@@ -209,7 +209,7 @@ export async function publishCaseUpdateAction(
       await sendPushToUsers(supabase, recipientIds, {
         title: caseRow?.title || "Case update",
         body: `New update: ${stage}`,
-        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
       });
     }
   } catch {

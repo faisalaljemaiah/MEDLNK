@@ -26,7 +26,7 @@ delete from public.cases where id in (:'alert', :'plain');
 insert into public.cases (id, author_id, title, short_caption, case_type) values
   (:'alert', :'author', 'Look-alike hydralazine packaging', 'caption', 'safety_alert'),
   (:'plain', :'author', 'An ordinary case',                 'caption', 'clinical_case');
-delete from public.notifications where type = 'safety_alert';
+delete from public.safety_alert_pushes where case_id in (:'alert', :'plain');
 
 -- The expected recipient set is computed, not hardcoded: "everyone verified,
 -- unsuspended and not the author" is the actual invariant, and a literal list
@@ -42,51 +42,45 @@ create or replace view test_expected_alert_recipients as
 \echo '### 1. the author broadcasts an alert -- reaches everyone else'
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-select public.fan_out_safety_alert(:'alert');
-reset role;
 select test.check(
   '0015.1 alert reaches every other verified member',
   (select coalesce(string_agg(coalesce(p.handle, p.id::text), ',' order by coalesce(p.handle, p.id::text)), '')
-     from public.notifications n join public.profiles p on p.id = n.user_id
-     where n.type = 'safety_alert'),
+     from public.fan_out_safety_alert(:'alert') r
+     join public.profiles p on p.id = r),
   (select handles from test_expected_alert_recipients));
+reset role;
 
 \echo ''
-\echo '### 2. re-broadcasting must not stack duplicates'
+\echo '### 2. re-broadcasting must not push the same recipient twice'
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-select public.fan_out_safety_alert(:'alert');
-reset role;
 select test.check(
-  '0015.2 re-broadcast is idempotent per recipient',
-  (select count(*)::text from public.notifications where type = 'safety_alert'),
-  (select count(*)::text from public.profiles p
-     where p.verified and p.suspended_at is null
-       and p.id <> '11111111-1111-1111-1111-111111111111'));
+  '0015.2 re-broadcast returns nobody, everyone already got it',
+  (select count(*)::text from public.fan_out_safety_alert(:'alert')),
+  '0');
+reset role;
 
 \echo ''
 \echo '### 3. somebody else must not be able to fire the authors alert'
-delete from public.notifications where type = 'safety_alert';
+delete from public.safety_alert_pushes where case_id = :'alert';
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
-select public.fan_out_safety_alert(:'alert');
-reset role;
 select test.check(
   '0015.3 only the author can broadcast',
-  (select count(*)::text from public.notifications where type = 'safety_alert'),
+  (select count(*)::text from public.fan_out_safety_alert(:'alert')),
   '0');
+reset role;
 
 \echo ''
 \echo '### 4. it refuses to broadcast a post that is not a safety alert'
 -- Otherwise this is a "notify the whole platform" button attached to any post.
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-select public.fan_out_safety_alert(:'plain');
-reset role;
 select test.check(
   '0015.4 non-alert posts cannot be broadcast',
-  (select count(*)::text from public.notifications where type = 'safety_alert'),
+  (select count(*)::text from public.fan_out_safety_alert(:'plain')),
   '0');
+reset role;
 
 \echo ''
 \echo '### 5. suspended members are not alerted'
@@ -94,18 +88,19 @@ reset role;
 update public.profiles set suspended_at = now() where id = :'cardio';
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-select public.fan_out_safety_alert(:'alert');
-reset role;
 select test.check(
   '0015.5 suspended members are skipped',
-  (select count(*)::text from public.notifications n
-     where n.type = 'safety_alert' and n.user_id = :'cardio'),
+  (select count(*)::text from public.fan_out_safety_alert(:'alert') r where r = :'cardio'),
   '0');
+reset role;
+delete from public.safety_alert_pushes where case_id = :'alert';
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 select test.check(
   '0015.5 ...while everyone else still gets it',
-  (select count(*)::text from public.notifications n
-     where n.type = 'safety_alert' and n.user_id = :'reader'),
+  (select count(*)::text from public.fan_out_safety_alert(:'alert') r where r = :'reader'),
   '1');
+reset role;
 update public.profiles set suspended_at = null where id = :'cardio';
 
 \echo ''

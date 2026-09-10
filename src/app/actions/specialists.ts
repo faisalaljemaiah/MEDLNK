@@ -97,7 +97,7 @@ export async function askSpecialistAction(
         await sendPushToUsers(supabase, recipientIds, {
           title: "Specialist request",
           body: `A case is waiting for a ${specialty} opinion`,
-          url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+          url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
         });
       }
     } catch {
@@ -190,7 +190,7 @@ export async function answerSpecialistAction(
         body: req?.specialty
           ? `A ${req.specialty} specialist answered a question`
           : "A specialist answered a question",
-        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
       });
     }
   } catch {

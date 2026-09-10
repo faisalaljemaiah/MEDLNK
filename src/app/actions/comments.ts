@@ -112,7 +112,7 @@ export async function addCommentAction(
       await sendPushToUsers(supabase, [authorId], {
         title: "New reply",
         body: `${actor?.full_name || `@${actor?.handle}` || "Someone"} replied to your case`,
-        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/notifications",
+        url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
       });
     }
   } catch {

@@ -212,17 +212,6 @@ export type CaseFollower = {
   created_at: string;
 };
 
-export type Notification = {
-  id: string;
-  user_id: string;
-  type: string;
-  body: string;
-  case_id: string | null;
-  actor_id: string | null;
-  read_at: string | null;
-  created_at: string;
-};
-
 export type Reaction = {
   id: string;
   case_id: string;
@@ -692,16 +681,6 @@ export type Database = {
           target_id: string;
         };
         Update: Partial<ModerationEvent>;
-        Relationships: [];
-      };
-      notifications: {
-        Row: Notification;
-        Insert: Partial<Notification> & {
-          user_id: string;
-          type: string;
-          body: string;
-        };
-        Update: Partial<Notification>;
         Relationships: [];
       };
     };

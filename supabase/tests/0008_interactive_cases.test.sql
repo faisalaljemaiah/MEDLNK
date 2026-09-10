@@ -144,13 +144,12 @@ set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 insert into public.case_updates (case_id, author_id, stage, body)
 values (:'kase', :'author', 'Outcome', 'Prescriber contacted.');
-select public.fan_out_case_update(:'kase', 'case_update', 'New update');
-reset role;
 select test.check(
   '0008.12 the follower is notified',
-  (select string_agg(p.handle || ':' || n.type, ',' order by p.handle)
-     from public.notifications n join public.profiles p on p.id = n.user_id),
-  'reader:case_update');
+  (select string_agg(p.handle, ',' order by p.handle)
+     from public.fan_out_case_update(:'kase', 'case_update', 'New update') r
+     join public.profiles p on p.id = r),
+  'reader');
 
 \echo ''
 \echo '### 13. the fan-out reaches followers of THAT case and nobody else'
@@ -159,15 +158,6 @@ select test.check(
 -- visible difference is this count.
 select test.check(
   '0008.13 fan-out is scoped to the case',
-  (select count(*)::text from public.notifications),
+  (select count(*)::text from public.fan_out_case_update(:'kase', 'case_update', 'New update')),
   '1');
-
-\echo ''
-\echo '### 14. clients must not be able to mint their own notifications'
-set role authenticated;
-set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
-select test.expect_error(
-  '0008.14 notifications are server-written only',
-  $$insert into public.notifications (user_id, type, body)
-    values ('22222222-2222-2222-2222-222222222222', 'fake', 'spam')$$);
 reset role;
