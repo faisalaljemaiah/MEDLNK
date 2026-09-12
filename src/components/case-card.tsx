@@ -140,23 +140,16 @@ export function CaseCard({
         <CaseVideoPreview mediaUrl={feedCase.media_url} />
       )}
 
-      {feedCase.tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {feedCase.tags.slice(0, 4).map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-line px-2.5 py-0.5 font-label text-xs text-muted"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+      {/* Above the hashtags, not below: this is the feed's one "go read the
+          whole thing" action, and it reads as more of an invitation sitting
+          right off the caption than after a row of tags. Electric blue is
+          deliberate too — the only place in the feed that isn't this app's
+          own teal accent, so it stands out as "tap me" rather than blending
+          in with every other accent-colored control on the card. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link
           href={caseHref}
-          className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          className="dive-deep-btn inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-transform duration-150 ease-out active:scale-95"
         >
           {t(locale, "caseCard.diveDeep")}
           <span
@@ -175,6 +168,19 @@ export function CaseCard({
           </Link>
         )}
       </div>
+
+      {feedCase.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {feedCase.tags.slice(0, 4).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-line px-2.5 py-0.5 font-label text-xs text-muted"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4">
         <ReactionBar
