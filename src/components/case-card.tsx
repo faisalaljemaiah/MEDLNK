@@ -149,7 +149,7 @@ export function CaseCard({
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link
           href={caseHref}
-          className="dive-deep-btn inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-transform duration-150 ease-out active:scale-95"
+          className="dive-deep-btn inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white transition-transform duration-150 ease-out active:scale-95"
         >
           {t(locale, "caseCard.diveDeep")}
           <span
