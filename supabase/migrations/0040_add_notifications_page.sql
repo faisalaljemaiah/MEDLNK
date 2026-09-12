@@ -12,7 +12,12 @@
 -- Server Action needs to change. notify_new_reaction is new: reacting is the
 -- one of these three events that had no notify_* function at all yet.
 
-create table public.notifications (
+-- Guarded throughout (if not exists / drop-then-create / create or replace):
+-- 0039 was meant to have dropped this table already, but on a project where
+-- that migration was never actually pasted in, it's still sitting there from
+-- 0008 with this exact shape — this has to be safe to run either way.
+
+create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   type text not null,
@@ -23,22 +28,28 @@ create table public.notifications (
   created_at timestamptz not null default now()
 );
 
-create index notifications_user_idx on public.notifications (user_id, created_at desc);
-create index notifications_unread_idx on public.notifications (user_id)
+create index if not exists notifications_user_idx
+  on public.notifications (user_id, created_at desc);
+create index if not exists notifications_unread_idx on public.notifications (user_id)
   where read_at is null;
 
 alter table public.notifications enable row level security;
 
+drop policy if exists "notifications_select_own" on public.notifications;
 create policy "notifications_select_own"
   on public.notifications for select
   using (auth.uid() = user_id);
 
+drop policy if exists "notifications_update_own" on public.notifications;
 create policy "notifications_update_own"
   on public.notifications for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- No insert policy: written only by the security-definer functions below.
+-- If an old insert policy exists from before this table's history, drop it —
+-- clients must never be able to mint their own notifications.
+drop policy if exists "notifications_insert_own" on public.notifications;
 
 create or replace function public.notify_new_follower(p_followee_id uuid)
 returns uuid
@@ -88,7 +99,7 @@ $$;
 -- only calls this for those, but the check is repeated here too, since a
 -- security-definer function should never trust its caller alone for
 -- something this cheap to verify directly.
-create function public.notify_new_reaction(p_case_id uuid, p_type text)
+create or replace function public.notify_new_reaction(p_case_id uuid, p_type text)
 returns uuid
 language plpgsql
 security definer
