@@ -70,11 +70,12 @@ export async function toggleReactionAction(
     await trackEventAction("reaction_toggled", { type });
 
     // "Likes" in the notifications inbox means one of the three clinical
-    // values — repost and save are bookmarking/sharing, not the same
-    // "someone appreciated this" signal, so they don't notify. Best-effort,
-    // same as every other notification dispatch in this codebase: the
-    // reaction is saved regardless of whether the push (or the in-app
-    // notification row behind it) goes through.
+    // values — save is private bookmarking, not the same "someone
+    // appreciated this" signal, so it doesn't notify. Repost gets its own
+    // branch below (a "Shares" entry, not a "like"). Best-effort, same as
+    // every other notification dispatch in this codebase: the reaction is
+    // saved regardless of whether the push (or the in-app notification row
+    // behind it) goes through.
     if (isClinicalReaction(type)) {
       try {
         const { data: authorId } = await supabase.rpc("notify_new_reaction", {
@@ -100,6 +101,31 @@ export async function toggleReactionAction(
         }
       } catch {
         // Reaction is saved; notifying the author is not worth failing it for.
+      }
+    } else if (type === "repost") {
+      try {
+        const { data: authorId } = await supabase.rpc("notify_new_repost", {
+          p_case_id: caseId,
+        });
+        if (authorId) {
+          const { data: caseRow } = await supabase
+            .from("cases")
+            .select("case_number")
+            .eq("id", caseId)
+            .single();
+          const { data: actor } = await supabase
+            .from("profiles")
+            .select("handle,full_name")
+            .eq("id", user.id)
+            .single();
+          await sendPushToUsers(supabase, [authorId], {
+            title: "New repost",
+            body: `${actor?.full_name || `@${actor?.handle}` || "Someone"} reposted your case`,
+            url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
+          });
+        }
+      } catch {
+        // Repost is saved; notifying the author is not worth failing it for.
       }
     }
   }

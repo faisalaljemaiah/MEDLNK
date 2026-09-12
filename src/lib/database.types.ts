@@ -769,6 +769,11 @@ export type Database = {
         Args: { p_case_id: string; p_type: string };
         Returns: string | null;
       };
+      /** Notifies a case's author of a repost. Returns their id, or null if skipped. */
+      notify_new_repost: {
+        Args: { p_case_id: string };
+        Returns: string | null;
+      };
     };
   };
 };

@@ -103,6 +103,10 @@ const en = {
   "notifications.title": "Notifications",
   "notifications.markAllRead": "Mark all read",
   "notifications.empty": "Nothing yet. New followers, likes and comments on your cases will show up here.",
+  "notifications.sectionReplies": "Replies",
+  "notifications.sectionInterests": "Interests",
+  "notifications.sectionFollowers": "Followers",
+  "notifications.sectionShares": "Shares",
 
   "search.title": "Discover",
   "search.placeholder": "Search cases, tags, specialties…",
@@ -422,6 +426,10 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "notifications.title": "الإشعارات",
   "notifications.markAllRead": "تحديد الكل كمقروء",
   "notifications.empty": "لا شيء بعد. ستظهر هنا المتابعات الجديدة والإعجابات والتعليقات على حالاتك.",
+  "notifications.sectionReplies": "الردود",
+  "notifications.sectionInterests": "الإعجابات",
+  "notifications.sectionFollowers": "المتابعون",
+  "notifications.sectionShares": "المشاركات",
 
   "search.title": "استكشف",
   "search.placeholder": "ابحث في الحالات والوسوم والتخصصات…",

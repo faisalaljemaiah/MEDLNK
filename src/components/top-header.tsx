@@ -16,9 +16,12 @@ export function TopHeader({ unreadNotifications = 0 }: { unreadNotifications?: n
       >
         <DashIcon width={22} height={22} />
         {unreadNotifications > 0 && (
+          // A bouncing dot reads as "something just landed" the way a
+          // static one doesn't — animate-bounce is neutralized for free by
+          // globals.css's blanket prefers-reduced-motion override below.
           <span
             aria-hidden
-            className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent"
+            className="animate-bounce absolute right-1 top-0.5 size-2 rounded-full bg-accent"
           />
         )}
       </Link>
