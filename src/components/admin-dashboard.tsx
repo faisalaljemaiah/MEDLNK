@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { SettingsIcon } from "@/components/icons";
 import { RemoveUserButtons } from "@/components/remove-user-buttons";
 import { signOutAction } from "@/app/actions/auth";
@@ -12,6 +13,7 @@ import {
   toggleSuspensionAction,
   setBadgeTierAction,
   resetMemberMfaAction,
+  restoreUserAction,
 } from "@/app/actions/admin";
 import { getReportQueue, getModerationLog } from "@/lib/moderation";
 import {
@@ -28,7 +30,13 @@ import {
   type DailyCount,
 } from "@/lib/analytics";
 import { FEATURE_USAGE_LABELS, FUNNEL_STEP_LABELS } from "@/lib/analytics-events";
-import { searchAllUsers, searchAllCases, getTotalUserCount } from "@/lib/admin-directory";
+import {
+  searchAllUsers,
+  searchAllCases,
+  getTotalUserCount,
+  getDeletedUsers,
+  getUserPosts,
+} from "@/lib/admin-directory";
 import { REPORT_REASON_LABELS, REPORT_STATUS_META } from "@/lib/report-reasons";
 import { getSupportMessages } from "@/lib/support";
 import { SUPPORT_REASON_LABELS } from "@/lib/support-reasons";
@@ -40,6 +48,7 @@ import { UnavailableNotice } from "@/components/unavailable-notice";
 const TABS = [
   { key: "requests", label: "Requests" },
   { key: "users", label: "Users" },
+  { key: "deleted", label: "Deleted" },
   { key: "posts", label: "Posts" },
   { key: "reports", label: "Reports" },
   { key: "support", label: "Support" },
@@ -132,6 +141,9 @@ export async function AdminDashboard({
           basePath={basePath}
           viewerHandle={viewerHandle}
         />
+      )}
+      {tab === "deleted" && (
+        <DeletedAccountsQueue supabase={supabase} viewerHandle={viewerHandle} />
       )}
       {tab === "posts" && (
         <PostsDirectory
@@ -245,6 +257,137 @@ async function VerificationQueue({
           </div>
         </li>
       ))}
+    </ul>
+  );
+}
+
+const DELETION_GRACE_DAYS = 30;
+
+/**
+ * Every account inside its 30-day restore window (deleteAccountAction,
+ * src/app/actions/account.ts) — what's requested is exactly what shows
+ * here: the person's name, email, license number and proof document, and
+ * their own posts, all still intact since nothing has actually been
+ * removed yet. Email lives in auth.users, not profiles, so each row needs
+ * its own admin-client lookup (same technique notifyApplicant and
+ * removeAndBlockUserAction already use in src/app/actions/admin.ts).
+ */
+async function DeletedAccountsQueue({
+  supabase,
+  viewerHandle,
+}: {
+  supabase: Client;
+  viewerHandle: string | null;
+}) {
+  const deleted = await getDeletedUsers(supabase);
+
+  if (deleted.length === 0) {
+    return (
+      <p className="mt-8 text-center text-sm text-muted">
+        No accounts are currently pending deletion.
+      </p>
+    );
+  }
+
+  const admin = createAdminClient();
+  const withDetails = await Promise.all(
+    deleted.map(async (u) => {
+      const [{ data: authUser }, docUrl, posts] = await Promise.all([
+        admin.auth.admin.getUserById(u.id),
+        u.license_document_path
+          ? supabase.storage
+              .from("verification-docs")
+              .createSignedUrl(u.license_document_path, 600)
+              .then((r) => r.data?.signedUrl ?? null)
+          : Promise.resolve(null),
+        getUserPosts(supabase, u.id),
+      ]);
+      return {
+        ...u,
+        email: authUser?.user?.email ?? null,
+        documentUrl: docUrl,
+        posts,
+      };
+    }),
+  );
+
+  return (
+    <ul className="mt-5 flex flex-col gap-3">
+      {withDetails.map((u) => {
+        const purgeDate = new Date(
+          new Date(u.deleted_at).getTime() + DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000,
+        );
+        return (
+          <li key={u.id} className="rounded-xl border border-line bg-surface p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-text">
+                  {u.full_name || "(no name)"}{" "}
+                  <span className="font-normal text-muted">@{u.handle ?? "—"}</span>
+                </p>
+                <p className="font-label text-xs text-muted">
+                  {u.email || "no email on file"}
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  Deleted {new Date(u.deleted_at).toLocaleDateString()} — purges{" "}
+                  <span className="font-medium text-danger">
+                    {purgeDate.toLocaleDateString()}
+                  </span>
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  License: {u.license_number || "—"}
+                </p>
+                {u.documentUrl ? (
+                  <a
+                    href={u.documentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block text-sm text-accent hover:underline"
+                  >
+                    View license / proof of study →
+                  </a>
+                ) : (
+                  <p className="mt-1 text-sm text-muted">No document uploaded</p>
+                )}
+                {u.posts.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-label text-xs uppercase tracking-wide text-muted">
+                      Posts ({u.posts.length})
+                    </p>
+                    <ul className="mt-1 flex flex-col gap-0.5">
+                      {u.posts.map((c) => (
+                        <li key={c.id} className="truncate text-sm text-text">
+                          {c.case_number ? `${c.case_number} · ` : ""}
+                          {c.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <form action={restoreUserAction.bind(null, u.id, viewerHandle)}>
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-positive/50 px-3.5 py-2 text-sm font-medium text-positive"
+                  >
+                    Restore
+                  </button>
+                </form>
+                {/* Same confirm-before-delete client component the Users
+                    directory uses for this exact action — a deleted account
+                    doesn't get a lesser safety net just because it's
+                    already partway through leaving. */}
+                <RemoveUserButtons
+                  profileId={u.id}
+                  viewerHandle={viewerHandle}
+                  displayName={u.full_name || `@${u.handle ?? "unknown"}`}
+                />
+              </div>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

@@ -46,6 +46,10 @@ export async function searchAllUsers(
     // than just hidden in the UI so getTotalUserCount's "members total"
     // figure matches what this list actually shows.
     .not("handle", "is", null)
+    // Deleted accounts get their own tab (getDeletedUsers) — a member
+    // inside their 30-day restore window shouldn't also clutter the
+    // ordinary directory as if nothing happened.
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -73,8 +77,52 @@ export async function getTotalUserCount(supabase: Client): Promise<number | null
   const { count, error } = await supabase
     .from("profiles")
     .select("*", { count: "exact", head: true })
-    .not("handle", "is", null);
+    .not("handle", "is", null)
+    .is("deleted_at", null);
   return error ? null : (count ?? 0);
+}
+
+export type DeletedUser = {
+  id: string;
+  handle: string | null;
+  full_name: string | null;
+  license_number: string | null;
+  license_document_path: string | null;
+  deleted_at: string;
+};
+
+/**
+ * The account-deletion review queue — everyone inside their 30-day restore
+ * window (deleteAccountAction, src/app/actions/account.ts), oldest deletion
+ * first: the ones nearest the daily purge cron
+ * (src/app/api/cron/purge-deleted-accounts) are the ones worth an admin's
+ * attention first. Distinct from searchAllUsers, which now excludes these —
+ * a deleted account isn't a member to suspend or badge, it's one to review
+ * or restore.
+ */
+export async function getDeletedUsers(supabase: Client): Promise<DeletedUser[]> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, handle, full_name, license_number, license_document_path, deleted_at")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: true });
+
+  return (data ?? []) as unknown as DeletedUser[];
+}
+
+/** A deleted account's own posts, for the same admin review — title/type/
+ *  date only, no author embed needed since the caller already knows who. */
+export async function getUserPosts(
+  supabase: Client,
+  authorId: string,
+): Promise<Pick<DirectoryCase, "id" | "title" | "case_number" | "case_type" | "created_at">[]> {
+  const { data } = await supabase
+    .from("cases")
+    .select("id, title, case_number, case_type, created_at")
+    .eq("author_id", authorId)
+    .order("created_at", { ascending: false });
+
+  return data ?? [];
 }
 
 export type DirectoryCase = {

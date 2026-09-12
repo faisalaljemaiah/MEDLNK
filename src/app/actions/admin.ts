@@ -227,13 +227,14 @@ export async function restoreCaseAction(
 export type AdminActionResult = { error: string } | undefined;
 
 /**
- * Permanently deletes the account — profiles.id references auth.users(id)
- * on delete cascade, and every other table cascades from profiles in turn,
- * so this is the same complete deletion `deleteAccountAction`
- * (src/app/actions/account.ts) gives a member over their own account, just
- * triggered by an admin instead. For the lesser cases (a fake name, an
- * obvious duplicate) where the person should still be free to sign up
- * again under a real identity — no entry goes on the blocklist.
+ * Permanently and immediately deletes the account — profiles.id references
+ * auth.users(id) on delete cascade, and every other table cascades from
+ * profiles in turn. Unlike a member's own deleteAccountAction (which only
+ * sets deleted_at, giving them a 30-day restore window), an admin removal
+ * for a TOS violation skips the grace period entirely. For the lesser
+ * cases (a fake name, an obvious duplicate) where the person should still
+ * be free to sign up again under a real identity — no entry goes on the
+ * blocklist.
  */
 export async function removeUserAction(
   profileId: string,
@@ -291,6 +292,35 @@ export async function removeAndBlockUserAction(
     note: email
       ? `Removed and blocked ${email} from signing up again`
       : "Removed from the admin Users directory",
+  });
+  revalidateAdminViews(viewerHandle);
+}
+
+/**
+ * The admin-side counterpart to a member's own restoreAccountAction
+ * (src/app/actions/account.ts) — support restoring an account on someone's
+ * behalf (they emailed in, they can't get back to /restore-account
+ * themselves, whatever the reason), for an account still inside its 30-day
+ * window. A no-op past that: the daily purge cron has already deleted the
+ * row by then, and there's nothing left to clear deleted_at on.
+ */
+export async function restoreUserAction(
+  profileId: string,
+  viewerHandle: string | null,
+) {
+  const { supabase, userId } = await requireAdmin();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ deleted_at: null })
+    .eq("id", profileId);
+  if (error) return;
+
+  await supabase.from("moderation_events").insert({
+    actor_id: userId,
+    action: "user_restored",
+    target_kind: "profile",
+    target_id: profileId,
+    note: "Restored from the admin Deleted accounts queue",
   });
   revalidateAdminViews(viewerHandle);
 }

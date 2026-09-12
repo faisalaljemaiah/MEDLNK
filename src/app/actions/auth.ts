@@ -143,7 +143,7 @@ export async function signInAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: signIn, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -156,6 +156,19 @@ export async function signInAction(
       redirect(`/verify-email?email=${encodeURIComponent(email)}`);
     }
     return { error: error.message };
+  }
+
+  // A password alone is still a real, correct sign-in for an account inside
+  // its 30-day deletion window (deleteAccountAction) — this sends it to the
+  // one page that can do anything about that instead of straight into a
+  // feed the (app) layout would just redirect away from anyway.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("deleted_at")
+    .eq("id", signIn.user.id)
+    .single();
+  if (profile?.deleted_at) {
+    redirect("/restore-account");
   }
 
   // A password alone only ever reaches aal1 — an account with 2FA enrolled

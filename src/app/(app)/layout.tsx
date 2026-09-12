@@ -24,6 +24,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
+  // An account inside its 30-day deletion window (deleteAccountAction,
+  // src/app/actions/account.ts) is still a valid, cookie-valid session —
+  // signInAction already redirects a fresh sign-in to /restore-account, but
+  // an existing session (another tab, a device that was already signed in
+  // when the deletion happened elsewhere) has to be caught here too, before
+  // it ever reaches a feed is_verified()/is_active() would refuse every
+  // write on anyway.
+  if (viewer && profile?.deleted_at) {
+    redirect("/restore-account");
+  }
+
   // A session exists the moment signup completes, before onboarding is ever
   // touched — handle_new_user (0003/0035) inserts the profile row with only
   // full_name and locale set, and profiles.handle stays null until

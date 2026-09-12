@@ -135,6 +135,13 @@ export type Profile = {
   /** Set by an admin. Makes is_verified() false, which blocks every write. */
   suspended_at: string | null;
   suspended_reason: string | null;
+  /**
+   * Set by the member themselves via deleteAccountAction — same effect on
+   * is_verified()/is_active() as suspended_at, but self-service and
+   * reversible (restoreAccountAction) for 30 days before the daily purge
+   * cron actually deletes the account.
+   */
+  deleted_at: string | null;
   created_at: string;
 };
 
