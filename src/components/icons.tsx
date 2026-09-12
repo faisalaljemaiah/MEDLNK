@@ -115,6 +115,15 @@ export function LearnIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** A single horizontal dash — the notifications icon in the top header. */
+export function DashIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>

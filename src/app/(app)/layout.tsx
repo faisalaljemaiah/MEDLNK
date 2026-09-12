@@ -3,6 +3,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { TopHeader } from "@/components/top-header";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
 import { getViewer, getViewerProfile } from "@/lib/auth";
+import { getUnreadNotificationCount } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/onboarding");
   }
 
+  // Badges the header's notifications icon — 0 (and no badge) whenever the
+  // count fails, same "must never take the header down" stance as
+  // getUnreadNotificationCount itself already takes.
+  const unreadNotifications = viewer
+    ? await getUnreadNotificationCount(await createClient(), viewer.id)
+    : 0;
+
   return (
     // Mobile shell (single centered column, floating bottom nav) is
     // untouched below `md:` — this is purely additive, the app's first
@@ -51,7 +59,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-dvh flex-1 flex-col md:pl-56">
       <DesktopSidebar profile={profile} />
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
-        <TopHeader />
+        <TopHeader unreadNotifications={unreadNotifications} />
         <main className="flex flex-1 flex-col pb-24 md:pb-10">{children}</main>
       </div>
       <div className="md:hidden">

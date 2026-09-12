@@ -72,6 +72,7 @@ const en = {
   "people.followers": "followers",
 
   "nav.settings": "Settings",
+  "nav.notifications": "Notifications",
 
   "settings.title": "Settings",
   "settings.language": "Language",
@@ -98,6 +99,10 @@ const en = {
   "messages.noConversations": "No conversations yet. Message a clinician from their profile to start one.",
   "messages.noMessagesYet": "No messages yet",
   "messages.youPrefix": "You: ",
+
+  "notifications.title": "Notifications",
+  "notifications.markAllRead": "Mark all read",
+  "notifications.empty": "Nothing yet. New followers, likes and comments on your cases will show up here.",
 
   "search.title": "Discover",
   "search.placeholder": "Search cases, tags, specialties…",
@@ -386,6 +391,7 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "people.followers": "متابِعون",
 
   "nav.settings": "الإعدادات",
+  "nav.notifications": "الإشعارات",
 
   "settings.title": "الإعدادات",
   "settings.language": "اللغة",
@@ -412,6 +418,10 @@ const ar: Partial<Record<TranslationKey, string>> = {
   "messages.noConversations": "لا توجد محادثات بعد. راسل طبيباً من صفحته الشخصية لبدء واحدة.",
   "messages.noMessagesYet": "لا توجد رسائل بعد",
   "messages.youPrefix": "أنت: ",
+
+  "notifications.title": "الإشعارات",
+  "notifications.markAllRead": "تحديد الكل كمقروء",
+  "notifications.empty": "لا شيء بعد. ستظهر هنا المتابعات الجديدة والإعجابات والتعليقات على حالاتك.",
 
   "search.title": "استكشف",
   "search.placeholder": "ابحث في الحالات والوسوم والتخصصات…",

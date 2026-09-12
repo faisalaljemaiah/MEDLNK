@@ -212,6 +212,17 @@ export type CaseFollower = {
   created_at: string;
 };
 
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: string;
+  body: string;
+  case_id: string | null;
+  actor_id: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 export type Reaction = {
   id: string;
   case_id: string;
@@ -683,6 +694,16 @@ export type Database = {
         Update: Partial<ModerationEvent>;
         Relationships: [];
       };
+      notifications: {
+        Row: Notification;
+        Insert: Partial<Notification> & {
+          user_id: string;
+          type: string;
+          body: string;
+        };
+        Update: Partial<Notification>;
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -741,6 +762,11 @@ export type Database = {
       /** Notifies the other side of a conversation. Returns their id, or null if skipped. */
       notify_new_message: {
         Args: { p_conversation_id: string };
+        Returns: string | null;
+      };
+      /** Notifies a case's author of a new clinical reaction. Returns their id, or null if skipped. */
+      notify_new_reaction: {
+        Args: { p_case_id: string; p_type: string };
         Returns: string | null;
       };
     };

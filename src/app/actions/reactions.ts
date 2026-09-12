@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { trackEventAction } from "@/app/actions/analytics";
 import { sendPushToUsers } from "@/lib/web-push";
+import { isClinicalReaction } from "@/lib/reaction-types";
 import type { ReactionType } from "@/lib/database.types";
 
 export type ReactionActionResult = { error: string } | { ok: true };
@@ -67,6 +68,40 @@ export async function toggleReactionAction(
     // Only the "adding" branch counts as feature usage — removing a
     // reaction is the same click undoing itself, not a second use.
     await trackEventAction("reaction_toggled", { type });
+
+    // "Likes" in the notifications inbox means one of the three clinical
+    // values — repost and save are bookmarking/sharing, not the same
+    // "someone appreciated this" signal, so they don't notify. Best-effort,
+    // same as every other notification dispatch in this codebase: the
+    // reaction is saved regardless of whether the push (or the in-app
+    // notification row behind it) goes through.
+    if (isClinicalReaction(type)) {
+      try {
+        const { data: authorId } = await supabase.rpc("notify_new_reaction", {
+          p_case_id: caseId,
+          p_type: type,
+        });
+        if (authorId) {
+          const { data: caseRow } = await supabase
+            .from("cases")
+            .select("case_number")
+            .eq("id", caseId)
+            .single();
+          const { data: actor } = await supabase
+            .from("profiles")
+            .select("handle,full_name")
+            .eq("id", user.id)
+            .single();
+          await sendPushToUsers(supabase, [authorId], {
+            title: "New reaction",
+            body: `${actor?.full_name || `@${actor?.handle}` || "Someone"} reacted to your case`,
+            url: caseRow?.case_number ? `/case/${caseRow.case_number}` : "/",
+          });
+        }
+      } catch {
+        // Reaction is saved; notifying the author is not worth failing it for.
+      }
+    }
   }
 
   revalidatePath(path);
