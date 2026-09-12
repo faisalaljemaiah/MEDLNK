@@ -1,19 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CaseType, Database } from "@/lib/database.types";
+import type { BadgeTier, CaseType, Database } from "@/lib/database.types";
 import { caseTypeMeta } from "@/lib/case-types";
 
 type Client = SupabaseClient<Database>;
+
+type CaseCardAuthor = {
+  full_name: string | null;
+  handle: string | null;
+  avatar_url: string | null;
+  verified: boolean;
+  badge_tier: BadgeTier | null;
+};
 
 export type CaseCardData = {
   case_number: string;
   title: string;
   short_caption: string;
   typeBadge: string | null;
-  author: {
-    full_name: string | null;
-    handle: string | null;
-    avatar_url: string | null;
-  } | null;
+  author: CaseCardAuthor | null;
 };
 
 // database.types.ts is hand-written with no Relationships metadata for
@@ -26,11 +30,7 @@ type CaseCardRow = {
   short_caption: string;
   case_type: CaseType;
   moderation_status: string;
-  author: {
-    full_name: string | null;
-    handle: string | null;
-    avatar_url: string | null;
-  } | null;
+  author: CaseCardAuthor | null;
 };
 
 /**
@@ -51,7 +51,7 @@ export async function getCaseCardData(
     .from("cases")
     .select(
       "case_number,title,short_caption,case_type,moderation_status," +
-        "author:profiles!cases_author_id_fkey(full_name,handle,avatar_url)",
+        "author:profiles!cases_author_id_fkey(full_name,handle,avatar_url,verified,badge_tier)",
     )
     .eq("case_number", caseNumber)
     .maybeSingle();

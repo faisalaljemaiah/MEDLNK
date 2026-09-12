@@ -1,7 +1,22 @@
 import type { CaseCardData } from "@/lib/case-card-data";
+import { BRAND_MARK_VIEWBOX, BRAND_MARK_TRANSFORM, BRAND_MARK_PATH } from "@/lib/brand-mark";
 
 /** Standard Open Graph size — same as the profile card. */
 export const CASE_CARD_SIZE = { width: 1200, height: 630 };
+
+// Literal hex, not the theme.css custom properties: Satori (next/og's
+// renderer) parses a static CSS subset and doesn't resolve var(--x). Kept in
+// sync by hand with theme.css's --badge-gold/--badge-platinum/--positive and
+// VerifiedBadge's default blue — same tradeoff src/lib/profile-card-image.tsx
+// makes for its own copy of this palette.
+const TIER_COLOR: Record<string, string> = {
+  gold: "#ca8a04",
+  platinum: "#64748b",
+  green: "#0b7c44",
+};
+const DEFAULT_VERIFIED_COLOR = "#2563eb";
+const DIAMOND_GRADIENT =
+  "linear-gradient(135deg, #7dd3fc, #ffffff, #f0abfc, #a78bfa, #67e8f9, #fca5a5)";
 
 /**
  * The shareable case teaser — one design, two uses: the rich link preview
@@ -30,9 +45,22 @@ export function CaseCardImage({ data }: { data: CaseCardData }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: 6, color: "#2b2420" }}>
-          ASYASHARE
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <svg
+            viewBox={BRAND_MARK_VIEWBOX}
+            width={26}
+            height={26}
+            fill="#2b2420"
+            style={{ flexShrink: 0 }}
+          >
+            <g transform={BRAND_MARK_TRANSFORM}>
+              <path d={BRAND_MARK_PATH} />
+            </g>
+          </svg>
+          <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: 6, color: "#2b2420" }}>
+            ASYASHARE
+          </span>
+        </div>
         {typeBadge && (
           <span
             style={{
@@ -116,9 +144,59 @@ export function CaseCardImage({ data }: { data: CaseCardData }) {
         )}
         <div style={{ display: "flex", flexDirection: "column" }}>
           {authorName && (
-            <span style={{ fontSize: 26, fontWeight: 600, color: "#10203a", display: "flex" }}>
-              {authorName}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 26, fontWeight: 600, color: "#10203a", display: "flex" }}>
+                {authorName}
+              </span>
+              {author?.verified && (
+                author.badge_tier === "diamond" ? (
+                  // Same reasoning as ProfileCardImage's Diamond case: Satori
+                  // can't run the real .diamond-badge's conic-gradient spin or
+                  // its checkmark-as-a-cutout mask, so this is a static
+                  // diagonal gradient with the check painted in the card's own
+                  // background color, reading as a hole the same way.
+                  <span
+                    style={{
+                      display: "flex",
+                      width: 26,
+                      height: 26,
+                      borderRadius: "50%",
+                      background: DIAMOND_GRADIENT,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 20 20">
+                      <path
+                        d="M6 10.3l2.4 2.4L14 7"
+                        stroke="#f6f8fc"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="none"
+                      />
+                    </svg>
+                  </span>
+                ) : (
+                  <svg
+                    width="26"
+                    height="26"
+                    viewBox="0 0 20 20"
+                    fill={author.badge_tier ? (TIER_COLOR[author.badge_tier] ?? DEFAULT_VERIFIED_COLOR) : DEFAULT_VERIFIED_COLOR}
+                  >
+                    <circle cx="10" cy="10" r="10" />
+                    <path
+                      d="M6 10.3l2.4 2.4L14 7"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </svg>
+                )
+              )}
+            </div>
           )}
           <span style={{ fontSize: 22, color: "#56657f", display: "flex" }}>
             Read the full case on Asyashare
