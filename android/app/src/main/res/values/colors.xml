@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches theme.css's accent token (the "stamped textured A" ink
+         charcoal) — referenced by styles.xml's AppTheme but never actually
+         defined here, which made android/ fail to build at all (AAPT:
+         resource color/colorPrimary not found). colorPrimaryDark tints the
+         status bar/recents-list entry on pre-Android-9 devices; colorAccent
+         matches theme.css's secondary accent token, the app's own
+         secondary/AI accent. -->
+    <color name="colorPrimary">#2b2420</color>
+    <color name="colorPrimaryDark">#1a1613</color>
+    <color name="colorAccent">#7c3aed</color>
+</resources>

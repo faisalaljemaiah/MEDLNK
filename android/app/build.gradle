@@ -1,5 +1,27 @@
 apply plugin: 'com.android.application'
 
+// Release signing — reads android/keystore.properties, which is gitignored
+// (never commit a real signing key or its passwords). Generate one with:
+//   keytool -genkeypair -v -keystore asyashare-release.keystore -alias asyashare \
+//     -keyalg RSA -keysize 2048 -validity 10000
+// then create android/keystore.properties (same directory as this build.gradle's
+// parent, i.e. android/) with:
+//   storeFile=/absolute/path/to/asyashare-release.keystore
+//   storePassword=...
+//   keyAlias=asyashare
+//   keyPassword=...
+// Back that keystore up somewhere safe outside this repo — losing it means
+// losing the ability to ever publish an update to this app on Google Play.
+// Missing the properties file just means the release build type falls back
+// to being unsigned (still buildable, e.g. for CI structure-checks — just
+// not something Google Play will accept an upload of).
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+def hasKeystoreProperties = keystorePropertiesFile.exists()
+if (hasKeystoreProperties) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.asyashare.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +38,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasKeystoreProperties) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasKeystoreProperties) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
