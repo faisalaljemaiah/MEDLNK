@@ -195,14 +195,25 @@ async function VerificationQueue({
   // reviewing a document means minting a short-lived URL server-side rather
   // than ever exposing a public one. 10 minutes is long enough to review
   // one queue pass without leaving a stale link usable long after.
+  //
+  // Email lives in auth.users, not profiles (same as DeletedAccountsQueue
+  // below) — this queue is small (only pending members), so a per-row
+  // admin lookup is fine, unlike the full Users directory.
+  const admin = createAdminClient();
   const withDocs = await Promise.all(
     pending.map(async (p) => {
       const path = p.license_document_path;
-      if (!path) return { ...p, documentUrl: null };
-      const { data } = await supabase.storage
-        .from("verification-docs")
-        .createSignedUrl(path, 600);
-      return { ...p, documentUrl: data?.signedUrl ?? null };
+      const [{ data: authUser }, docResult] = await Promise.all([
+        admin.auth.admin.getUserById(p.id),
+        path
+          ? supabase.storage.from("verification-docs").createSignedUrl(path, 600)
+          : Promise.resolve({ data: null }),
+      ]);
+      return {
+        ...p,
+        email: authUser?.user?.email ?? null,
+        documentUrl: docResult.data?.signedUrl ?? null,
+      };
     }),
   );
 
@@ -217,6 +228,9 @@ async function VerificationQueue({
               </p>
               <p className="font-label text-xs text-muted">
                 {p.role || "no role"} · {p.city || "no city"}
+              </p>
+              <p className="text-xs text-muted">
+                {p.email || "no email on file"}
               </p>
               <p className="mt-1 text-sm text-muted">
                 License: {p.license_number || "—"}
@@ -408,16 +422,27 @@ async function UsersDirectory({
     getTotalUserCount(supabase),
   ]);
 
+  // Email lives in auth.users, not profiles. This list can hold up to 500
+  // rows (searchAllUsers's default limit), so — unlike the small Requests
+  // and Deleted queues — a per-row admin.auth.admin.getUserById call each
+  // would mean hundreds of separate admin-API round trips on every page
+  // load. One listUsers page (up to 1000) covers this list's whole range
+  // in a single call instead.
+  const admin = createAdminClient();
+  const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const emailById = new Map(authList?.users.map((u) => [u.id, u.email ?? null]) ?? []);
+
   // Signed, not public — same as the Requests queue — so a member's
   // document stays reviewable from here at any point, not just while
   // their verification is pending.
   const withDocs = await Promise.all(
     users.map(async (u) => {
-      if (!u.license_document_path) return { ...u, documentUrl: null };
+      const email = emailById.get(u.id) ?? null;
+      if (!u.license_document_path) return { ...u, email, documentUrl: null };
       const { data } = await supabase.storage
         .from("verification-docs")
         .createSignedUrl(u.license_document_path, 600);
-      return { ...u, documentUrl: data?.signedUrl ?? null };
+      return { ...u, email, documentUrl: data?.signedUrl ?? null };
     }),
   );
 
@@ -467,6 +492,9 @@ async function UsersDirectory({
                   <p className="font-label text-xs text-muted">
                     @{u.handle ?? "—"} · {u.role || "no role"}
                     {u.specialty ? ` · ${u.specialty}` : ""}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {u.email || "no email on file"}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     <span
