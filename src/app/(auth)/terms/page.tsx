@@ -22,7 +22,7 @@ export default function TermsPage() {
       <div className="flex flex-col gap-6 rounded-2xl border border-line bg-bg p-6 text-sm leading-relaxed text-text sm:p-8">
         <div>
           <h1 className="font-headline text-2xl text-text">Terms of Service</h1>
-          <p className="mt-1 text-xs text-muted">Last updated August 29, 2026</p>
+          <p className="mt-1 text-xs text-muted">Last updated September 24, 2026</p>
         </div>
 
         <Section title="1. What Asyashare is">
@@ -85,7 +85,34 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="6. No medical advice, no liability for clinical decisions">
+        <Section title="6. Child safety standards">
+          <p>
+            Asyashare has zero tolerance for child sexual abuse material
+            (CSAM) and for any content that sexualizes, endangers, or
+            exploits a minor. Asyashare is a professional platform —
+            membership requires verification as a healthcare professional or
+            student — but this policy applies regardless of who a violation
+            comes from.
+          </p>
+          <p className="mt-2">
+            Any user can report a post, comment, or profile directly from
+            within the app; reports are reviewed by our moderation team, and
+            violating content and accounts are removed immediately. Where
+            required by law, we cooperate with law enforcement and report
+            CSAM to the relevant authorities, including the National Center
+            for Missing &amp; Exploited Children (NCMEC).
+          </p>
+          <p className="mt-2">
+            To report a child safety concern, use the in-app report option on
+            the content in question, or reach us directly through our{" "}
+            <Link href="/contact" className="text-accent hover:underline">
+              contact form
+            </Link>
+            .
+          </p>
+        </Section>
+
+        <Section title="7. No medical advice, no liability for clinical decisions">
           <p>
             Content on Asyashare reflects individual clinicians&apos; accounts
             and opinions, not verified clinical guidance. Nothing on Asyashare
@@ -97,23 +124,23 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="7. Termination">
+        <Section title="8. Termination">
           <p>
             You may delete your account at any time from Settings. We may
             suspend or terminate an account that violates these terms,
             most seriously and immediately for any patient-identifiable
-            content, as described above.
+            content or child safety violation, as described above.
           </p>
         </Section>
 
-        <Section title="8. Changes to these terms">
+        <Section title="9. Changes to these terms">
           <p>
             We may update these terms as Asyashare evolves. Material changes
             will be noted on this page with an updated date above.
           </p>
         </Section>
 
-        <Section title="9. Contact">
+        <Section title="10. Contact">
           <p>
             Questions about these terms, or a report of patient-identifying
             content, can be sent through our{" "}
