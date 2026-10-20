@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "thyroid-storm",
+  "title": "Thyroid storm",
+  "summary": "A life-threatening emergency. The order of the first drugs matters.",
+  "mnemonic": {
+    "cue": "Stop the factory → shut the gates → calm the body",
+    "expansion": [
+      "Factory: thionamide blocks new synthesis",
+      "Gates: iodide blocks release, at least 1 hour after the thionamide",
+      "Body: β-blocker, corticosteroid, acetaminophen"
+    ]
+  },
+  "root": {
+    "type": "start",
+    "id": "start",
+    "content": "High fever, tachycardia, delirium in a thyrotoxic patient",
+    "next": {
+      "type": "action",
+      "id": "synth",
+      "drug": true,
+      "content": { "slot": "s-synth" },
+      "next": {
+        "type": "action",
+        "id": "release",
+        "drug": true,
+        "content": { "mixed": ["≥ 1 hour later:", { "slot": "s-release" }] },
+        "next": {
+          "type": "action",
+          "id": "adrenergic",
+          "drug": true,
+          "content": { "slot": "s-adrenergic" },
+          "next": {
+            "type": "action",
+            "id": "steroid",
+            "drug": true,
+            "content": { "slot": "s-steroid" },
+            "next": {
+              "type": "action",
+              "id": "fever",
+              "drug": true,
+              "content": { "mixed": ["For fever:", { "slot": "s-antipyretic" }] },
+              "next": {
+                "type": "action",
+                "id": "trigger",
+                "content": { "slot": "s-trigger" },
+                "next": {
+                  "type": "question",
+                  "id": "q-response",
+                  "content": "Responding to treatment?",
+                  "branches": [
+                    { "label": "YES", "node": { "type": "done", "id": "done", "content": "Decompensation lasts about 72 h on average" } },
+                    { "label": "NO", "node": { "type": "danger", "id": "refractory", "content": { "slot": "s-refractory" } } }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "cards": [
+    { "id": "ptu", "text": "Propylthiouracil (high dose)" },
+    { "id": "iodide", "text": "SSKI or Lugol's solution" },
+    { "id": "bb", "text": "Propranolol (esmolol in ICU)" },
+    { "id": "steroid", "text": "Corticosteroid (e.g., hydrocortisone)" },
+    { "id": "apap", "text": "Acetaminophen" },
+    { "id": "trigger", "text": "Find and treat the trigger (e.g., infection)" },
+    { "id": "plasma", "text": "Plasmapheresis or peritoneal dialysis" },
+    { "id": "iodide-first", "text": "Iodide first, before the thionamide", "trap": true, "trapReason": "Iodide given first could provide substrate to make even more thyroid hormone. Give it at least 1 hour after the thionamide." },
+    { "id": "aspirin", "text": "Aspirin or another NSAID", "trap": true, "trapReason": "Aspirin and other NSAIDs may displace bound thyroid hormone. Use acetaminophen for fever." },
+    { "id": "rai", "text": "Radioactive iodine now", "trap": true, "trapReason": "RAI treatment is itself a precipitating factor for thyroid storm, not an emergency treatment." }
+  ],
+  "slots": {
+    "s-synth": { "kind": "single", "answer": "ptu", "placeholder": "Block synthesis", "explanation": "ATDs block new hormone synthesis. Large-dose PTU may be preferred because it also blocks peripheral T4 → T3 conversion; methimazole lasts longer. Tablets can go by gastric or rectal tube." },
+    "s-release": { "kind": "single", "answer": "iodide", "placeholder": "Block release", "explanation": "Iodides rapidly block release of preformed hormone. Give them at least 1 hour after the thionamide so the gland can't use the iodide." },
+    "s-adrenergic": { "kind": "single", "answer": "bb", "placeholder": "Block effects", "explanation": "β-Blockers inhibit the effects of severe thyrotoxicosis. Esmolol is preferred in the ICU: usable with lung disease or heart-failure risk and rapidly reversible." },
+    "s-steroid": { "kind": "single", "answer": "steroid", "placeholder": "Systemic support", "explanation": "Corticosteroids are generally recommended; the benefit may come from their antipyretic effect and BP stabilization." },
+    "s-antipyretic": { "kind": "single", "answer": "apap", "placeholder": "Antipyretic", "explanation": "Acetaminophen is the antipyretic. Avoid aspirin and other NSAIDs, which may displace bound thyroid hormone." },
+    "s-trigger": { "kind": "single", "answer": "trigger", "placeholder": "Underlying cause", "explanation": "Treat what precipitated the storm: infection, trauma, surgery, RAI treatment, or ATD withdrawal." },
+    "s-refractory": { "kind": "single", "answer": "plasma", "placeholder": "Not responding", "explanation": "Plasmapheresis and peritoneal dialysis have been used to remove excess hormone when conservative measures fail, although they don't always work." }
+  }
+}

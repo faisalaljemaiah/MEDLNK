@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "hyperthyroid-treatment",
+  "title": "Treating Graves' hyperthyroidism",
+  "summary": "Control symptoms, then pick a definitive therapy with the patient.",
+  "mnemonic": {
+    "cue": "PTU = Pregnancy's 1st Trimester (and storm)",
+    "expansion": [
+      "Methimazole for virtually everyone else",
+      "PTU only in: 1st trimester, thyroid storm, minor reaction to methimazole (refusing RAI/surgery)"
+    ]
+  },
+  "root": {
+    "type": "start",
+    "id": "start",
+    "content": "Overt hyperthyroidism from Graves' disease",
+    "next": {
+      "type": "action",
+      "id": "bb",
+      "drug": true,
+      "content": { "mixed": ["For symptoms now:", { "slot": "s-bb" }] },
+      "next": {
+        "type": "question",
+        "id": "q-choice",
+        "content": "Definitive therapy (chosen with the patient)?",
+        "branches": [
+          {
+            "label": "Antithyroid drug",
+            "node": {
+              "type": "question",
+              "id": "q-trimester",
+              "content": "First trimester of pregnancy?",
+              "branches": [
+                {
+                  "label": "YES",
+                  "node": {
+                    "type": "action",
+                    "id": "ptu",
+                    "drug": true,
+                    "content": { "slot": "s-ptu" },
+                    "next": { "type": "done", "id": "after-t1", "content": "After the 1st trimester, methimazole is used" }
+                  }
+                },
+                {
+                  "label": "NO",
+                  "node": {
+                    "type": "action",
+                    "id": "mmi",
+                    "drug": true,
+                    "content": { "slot": "s-mmi" },
+                    "next": {
+                      "type": "action",
+                      "id": "duration",
+                      "content": { "mixed": ["For remission:", { "slot": "s-duration" }] },
+                      "next": {
+                        "type": "danger",
+                        "id": "agranulo",
+                        "content": { "slot": "s-agranulo" },
+                        "next": { "type": "done", "id": "relapse", "content": "Relapse? RAI or surgery preferred over a 2nd ATD course" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "label": "Radioactive iodine",
+            "node": {
+              "type": "danger",
+              "id": "rai-no",
+              "content": { "slot": "s-rai-no" },
+              "next": {
+                "type": "action",
+                "id": "rai-pre",
+                "content": { "slot": "s-rai-pre" },
+                "next": { "type": "done", "id": "rai-after", "content": "Most become hypothyroid: start levothyroxine when FT4 falls" }
+              }
+            }
+          },
+          {
+            "label": "Surgery",
+            "node": {
+              "type": "action",
+              "id": "surg-when",
+              "content": { "mixed": ["Strongly consider with", { "slot": "s-surg-1" }, "or", { "slot": "s-surg-2" }] },
+              "next": {
+                "type": "action",
+                "id": "surg-prep",
+                "content": { "mixed": ["Prepare:", { "slot": "s-surg-prep" }] },
+                "next": { "type": "done", "id": "surg-after", "content": "Total thyroidectomy → hypothyroidism is certain" }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "cards": [
+    { "id": "bb", "text": "β-blocker (goal HR < 90)" },
+    { "id": "ptu", "text": "Propylthiouracil" },
+    { "id": "mmi", "text": "Methimazole" },
+    { "id": "duration", "text": "Continue 12–24 months" },
+    { "id": "agranulo", "text": "Fever or sore throat: stop drug, check WBC + diff" },
+    { "id": "rai-no", "text": "Not if pregnant or breastfeeding" },
+    { "id": "rai-pre", "text": "Older/cardiac: methimazole first, stop 2–3 days before RAI" },
+    { "id": "big-gland", "text": "Large gland (≥ 80 g)" },
+    { "id": "eyes", "text": "Severe ophthalmopathy" },
+    { "id": "surg-prep", "text": "Methimazole to euthyroid, then iodide 10–14 days" },
+    { "id": "ptu-first", "text": "PTU first-line in adults", "trap": true, "trapReason": "The ATA and FDA recommend against PTU as first-line therapy because of severe hepatotoxicity. Exceptions: 1st trimester, thyroid storm, methimazole intolerance." },
+    { "id": "iodide-before-rai", "text": "Iodide just before RAI", "trap": true, "trapReason": "Iodide given before RAI blocks the gland's uptake of the radioactive iodine. If used, give it 3–7 days after RAI." },
+    { "id": "bb-stop", "text": "Stop the β-blocker abruptly", "trap": true, "trapReason": "β-Blockers should be tapered slowly; abrupt withdrawal may incite a thyroid storm." }
+  ],
+  "slots": {
+    "s-bb": { "kind": "single", "answer": "bb", "placeholder": "Symptom control", "explanation": "β-Blockade is recommended in all symptomatic thyrotoxicosis, especially in older adults, resting HR > 90, or cardiovascular disease. It controls symptoms but doesn't fix the cause." },
+    "s-ptu": { "kind": "single", "answer": "ptu", "placeholder": "Drug", "explanation": "In the 1st trimester, the risk of methimazole embryopathy outweighs PTU hepatotoxicity, so PTU is preferred." },
+    "s-mmi": { "kind": "single", "answer": "mmi", "placeholder": "Drug", "explanation": "Methimazole should be used in virtually every patient who chooses ATD therapy. Response takes 4–6 weeks, which is why the β-blocker comes first." },
+    "s-duration": { "kind": "single", "answer": "duration", "placeholder": "Duration", "explanation": "To induce remission, continue ATDs for at least 12–24 months. Average remission is about 40%–50%; longer courses do better." },
+    "s-agranulo": { "kind": "single", "answer": "agranulo", "placeholder": "Counsel", "explanation": "Agranulocytosis is rare but serious, usually in the first 3 months. Patients should stop the drug and get a WBC with differential at fever or sore throat." },
+    "s-rai-no": { "kind": "single", "answer": "rai-no", "placeholder": "Contraindication", "explanation": "Pregnancy is an absolute contraindication. Lactating patients and those planning pregnancy within 6 months should also avoid RAI." },
+    "s-rai-pre": { "kind": "single", "answer": "rai-pre", "placeholder": "Preparation", "explanation": "Hormone levels rise briefly after RAI, so older and cardiac patients are often pretreated with methimazole. Stop it 2–3 days before and restart 3–7 days after." },
+    "s-surg-1": { "kind": "group", "group": "surgery", "placeholder": "Indication", "explanation": "Surgery should be strongly considered for a large gland (≥ 80 g) or severe ophthalmopathy (also suspected cancer or primary hyperparathyroidism needing surgery)." },
+    "s-surg-2": { "kind": "group", "group": "surgery", "placeholder": "Indication", "explanation": "Surgery should be strongly considered for a large gland (≥ 80 g) or severe ophthalmopathy (also suspected cancer or primary hyperparathyroidism needing surgery). RAI can worsen eye disease." },
+    "s-surg-prep": { "kind": "single", "answer": "surg-prep", "placeholder": "Preparation", "explanation": "Give methimazole until biochemically euthyroid (usually 6–8 weeks), then add iodide for 10–14 days to reduce gland vascularity." }
+  },
+  "groups": {
+    "surgery": { "cards": ["big-gland", "eyes"] }
+  }
+}

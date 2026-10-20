@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "id": "thyrotoxicosis-workup",
+  "title": "Thyrotoxicosis: find the cause",
+  "summary": "The RAIU tells you whether the gland is making too much hormone or not.",
+  "mnemonic": {
+    "cue": "High uptake MAKES · Low uptake LEAKS or TAKES",
+    "expansion": [
+      "High RAIU: the gland is making too much (Graves', toxic adenoma, toxic MNG)",
+      "Low RAIU: hormone leaks from an inflamed gland (thyroiditis) or is taken as a pill (exogenous)"
+    ]
+  },
+  "root": {
+    "type": "start",
+    "id": "start",
+    "content": "Suspected thyrotoxicosis",
+    "next": {
+      "type": "action",
+      "id": "labs",
+      "content": "Labs: low TSH with high FT4 / T3 confirm thyrotoxicosis",
+      "next": {
+        "type": "question",
+        "id": "q-pregnant",
+        "content": "Pregnant or breastfeeding?",
+        "branches": [
+          {
+            "label": "YES",
+            "node": {
+              "type": "danger",
+              "id": "no-raiu",
+              "content": { "slot": "s-no-raiu" },
+              "next": { "type": "done", "id": "done-preg", "content": "Rely on history, exam and lab markers" }
+            }
+          },
+          {
+            "label": "NO",
+            "node": {
+              "type": "action",
+              "id": "raiu",
+              "content": { "mixed": ["Cause unclear? Order a", { "slot": "s-raiu" }] },
+              "next": {
+                "type": "question",
+                "id": "q-uptake",
+                "content": "Uptake result?",
+                "branches": [
+                  {
+                    "label": "HIGH uptake",
+                    "node": {
+                      "type": "question",
+                      "id": "q-high",
+                      "content": "What do antibodies and the scan show?",
+                      "branches": [
+                        { "label": "TRAb +, diffuse goiter", "node": { "type": "done", "id": "graves", "content": { "slot": "s-graves" } } },
+                        { "label": "One “hot” nodule", "node": { "type": "done", "id": "ta", "content": { "slot": "s-ta" } } },
+                        { "label": "Patchy uptake, many nodules", "node": { "type": "done", "id": "mng", "content": { "slot": "s-mng" } } }
+                      ]
+                    }
+                  },
+                  {
+                    "label": "LOW uptake",
+                    "node": {
+                      "type": "danger",
+                      "id": "no-atd",
+                      "content": { "slot": "s-no-atd" },
+                      "next": {
+                        "type": "question",
+                        "id": "q-pain",
+                        "content": "Painful, tender gland (often after a viral illness)?",
+                        "branches": [
+                          {
+                            "label": "YES",
+                            "node": {
+                              "type": "action",
+                              "id": "subacute",
+                              "content": { "slot": "s-subacute" },
+                              "next": {
+                                "type": "action",
+                                "id": "subacute-tx",
+                                "drug": true,
+                                "content": { "mixed": ["Treat with", { "slot": "s-subacute-tx" }] },
+                                "next": { "type": "done", "id": "done-subacute", "content": "Self-limited: recovery in 2–6 months" }
+                              }
+                            }
+                          },
+                          {
+                            "label": "NO",
+                            "node": {
+                              "type": "question",
+                              "id": "q-tg",
+                              "content": "Serum thyroglobulin (TG)?",
+                              "branches": [
+                                {
+                                  "label": "LOW",
+                                  "node": {
+                                    "type": "action",
+                                    "id": "factitia",
+                                    "content": { "slot": "s-factitia" },
+                                    "next": { "type": "done", "id": "withhold", "content": { "slot": "s-withhold" } }
+                                  }
+                                },
+                                {
+                                  "label": "HIGH",
+                                  "node": {
+                                    "type": "action",
+                                    "id": "painless",
+                                    "content": { "slot": "s-painless" },
+                                    "next": { "type": "done", "id": "done-painless", "content": "Self-limited; β-blocker for symptoms" }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "cards": [
+    { "id": "no-raiu", "text": "Do not do an RAIU scan" },
+    { "id": "raiu", "text": "24-hour RAIU" },
+    { "id": "graves", "text": "Graves' disease" },
+    { "id": "ta", "text": "Toxic adenoma" },
+    { "id": "mng", "text": "Toxic multinodular goiter" },
+    { "id": "no-atd", "text": "Antithyroid drugs won't help" },
+    { "id": "subacute", "text": "Subacute (de Quervain) thyroiditis" },
+    { "id": "subacute-tx", "text": "β-blocker + NSAID" },
+    { "id": "factitia", "text": "Exogenous thyroid hormone" },
+    { "id": "withhold", "text": "Stop it 4–6 weeks, then recheck TFTs" },
+    { "id": "painless", "text": "Painless (silent) thyroiditis" },
+    { "id": "levo", "text": "Levothyroxine", "trap": true, "trapReason": "Levothyroxine replaces hormone in hypothyroidism. Giving it in thyrotoxicosis adds to the excess." },
+    { "id": "rai-tx", "text": "Radioactive iodine therapy", "trap": true, "trapReason": "RAI is a treatment, not a test. The diagnostic test is the RAIU scan." },
+    { "id": "mmi", "text": "Methimazole", "trap": true, "trapReason": "This level is the work-up. Methimazole blocks new synthesis, so it can't help when hormone is leaking out (low-uptake causes)." }
+  ],
+  "slots": {
+    "s-no-raiu": { "kind": "single", "answer": "no-raiu", "placeholder": "Testing caution", "explanation": "RAIU is contraindicated in patients who are pregnant or lactating." },
+    "s-raiu": { "kind": "single", "answer": "raiu", "placeholder": "Test", "explanation": "When history and exam don't give the cause, the RAIU is critical. Normal 24-hour uptake is 10%–30%. Get it if there is any diagnostic uncertainty." },
+    "s-graves": { "kind": "single", "answer": "graves", "placeholder": "Diagnosis", "explanation": "Graves' disease is the most common cause of hyperthyroidism: TRAbs act like TSH on the gland. A positive TRAb in a nonnodular gland helps rule it in." },
+    "s-ta": { "kind": "single", "answer": "ta", "placeholder": "Diagnosis", "explanation": "A toxic adenoma is a “hot” nodule: it keeps taking up iodine while the rest of the gland is suppressed." },
+    "s-mng": { "kind": "single", "answer": "mng", "placeholder": "Diagnosis", "explanation": "In toxic MNG the scan shows patchy autonomous areas mixed with hypofunctioning areas. It develops slowly, mostly in older adults with long-standing goiters." },
+    "s-no-atd": { "kind": "single", "answer": "no-atd", "placeholder": "Key point", "explanation": "A low RAIU means the gland isn't overproducing. ATDs block new synthesis but don't stop release of preformed hormone, so they aren't indicated in thyroiditis." },
+    "s-subacute": { "kind": "single", "answer": "subacute", "placeholder": "Diagnosis", "explanation": "Painful subacute thyroiditis often follows a viral syndrome. The gland is firm and exquisitely tender, and pain may spread to the ear." },
+    "s-subacute-tx": { "kind": "single", "answer": "subacute-tx", "placeholder": "Treatment", "explanation": "β-Blockers relieve thyrotoxic symptoms and NSAIDs relieve pain. Occasionally prednisone 30–40 mg daily is needed to suppress inflammation." },
+    "s-factitia": { "kind": "single", "answer": "factitia", "placeholder": "Diagnosis", "explanation": "Taking thyroid hormone suppresses the gland, so TG is low. In thyroiditis, leaking hormone makes TG high." },
+    "s-withhold": { "kind": "single", "answer": "withhold", "placeholder": "Next step", "explanation": "Withhold the exogenous thyroid hormone for 4–6 weeks, then repeat thyroid function tests to confirm a euthyroid state." },
+    "s-painless": { "kind": "single", "answer": "painless", "placeholder": "Diagnosis", "explanation": "Painless (silent, lymphocytic) thyroiditis: not tender, RAIU < 2%, high TG from leaking hormone. It is self-limited; β-blockers ease adrenergic symptoms." }
+  }
+}

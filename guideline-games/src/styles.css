@@ -475,6 +475,13 @@ code {
 .fc-done .fc-box .slot {
   color: var(--text);
 }
+.fc-done .fc-box:has(.slot) {
+  border-radius: 18px;
+  width: 100%;
+}
+.fc-done .why {
+  color: rgb(255 255 255 / 0.88);
+}
 /* Question: a pointed "decision" shape (a diamond squashed to fit text on a phone). */
 .fc-question .fc-box {
   background: var(--warn-border);

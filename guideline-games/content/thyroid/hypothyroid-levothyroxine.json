@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "hypothyroid-levothyroxine",
+  "title": "Hypothyroidism & levothyroxine",
+  "summary": "Read the TSH and FT4 together, then dose levothyroxine for the patient in front of you.",
+  "mnemonic": {
+    "cue": "Full · 50 · 25",
+    "expansion": [
+      "Young or middle-aged, healthy: full dose ≈ 1.6 mcg/kg/day",
+      "Older or long-standing disease, no heart disease: 50 mcg daily",
+      "Older with heart disease: 25 mcg daily"
+    ]
+  },
+  "root": {
+    "type": "start",
+    "id": "start",
+    "content": "Fatigue, cold intolerance, weight gain, constipation",
+    "next": {
+      "type": "question",
+      "id": "q-coma",
+      "content": "Hypothermia and altered mental status?",
+      "branches": [
+        {
+          "label": "YES",
+          "node": {
+            "type": "danger",
+            "id": "myxedema",
+            "content": { "mixed": ["Myxedema coma:", { "slot": "s-myx" }] }
+          }
+        },
+        {
+          "label": "NO",
+          "node": {
+            "type": "question",
+            "id": "q-labs",
+            "content": "TSH and FT4?",
+            "branches": [
+              {
+                "label": "TSH ↑, FT4 ↓",
+                "node": {
+                  "type": "action",
+                  "id": "primary",
+                  "content": { "slot": "s-primary" },
+                  "next": {
+                    "type": "action",
+                    "id": "drug",
+                    "drug": true,
+                    "content": { "mixed": ["Drug of choice:", { "slot": "s-drug" }] },
+                    "next": {
+                      "type": "action",
+                      "id": "timing",
+                      "content": { "mixed": ["How to take:", { "slot": "s-timing" }] },
+                      "next": {
+                        "type": "action",
+                        "id": "monitor",
+                        "content": { "mixed": ["Monitor:", { "slot": "s-monitor" }] },
+                        "next": {
+                          "type": "question",
+                          "id": "q-start",
+                          "content": "Starting dose for this patient?",
+                          "branches": [
+                            { "label": "Young / middle-aged, healthy", "node": { "type": "done", "id": "full", "content": { "slot": "s-full" } } },
+                            { "label": "Older, no heart disease", "node": { "type": "done", "id": "fifty", "content": { "slot": "s-50" } } },
+                            { "label": "Older + heart disease", "node": { "type": "done", "id": "twentyfive", "content": { "slot": "s-25" } } }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "label": "TSH ↑, FT4 normal",
+                "node": {
+                  "type": "action",
+                  "id": "subclinical",
+                  "content": { "mixed": ["Subclinical:", { "slot": "s-subclinical" }] },
+                  "next": { "type": "done", "id": "subclin-treat", "content": { "slot": "s-subclin-treat" } }
+                }
+              },
+              {
+                "label": "FT4 ↓, TSH low/normal",
+                "node": {
+                  "type": "action",
+                  "id": "central",
+                  "content": { "slot": "s-central" },
+                  "next": { "type": "done", "id": "central-monitor", "content": { "slot": "s-central-monitor" } }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "cards": [
+    { "id": "myx", "text": "IV levothyroxine + IV hydrocortisone" },
+    { "id": "primary", "text": "Primary hypothyroidism (usually Hashimoto's)" },
+    { "id": "levo", "text": "Levothyroxine (T4)" },
+    { "id": "timing", "text": "Empty stomach, 30 min before breakfast" },
+    { "id": "monitor", "text": "TSH every 4–6 weeks; adjust by 12.5–25 mcg" },
+    { "id": "full", "text": "Full dose ≈ 1.6 mcg/kg/day" },
+    { "id": "fifty", "text": "50 mcg daily" },
+    { "id": "twentyfive", "text": "25 mcg daily" },
+    { "id": "observe", "text": "Usually observe" },
+    { "id": "subclin-treat", "text": "Treat if TSH ≥ 10, or young/middle-aged with symptoms" },
+    { "id": "central", "text": "Central (pituitary or hypothalamic)" },
+    { "id": "central-monitor", "text": "Follow FT4, not TSH (upper-normal)" },
+    { "id": "t3", "text": "Add liothyronine (T3)", "trap": true, "trapReason": "The ATA recommends against routine levothyroxine + liothyronine combination therapy; benefits haven't been reproducible." },
+    { "id": "tsh-weekly", "text": "Recheck TSH after 1 week", "trap": true, "trapReason": "With a 7-day half-life, steady state takes 4–6 weeks. Checking sooner gives no clinical advantage." },
+    { "id": "oral-coma", "text": "Oral levothyroxine in coma", "trap": true, "trapReason": "In myxedema coma gut peristalsis stops, so every drug must be given parenterally." }
+  ],
+  "slots": {
+    "s-myx": { "kind": "single", "answer": "myx", "placeholder": "Immediate therapy", "explanation": "Mortality is 60%–70%. Give IV levothyroxine 300–500 mcg bolus (IV T3 has also been advocated) and IV hydrocortisone 100 mg every 8 h until adrenal suppression is ruled out. Treat the precipitant." },
+    "s-primary": { "kind": "single", "answer": "primary", "placeholder": "Diagnosis", "explanation": "TSH above and FT4 below the reference range is primary hypothyroidism. Hashimoto's (chronic autoimmune) thyroiditis is the most common cause." },
+    "s-drug": { "kind": "single", "answer": "levo", "placeholder": "Drug", "explanation": "Levothyroxine is the drug of choice: stable, inexpensive, uniform potency, and a 7-day half-life allows once-daily dosing." },
+    "s-timing": { "kind": "single", "answer": "timing", "placeholder": "Administration", "explanation": "Food impairs absorption, as do iron, calcium, PPIs, H2 blockers, bile acid sequestrants and others. Take it before breakfast on an empty stomach." },
+    "s-monitor": { "kind": "single", "answer": "monitor", "placeholder": "Monitoring", "explanation": "TSH is the most sensitive monitoring test. Check every 4–6 weeks and titrate by 12.5–25 mcg until TSH is normal, then yearly." },
+    "s-full": { "kind": "single", "answer": "full", "placeholder": "Starting dose", "explanation": "Start the full estimated dose (1.6–1.7 mcg/kg/day, better by ideal body weight) in young and middle-aged patients without significant comorbidities, and in iatrogenic hypothyroidism." },
+    "s-50": { "kind": "single", "answer": "fifty", "placeholder": "Starting dose", "explanation": "With long-standing disease or older age without known cardiac disease, start levothyroxine 50 mcg daily." },
+    "s-25": { "kind": "single", "answer": "twentyfive", "placeholder": "Starting dose", "explanation": "Older patients with known cardiac disease start at 25 mcg daily to avoid cardiac effects of over-replacement." },
+    "s-subclinical": { "kind": "single", "answer": "observe", "placeholder": "Approach", "explanation": "High TSH with normal FT4 is subclinical. Most patients can be observed; it progresses to overt disease in 2%–5% per year." },
+    "s-subclin-treat": { "kind": "single", "answer": "subclin-treat", "placeholder": "When to treat", "explanation": "Treatment may be indicated when TSH is 10 mIU/L or higher, or in young and middle-aged patients with symptoms of mild hypothyroidism." },
+    "s-central": { "kind": "single", "answer": "central", "placeholder": "Diagnosis", "explanation": "Low FT4 with a low or low-normal TSH is central (secondary or tertiary) hypothyroidism: the pituitary or hypothalamus isn't driving the gland." },
+    "s-central-monitor": { "kind": "single", "answer": "central-monitor", "placeholder": "Monitoring", "explanation": "TSH can't be used in central hypothyroidism. Dose to symptoms and FT4 in the upper part of normal (middle of normal in older or comorbid patients)." }
+  }
+}

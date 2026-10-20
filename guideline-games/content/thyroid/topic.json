@@ -1,0 +1,8 @@
+{
+  "id": "thyroid",
+  "title": "Thyroid Disorders",
+  "accent": "#0e7490",
+  "source": "DiPiro's Pharmacotherapy, 13th ed. – Chapter 100",
+  "order": 1,
+  "lessons": ["thyrotoxicosis-workup", "hyperthyroid-treatment", "thyroid-storm", "hypothyroid-levothyroxine"]
+}
