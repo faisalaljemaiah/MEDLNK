@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     // fail) this app's lint rules.
     ".agents/**",
     ".claude/skills/**",
+    // Separate Vite app with its own package.json and tooling.
+    "guideline-games/**",
   ]),
 ]);
 

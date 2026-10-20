@@ -1,0 +1,7 @@
+{
+  "id": "tutorial",
+  "title": "How to play",
+  "accent": "#6366f1",
+  "order": 0,
+  "lessons": ["making-tea"]
+}

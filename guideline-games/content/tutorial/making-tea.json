@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "making-tea",
+  "title": "Making a cup of tea",
+  "summary": "A practice level. Drag each card into the right box, then press Check.",
+  "mnemonic": {
+    "cue": "TEA",
+    "expansion": ["Test the kettle is safe", "Enough water?", "Add extras last"]
+  },
+  "root": {
+    "type": "start",
+    "id": "start",
+    "content": "You want a cup of tea",
+    "next": {
+      "type": "question",
+      "id": "q-cord",
+      "content": "Is the kettle cord damaged?",
+      "branches": [
+        {
+          "label": "YES",
+          "node": { "type": "danger", "id": "stop", "content": { "slot": "s-danger" } }
+        },
+        {
+          "label": "NO",
+          "node": {
+            "type": "question",
+            "id": "q-water",
+            "content": "Is there water in the kettle?",
+            "branches": [
+              {
+                "label": "YES",
+                "node": {
+                  "type": "action",
+                  "id": "boil",
+                  "content": { "mixed": ["Boil the water, then", { "slot": "s-steep" }] },
+                  "next": {
+                    "type": "question",
+                    "id": "q-extras",
+                    "content": "Want it sweet and milky?",
+                    "branches": [
+                      {
+                        "label": "YES",
+                        "node": {
+                          "type": "action",
+                          "id": "extras",
+                          "content": { "mixed": ["Add", { "slot": "s-extra-1" }, "and", { "slot": "s-extra-2" }] },
+                          "next": { "type": "done", "id": "done-sweet", "content": "Enjoy" }
+                        }
+                      },
+                      {
+                        "label": "NO",
+                        "node": { "type": "done", "id": "done-plain", "content": "Enjoy it plain" }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "label": "NO",
+                "node": {
+                  "type": "action",
+                  "id": "fill",
+                  "content": { "slot": "s-fill" },
+                  "next": { "type": "done", "id": "done-again", "content": "Go back to the top" }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "cards": [
+    { "id": "danger", "text": "Don't use it. Ask for help" },
+    { "id": "fill", "text": "Fill the kettle" },
+    { "id": "steep", "text": "Steep the tea bag 3–5 min" },
+    { "id": "milk", "text": "Milk" },
+    { "id": "sugar", "text": "Sugar" },
+    { "id": "salt", "text": "Salt", "trap": true, "trapReason": "Salt has no place in this algorithm." },
+    { "id": "microwave", "text": "Microwave the kettle", "trap": true, "trapReason": "Never put a kettle in a microwave." }
+  ],
+  "slots": {
+    "s-danger": { "kind": "single", "answer": "danger", "explanation": "Red boxes are stop-and-refer steps: a damaged cord is a safety risk.", "placeholder": "Safety step" },
+    "s-steep": { "kind": "single", "answer": "steep", "explanation": "Steeping comes after boiling.", "placeholder": "Next step" },
+    "s-extra-1": { "kind": "group", "group": "extras", "explanation": "Group slot: milk and sugar can go in either order.", "placeholder": "Extra" },
+    "s-extra-2": { "kind": "group", "group": "extras", "explanation": "Group slot: milk and sugar can go in either order.", "placeholder": "Extra" },
+    "s-fill": { "kind": "single", "answer": "fill", "explanation": "No water means you fill the kettle first, then start over.", "placeholder": "What now?" }
+  },
+  "groups": {
+    "extras": { "cards": ["milk", "sugar"] }
+  }
+}
