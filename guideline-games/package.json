@@ -7,6 +7,7 @@
     "dev": "vite --host",
     "validate": "tsx scripts/validate.ts",
     "build": "npm run validate && tsc -b && vite build",
+    "build:artifact": "tsx scripts/artifact.ts",
     "preview": "vite preview --host",
     "test": "tsx --test src/**/*.test.ts"
   },

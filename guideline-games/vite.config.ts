@@ -2,10 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+// `--mode artifact` builds a single page for sharing as a link: no service worker.
+export default defineConfig(({ mode }) => ({
   base: "./",
   plugins: [
     react(),
+    mode !== "artifact" &&
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["icon.svg", "apple-touch-icon.png"],
@@ -30,4 +32,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+}));

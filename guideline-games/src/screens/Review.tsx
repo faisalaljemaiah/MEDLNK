@@ -18,9 +18,12 @@ export function Review({ topic, lesson }: { topic: Topic; lesson: Lesson }) {
         title={lesson.title}
         sub={`${topic.title} · Study sheet`}
         right={
-          <button type="button" className="icon-btn" onClick={() => window.print()} aria-label="Print">
-            ⎙
-          </button>
+          // Printing is blocked when the app is shared as a single-page link.
+          import.meta.env.MODE !== "artifact" && (
+            <button type="button" className="icon-btn" onClick={() => window.print()} aria-label="Print">
+              ⎙
+            </button>
+          )
         }
       />
       <main className="board">
