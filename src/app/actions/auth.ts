@@ -213,11 +213,14 @@ async function requestOrigin() {
 }
 
 /**
- * Always returns the same generic message whether or not the address has
- * an account — same "don't confirm which emails exist" stance Supabase's
- * own resetPasswordForEmail already takes at the API level, kept here too
- * so a slow response or a thrown error couldn't become a timing side
- * channel either.
+ * Returns the same generic message whether or not the address has an
+ * account — same "don't confirm which emails exist" stance Supabase's own
+ * resetPasswordForEmail already takes at the API level, kept here too so a
+ * slow response couldn't become a timing side channel either. A rate-limit
+ * error is the one exception: it's about this requester hitting Supabase's
+ * own send-frequency cap, not about whether the address exists, so it's
+ * safe — and far less confusing — to say so plainly instead of claiming a
+ * link is "on its way" when nothing was actually sent.
  */
 export async function requestPasswordResetAction(
   _prevState: AuthFormState,
@@ -230,16 +233,23 @@ export async function requestPasswordResetAction(
 
   const supabase = await createClient();
   const origin = await requestOrigin();
-  // Through /auth/callback, not straight to /reset-password — this
-  // project's Supabase clients default to the PKCE flow (neither
-  // createBrowserClient nor createServerClient overrides flowType), so the
-  // recovery link comes back with a `?code=` query param, not a URL hash.
-  // Only a server route can exchange that for a session, since the PKCE
-  // code_verifier this call generates lives in a cookie only the server
-  // client set just now can redeem.
-  await supabase.auth.resetPasswordForEmail(email, {
+  // Through /auth/callback, not straight to /reset-password. The link
+  // Supabase emails verifies with token_hash + type (see that route) —
+  // deliberately not relying on exchangeCodeForSession's PKCE code, which
+  // only works if the link is opened in the same browser/cookie storage
+  // that made this call. On a phone, this call comes from the app's own
+  // webview while the emailed link opens the system browser — two
+  // different cookie jars that can never match, so every real user would
+  // hit "link expired" no matter how fresh it was.
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/reset-password`,
   });
+
+  if (error?.status === 429) {
+    return {
+      error: "You've requested a reset recently — please wait a bit before trying again.",
+    };
+  }
 
   return {
     message:

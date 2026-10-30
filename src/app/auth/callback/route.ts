@@ -1,33 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeNextPath } from "@/lib/redirect-target";
 
 /**
- * Every email-based auth link (password recovery, and any future
- * magic-link/invite flow) redirects here with a PKCE `?code=` — the actual
- * flow this project's Supabase clients use (createBrowserClient and
- * createServerClient, src/lib/supabase/client.ts and server.ts, both default
- * to PKCE since neither passes a flowType override). Exchanging that code
- * for a session has to happen server-side, via the same cookie-aware
- * server client resetPasswordForEmail (src/app/actions/auth.ts) used to
- * start the flow — that's where the PKCE code_verifier it set actually
- * lives, so only this request, in this same browser, can redeem it.
+ * Handles email-based auth links (password recovery, and any future
+ * magic-link/invite flow) via `token_hash` + `type`, not a PKCE `?code=`.
+ *
+ * PKCE's `exchangeCodeForSession` needs the code_verifier cookie that was
+ * set in whatever browser/webview originally called resetPasswordForEmail —
+ * but on a mobile device that request comes from the app's own webview,
+ * while tapping the emailed link opens the system browser (Safari/Chrome),
+ * a completely different cookie jar. That combination can never succeed, so
+ * every real user hit "link is invalid or expired" even though the link
+ * itself was otherwise correct. verifyOtp(token_hash) has no such
+ * requirement — GoTrue validates the one-time token entirely server-side
+ * and hands back a session right here, regardless of where it's opened.
+ *
+ * This means the Reset Password email template must link here with
+ * `?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+ * instead of Supabase's default `{{ .ConfirmationURL }}` (which still
+ * produces the old PKCE `?code=` redirect through /auth/v1/verify).
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
   const next = sanitizeNextPath(searchParams.get("next")) ?? "/reset-password";
 
-  if (code) {
+  if (tokenHash && type) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // No code, or the exchange failed (link already used, expired, or
-  // tampered with) — land on the same page a stale link always showed,
+  // No usable params, or verification failed (link already used, expired,
+  // or tampered with) — land on the same page a stale link always showed,
   // rather than a bare error screen.
   return NextResponse.redirect(`${origin}${next}`);
 }
