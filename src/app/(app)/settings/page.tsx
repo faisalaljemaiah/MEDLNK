@@ -11,7 +11,12 @@ import { PushNotificationToggle } from "@/components/push-notification-toggle";
 import { signOutAction } from "@/app/actions/auth";
 import { t } from "@/lib/i18n";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ require2fa?: string }>;
+}) {
+  const { require2fa } = await searchParams;
   const user = await getViewer();
   if (!user) redirect("/login");
 
@@ -27,6 +32,21 @@ export default async function SettingsPage() {
   return (
     <div className="px-4 py-6">
       <h1 className="font-headline text-xl text-text">{t(locale, "settings.title")}</h1>
+
+      {require2fa === "admin" && !mfaEnabled && (
+        <div className="mt-4 rounded-2xl border border-danger/40 bg-danger/5 p-4 text-sm text-text">
+          <p className="font-medium">Set up two-factor authentication to open the admin panel</p>
+          <p className="mt-1 text-muted">
+            Admin accounts can see every member&apos;s verification documents
+            and manage the whole platform, so they require 2FA before the
+            admin panel will open. Set it up below, then go back to{" "}
+            <Link href="/admin" className="text-accent hover:underline">
+              /admin
+            </Link>
+            .
+          </p>
+        </div>
+      )}
 
       <SettingsGroupLabel>{t(locale, "settings.preferences")}</SettingsGroupLabel>
       <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4">
