@@ -42,11 +42,10 @@ export async function updateProfileAction(
   const rawRole = String(formData.get("role") ?? "").trim();
   const rawCity = String(formData.get("city") ?? "").trim();
   const specialty = String(formData.get("specialty") ?? "").trim();
-  // Verified members no longer see this field at all (onboarding-form.tsx),
-  // so nothing is submitted for it on a routine edit — fall back to whatever
-  // is already on file rather than reading that absence as "clear it out."
-  const submittedLicenseNumber = String(formData.get("license_number") ?? "").trim();
-  const license_number = submittedLicenseNumber || existing?.license_number || "";
+  // No longer a form field at all (onboarding-form.tsx) — a reviewed
+  // document is what actually verifies anyone, so this just preserves
+  // whatever an older profile already has on file rather than clearing it.
+  const license_number = existing?.license_number || "";
   const rawCountry = String(formData.get("country_code") ?? "").trim().toUpperCase();
   const country_code = COUNTRIES.some((c) => c.code === rawCountry)
     ? rawCountry
@@ -71,14 +70,9 @@ export async function updateProfileAction(
       ? String(formData.get("city_other") ?? "").trim()
       : rawCity;
 
-  if (
-    !full_name ||
-    !handle ||
-    !role ||
-    (LICENSE_VERIFICATION_ENABLED && !existing?.verified && !license_number)
-  ) {
+  if (!full_name || !handle || !role) {
     return {
-      error: "Full name, handle, role, and license number are required.",
+      error: "Full name, handle, and role are required.",
     };
   }
   if (handle.length < 3) {
@@ -150,14 +144,11 @@ export async function updateProfileAction(
     };
   }
 
-  // A corrected license number or a freshly uploaded document, submitted
-  // after a rejection, re-enters the admin's verification queue — the
-  // privilege-guard triggers (0028) allow exactly this one self-driven
-  // transition and nothing else.
+  // A freshly uploaded document, submitted after a rejection, re-enters the
+  // admin's verification queue — the privilege-guard triggers (0028) allow
+  // exactly this one self-driven transition and nothing else.
   const resubmitting =
-    existing?.verification_status === "rejected" &&
-    (license_document_path !== undefined ||
-      license_number !== existing.license_number);
+    existing?.verification_status === "rejected" && license_document_path !== undefined;
 
   // Deliberately excludes country_code and license_document_path — each may
   // not exist on this project yet (0026, 0027), so they're layered in only

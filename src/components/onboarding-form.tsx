@@ -24,10 +24,10 @@ export function OnboardingForm({
    *  no-op, and it reappears on its own once the migration lands. */
   documentUploadAvailable: boolean;
   /** True only when rejected and out of resubmission attempts (0033) — the
-   *  license number and document are disabled so the only submit that can
-   *  go through is one that doesn't touch either, since the server-side
-   *  trigger would reject a resubmission attempt anyway. Everything else
-   *  (name, handle, specialty, photo) stays editable. */
+   *  document upload is disabled so the only submit that can go through is
+   *  one that doesn't touch it, since the server-side trigger would reject
+   *  a resubmission attempt anyway. Everything else (name, handle,
+   *  specialty, photo) stays editable. */
   resubmissionLocked?: boolean;
 }) {
   const [state, setState] = useState<ProfileFormState>(undefined);
@@ -260,56 +260,43 @@ export function OnboardingForm({
           />
         )}
       </div>
-      {/* Already-verified members never see these — nothing left to verify,
-          so re-showing (and requiring) a license number or document on a
-          routine profile edit would just be friction. They stay visible for
-          first-time onboarding and for a rejected member's resubmission,
-          since both are still verified === false. Hidden outright while
-          LICENSE_VERIFICATION_ENABLED is off (see src/lib/verification.ts). */}
-      {LICENSE_VERIFICATION_ENABLED && !profile.verified && (
-        <>
-          <TextField
-            label="License number"
-            name="license_number"
-            defaultValue={profile.license_number ?? ""}
-            placeholder="Used for manual verification only"
-            required
-            // readOnly, not disabled — a disabled field is excluded from the
-            // submitted FormData entirely, which would both fail the "required"
-            // check server-side and (since profile.ts compares the submitted
-            // value against the existing one to detect a resubmission) read as
-            // license_number having changed to empty. readOnly still submits
-            // the current value while blocking edits.
-            readOnly={resubmissionLocked}
-            className={resubmissionLocked ? "opacity-60" : undefined}
+      {/* Already-verified members never see this — nothing left to verify,
+          so re-showing (and requiring) a document on a routine profile edit
+          would just be friction. Stays visible for first-time onboarding
+          and for a rejected member's resubmission, since both are still
+          verified === false. Hidden outright while LICENSE_VERIFICATION_ENABLED
+          is off (see src/lib/verification.ts). No license-number field — a
+          reviewed document is the only thing that actually verifies anyone;
+          a self-reported number next to it never did. */}
+      {LICENSE_VERIFICATION_ENABLED && !profile.verified && documentUploadAvailable && (
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="license_document"
+            className="font-label text-xs uppercase tracking-wide text-muted"
+          >
+            Proof of license or enrollment
+          </label>
+          <input
+            id="license_document"
+            name="license_document"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            // Lets a phone offer "Take Photo" alongside the usual file
+            // picker — the common case here is a license card or student ID
+            // nobody already has scanned, not a file sitting in storage.
+            capture="environment"
+            required={!profile.license_document_path}
+            disabled={resubmissionLocked}
+            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text disabled:opacity-50"
           />
-          {documentUploadAvailable && (
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="license_document"
-                className="font-label text-xs uppercase tracking-wide text-muted"
-              >
-                License or proof of study
-              </label>
-              <input
-                id="license_document"
-                name="license_document"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                required={!profile.license_document_path}
-                disabled={resubmissionLocked}
-                className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text disabled:opacity-50"
-              />
-              <p className="text-xs text-muted">
-                {resubmissionLocked
-                  ? "Locked until your next resubmission window opens — see above."
-                  : profile.license_document_path
-                    ? "Document on file — choose a new one only if you need to replace it."
-                    : "A photo or PDF of your professional license or student ID. Reviewed manually, never shown publicly."}
-              </p>
-            </div>
-          )}
-        </>
+          <p className="text-xs text-muted">
+            {resubmissionLocked
+              ? "Locked until your next resubmission window opens — see above."
+              : profile.license_document_path
+                ? "Document on file — choose a new one only if you need to replace it."
+                : "A photo or PDF of your professional license or student ID. Reviewed manually, never shown publicly."}
+          </p>
+        </div>
       )}
       {state?.error && (
         <p className="text-sm text-danger" role="alert">

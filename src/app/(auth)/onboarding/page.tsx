@@ -101,8 +101,8 @@ export default async function OnboardingPage() {
         <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
           {attemptStatus.attemptsRemaining > 0 ? (
             <>
-              Your license verification was not approved. Double-check your
-              license number and upload a clearer document below to resubmit.
+              Your license verification was not approved. Upload a clearer
+              document below to resubmit.
               <p className="mt-1.5 text-xs">
                 {attemptStatus.attemptsRemaining} of 3 resubmissions left this
                 month.

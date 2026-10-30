@@ -29,8 +29,8 @@ export default function PrivacyPage() {
           <p>
             Account details you provide: email, name, handle, role,
             specialty, city, and country. If you request verification, we
-            also collect a license number and a document you upload as proof
-            (student ID, license, or similar). Content you create: cases,
+            also collect a document you upload as proof (student ID,
+            license, or similar). Content you create: cases,
             comments, reactions, messages, and any photos or videos you
             attach — which must already be de-identified before you post
             them, as described in the Terms of Service. We also keep basic
