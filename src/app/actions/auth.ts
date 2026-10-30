@@ -230,14 +230,15 @@ export async function requestPasswordResetAction(
 
   const supabase = await createClient();
   const origin = await requestOrigin();
-  // Straight to /reset-password, not through a server-side code-exchange
-  // route — this project's Supabase Auth is configured for the implicit
-  // flow, so the recovery link redirects with the session in a URL hash
-  // fragment (#access_token=...), which only client-side JS can ever see.
-  // /reset-password itself picks that up via onAuthStateChange's
-  // PASSWORD_RECOVERY event (see that page).
+  // Through /auth/callback, not straight to /reset-password — this
+  // project's Supabase clients default to the PKCE flow (neither
+  // createBrowserClient nor createServerClient overrides flowType), so the
+  // recovery link comes back with a `?code=` query param, not a URL hash.
+  // Only a server route can exchange that for a session, since the PKCE
+  // code_verifier this call generates lives in a cookie only the server
+  // client set just now can redeem.
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/reset-password`,
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
   });
 
   return {
