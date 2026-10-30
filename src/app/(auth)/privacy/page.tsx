@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <div className="flex flex-col gap-6 rounded-2xl border border-line bg-bg p-6 text-sm leading-relaxed text-text sm:p-8">
         <div>
           <h1 className="font-headline text-2xl text-text">Privacy Policy</h1>
-          <p className="mt-1 text-xs text-muted">Last updated August 29, 2026</p>
+          <p className="mt-1 text-xs text-muted">Last updated October 30, 2026</p>
         </div>
 
         <Section title="1. What we collect">
@@ -78,7 +78,35 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="6. Cookies and local storage">
+        <Section title="6. Subprocessors">
+          <p>
+            We share data with a small number of service providers who
+            process it on our behalf, only as needed to run Asyashare:
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>
+              <strong>Supabase</strong> — database, authentication, and file
+              storage for the whole platform.
+            </li>
+            <li>
+              <strong>Resend</strong> — delivers transactional email (account
+              verification, password resets, and verification-decision
+              notices).
+            </li>
+            <li>
+              <strong>Anthropic</strong> — powers the optional de-identification
+              check and writing-assistant features on the compose form. Your
+              draft text is sent to Anthropic&apos;s API server-to-server to
+              generate that one response and is not used to train their
+              models.
+            </li>
+          </ul>
+          <p className="mt-2">
+            We&apos;ll update this list if that changes.
+          </p>
+        </Section>
+
+        <Section title="7. Cookies and local storage">
           <p>
             We use a session cookie to keep you signed in and a small amount
             of browser local storage for interface preferences (like a
@@ -87,7 +115,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="7. Your choices">
+        <Section title="8. Your choices">
           <p>
             You can edit your profile and delete your own posts at any time.
             &quot;Delete account&quot; in Settings permanently deletes your
@@ -97,7 +125,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="8. Children's privacy">
+        <Section title="9. Children's privacy">
           <p>
             Asyashare is for medical professionals and students and is not
             directed at children. We don&apos;t knowingly collect data from
@@ -105,14 +133,14 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="9. Changes to this policy">
+        <Section title="10. Changes to this policy">
           <p>
             We may update this policy as Asyashare evolves. Material changes
             will be noted on this page with an updated date above.
           </p>
         </Section>
 
-        <Section title="10. Contact">
+        <Section title="11. Contact">
           <p>
             Questions about this policy, or a request for a copy or deletion
             of your data, can be sent through our{" "}

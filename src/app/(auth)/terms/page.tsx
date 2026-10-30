@@ -22,7 +22,7 @@ export default function TermsPage() {
       <div className="flex flex-col gap-6 rounded-2xl border border-line bg-bg p-6 text-sm leading-relaxed text-text sm:p-8">
         <div>
           <h1 className="font-headline text-2xl text-text">Terms of Service</h1>
-          <p className="mt-1 text-xs text-muted">Last updated September 24, 2026</p>
+          <p className="mt-1 text-xs text-muted">Last updated October 30, 2026</p>
         </div>
 
         <Section title="1. What Asyashare is">
@@ -112,7 +112,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="7. No medical advice, no liability for clinical decisions">
+        <Section title="7. No medical advice, limitation of liability">
           <p>
             Content on Asyashare reflects individual clinicians&apos; accounts
             and opinions, not verified clinical guidance. Nothing on Asyashare
@@ -121,6 +121,16 @@ export default function TermsPage() {
             warranties of any kind, and to the fullest extent permitted by
             law we are not liable for decisions made based on content found
             here.
+          </p>
+          <p className="mt-2">
+            To the fullest extent permitted by law, and except where a claim
+            cannot be limited by law, Asyashare&apos;s total liability to you
+            for any claim arising from or relating to your use of the
+            platform is limited to the amount you paid us, if any, in the 12
+            months before the claim arose. Asyashare is currently free to
+            use, so this amount is $0 unless that changes in the future. We
+            are not liable for any indirect, incidental, or consequential
+            damages.
           </p>
         </Section>
 
