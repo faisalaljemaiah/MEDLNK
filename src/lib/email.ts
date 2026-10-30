@@ -14,11 +14,7 @@ function getClient(): Resend | null {
   return new Resend(key);
 }
 
-// resend.dev's shared sandbox sender — works with zero setup but (per
-// Resend's own restriction on unverified domains) can only deliver to the
-// email address the Resend account was created with. Swap for a verified
-// "no-reply@yourdomain.com" once a domain is added in the Resend dashboard.
-const FROM = "Asyashare <onboarding@resend.dev>";
+const FROM = "Asyashare <noreply@asyashare.com>";
 
 const COLORS = {
   bg: "#f6f8fc",
