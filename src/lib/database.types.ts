@@ -142,6 +142,8 @@ export type Profile = {
    * cron actually deletes the account.
    */
   deleted_at: string | null;
+  /** Set by api/cron/follower-digest after each send — see that route. */
+  last_follower_digest_at: string | null;
   created_at: string;
 };
 

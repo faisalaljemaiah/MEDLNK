@@ -148,6 +148,69 @@ export async function sendVerificationRejectedEmail(to: string, name: string) {
   await send(to, subject, html, text);
 }
 
+export type DigestFollower = { handle: string; full_name: string | null };
+
+/**
+ * One email per person per run of api/cron/follower-digest, not one per
+ * follow — that route already batches every follow since that profile's
+ * last digest before calling this, so a quiet week sends nothing and a
+ * busy one still sends exactly one email.
+ */
+export async function sendNewFollowersDigestEmail(
+  to: string,
+  name: string,
+  handle: string,
+  followers: DigestFollower[],
+) {
+  const count = followers.length;
+  const subject =
+    count === 1
+      ? "You have a new follower on Asyashare"
+      : `You have ${count} new followers on Asyashare`;
+
+  // Named ones up front, same as any "X and 4 others" list — the overflow
+  // count matters more than every single name once there are a lot of them.
+  const MAX_NAMED = 8;
+  const named = followers.slice(0, MAX_NAMED);
+  const overflow = count - named.length;
+
+  const listHtml = named
+    .map(
+      (f) => `
+      <tr>
+        <td style="padding:8px 0;border-top:1px solid ${COLORS.line};font-size:14px;color:${COLORS.text};">
+          ${f.full_name || `@${f.handle}`}${f.full_name ? ` <span style="color:${COLORS.muted};">@${f.handle}</span>` : ""}
+        </td>
+      </tr>`,
+    )
+    .join("");
+
+  const html = emailShell({
+    badgeGlyph: "&#128101;",
+    badgeColor: COLORS.accent,
+    badgeBg: COLORS.accentSoft,
+    headline: count === 1 ? "A new follower" : `${count} new followers`,
+    bodyHtml: `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:${COLORS.text};">Hi ${name},</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:${COLORS.text};">
+        Since your last update, these members started following you on Asyashare:
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+        ${listHtml}
+      </table>
+      ${overflow > 0 ? `<p style="margin:0 0 24px;font-size:13px;color:${COLORS.muted};">and ${overflow} more.</p>` : ""}
+      ${ctaButton(`${siteUrl()}/u/${handle}/followers`, "View your followers", "solid")}
+    `,
+  });
+
+  const textList = named
+    .map((f) => `- ${f.full_name || `@${f.handle}`}${f.full_name ? ` (@${f.handle})` : ""}`)
+    .join("\n");
+  const text = `Hi ${name},\n\nSince your last update, these members started following you on Asyashare:\n\n${textList}${overflow > 0 ? `\n...and ${overflow} more.` : ""}\n\nView your followers: ${siteUrl()}/u/${handle}/followers`;
+
+  await send(to, subject, html, text);
+}
+
 function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
