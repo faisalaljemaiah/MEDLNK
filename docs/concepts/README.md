@@ -39,8 +39,9 @@ Big headlines only (about 30px and up). Everything else stays on the system font
   theme, stamped headline, logo, warm paper-toned tiles, plus a "You're in."
   confirmation screen that previews the first personalized case).
 - Sign-up flow that goes with it: `1a-signup-stamped.png`, same stamped
-  style. Create account (name, email, password, terms; same fields as
-  today) → Step 1 "Who are you?" (photo, name, handle, role as picture
+  style. Create account (first name and last name as separate fields,
+  email, password, terms; the database only has full_name today, so
+  either add first/last columns or join them on save) → Step 1 "Who are you?" (photo, name, handle, role as picture
   tiles with sub-role chips, specialty, where you practice) → Step 2 pick
   interests → Step 3 "Get verified." (camera viewfinder for the license or
   student ID, Take a photo / Upload file) → "You're in." Today the
