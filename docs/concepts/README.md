@@ -47,6 +47,8 @@ Big headlines only (about 30px and up). Everything else stays on the system font
   student ID, Take a photo / Upload file) → "You're in." Today the
   document upload sits inside the profile form; this splits it into its
   own last step.
+- **Built** (sign-up flow and interest picker, migration 0044). The
+  personalized feed that uses the saved interests is still to come.
 - Preferred version: `1a-signup-apple.png`. Same flow and stamped Gloock
   titles, but built on iOS patterns: inset grouped lists with inline
   labels, glass back button, segmented control for the sub-role,
