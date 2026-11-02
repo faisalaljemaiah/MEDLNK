@@ -12,8 +12,8 @@ app's old accent. The real theme (src/app/theme.css) is the "stamped document"
 look: ink #2b2420 and cream #f0ebe6. Build with the real tokens, as in
 `1b-interests-stamped.png`.
 
-**Stamped headlines:** EricaOne (OFL, free for commercial use; same font as the
-"It's live." launch post) with a sparse ink-fleck mask matching the logo mark.
+**Stamped headlines:** Gloock Regular (OFL, free for commercial use; chosen
+over EricaOne) with a sparse ink-fleck mask matching the logo mark.
 Big headlines only (about 30px and up). Everything else stays on the system font.
 
 ## 0. Header and nav (`0-header-nav.png`)
