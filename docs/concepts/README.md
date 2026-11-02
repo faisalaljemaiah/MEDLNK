@@ -47,6 +47,12 @@ Big headlines only (about 30px and up). Everything else stays on the system font
   student ID, Take a photo / Upload file) → "You're in." Today the
   document upload sits inside the profile form; this splits it into its
   own last step.
+- Preferred version: `1a-signup-apple.png`. Same flow and stamped Gloock
+  titles, but built on iOS patterns: inset grouped lists with inline
+  labels, glass back button, segmented control for the sub-role,
+  disclosure rows for specialty and location, settings-style icon tiles,
+  camera viewfinder, capsule buttons in Title Case, and a borderless
+  purple "I'll Do It Later" text button on the verify step.
 - Tile pictures are swappable: one image per tile. Use one consistent set
   (same illustrator or icon pack), square, transparent background, about
   512px.
