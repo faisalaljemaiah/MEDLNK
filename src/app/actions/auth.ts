@@ -5,7 +5,8 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { trackEventAction } from "@/app/actions/analytics";
-import { LOCALES } from "@/lib/i18n";
+import { LOCALES, t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 import { sanitizeNextPath } from "@/lib/redirect-target";
 
 export type AuthFormState =
@@ -34,16 +35,19 @@ export async function signUpAction(
   // used, and the trigger itself falls back to 'en' for anything outside
   // this list, so an invalid value here is harmless rather than needing its
   // own error path.
-  const locale = LOCALES.some((l) => l.value === rawLocale) ? rawLocale : "en";
+  const locale: Locale = LOCALES.some((l) => l.value === rawLocale) ? (rawLocale as Locale) : "en";
 
-  if (!fullName) {
-    return { error: "Your first and last name are required." };
+  // The split form needs both names; an older client posting only
+  // full_name just needs that.
+  const splitForm = formData.has("first_name") || formData.has("last_name");
+  if (splitForm ? !firstName || !lastName : !fullName) {
+    return { error: t(locale, "signup.errorName") };
   }
   if (!email || !password) {
-    return { error: "Email and password are required." };
+    return { error: t(locale, "signup.errorEmailPassword") };
   }
   if (password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
+    return { error: t(locale, "signup.errorPasswordLength") };
   }
 
   // Checked with the service-role client, not the anon session — the RLS
@@ -58,7 +62,7 @@ export async function signUpAction(
     .eq("email", email.toLowerCase())
     .maybeSingle();
   if (blocked) {
-    return { error: "You have been blocked from our app." };
+    return { error: t(locale, "signup.errorBlocked") };
   }
 
   const supabase = await createClient();

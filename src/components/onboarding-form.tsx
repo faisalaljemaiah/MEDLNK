@@ -7,7 +7,8 @@ import {
   type HandleAvailability,
   type ProfileFormState,
 } from "@/app/actions/profile";
-import { ROLE_GROUPS, roleGroupFor, ROLES, type RoleGroup } from "@/lib/roles";
+import { ROLE_GROUPS, roleGroupFor, roleGroupLabel, roleOptionLabel, ROLES, type RoleGroup } from "@/lib/roles";
+import { t } from "@/lib/i18n";
 import { COUNTRIES, countryName } from "@/lib/countries";
 import { citiesForCountry } from "@/lib/cities";
 import { SPECIALTIES } from "@/lib/specialties";
@@ -25,7 +26,7 @@ import {
   SegmentedControl,
   SelectRow,
 } from "@/components/ui/ios";
-import type { Profile } from "@/lib/database.types";
+import type { Locale, Profile } from "@/lib/database.types";
 
 /** "Jane Doe, PharmD" → "jane_doe" — a starting point the member can edit. */
 function suggestHandle(fullName: string | null): string {
@@ -38,17 +39,17 @@ function suggestHandle(fullName: string | null): string {
     .slice(0, 24);
 }
 
-function HandleStatus({ status }: { status: HandleAvailability | "checking" | null }) {
+function HandleStatus({ status, locale }: { status: HandleAvailability | "checking" | null; locale: Locale }) {
   if (status === "available") {
     return (
-      <svg width="18" height="18" viewBox="0 0 24 24" role="img" aria-label="Handle is available" className="shrink-0 text-positive">
+      <svg width="18" height="18" viewBox="0 0 24 24" role="img" aria-label={t(locale, "onboarding.handleAvailable")} className="shrink-0 text-positive">
         <circle cx="12" cy="12" r="11" fill="currentColor" />
         <path d="m7 12.3 3.3 3.2L17 8.8" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
   if (status === "taken") {
-    return <span className="shrink-0 text-[13px] font-medium text-danger">Taken</span>;
+    return <span className="shrink-0 text-[13px] font-medium text-danger">{t(locale, "onboarding.handleTaken")}</span>;
   }
   return null;
 }
@@ -56,10 +57,12 @@ function HandleStatus({ status }: { status: HandleAvailability | "checking" | nu
 export function OnboardingForm({
   profile,
   isEdit,
+  locale,
   children,
 }: {
   profile: Profile;
   isEdit: boolean;
+  locale: Locale;
   /** Extra rows shown under the form on Edit Profile (interests, verification). */
   children?: React.ReactNode;
 }) {
@@ -167,12 +170,15 @@ export function OnboardingForm({
   return (
     <form action={handleSubmit} className="flex flex-1 flex-col">
       <input type="hidden" name="role" value={role} />
+      {!isEdit && <input type="hidden" name="setup" value="1" />}
 
       <div className="flex items-center gap-3.5">
         <label className="flex shrink-0 cursor-pointer flex-col items-center gap-1.5">
           <Avatar avatarUrl={avatarPreview ?? profile.avatar_url} name={profile.full_name} size="lg" />
           <span className="text-[13px] font-semibold text-accent-2">
-            {convertingAvatar ? "Converting…" : hasPhoto ? "Change Photo" : "Add Photo"}
+            {convertingAvatar
+              ? t(locale, "onboarding.converting")
+              : t(locale, hasPhoto ? "onboarding.changePhoto" : "onboarding.addPhoto")}
           </span>
           {/* No name — this only feeds the crop step; handleSubmit sets the
               cropped file on the FormData itself. */}
@@ -180,16 +186,16 @@ export function OnboardingForm({
         </label>
         <GroupedList className="flex-1">
           <InputRow
-            label="Name"
+            label={t(locale, "onboarding.name")}
             labelWidth={64}
             name="full_name"
             defaultValue={profile.full_name ?? ""}
-            placeholder="Jane Doe, PharmD"
+            placeholder={t(locale, "onboarding.namePlaceholder")}
             autoComplete="name"
             required
           />
           <InputRow
-            label="Handle"
+            label={t(locale, "onboarding.handle")}
             labelWidth={64}
             name="handle"
             value={handle}
@@ -200,20 +206,21 @@ export function OnboardingForm({
             spellCheck={false}
             minLength={3}
             required
-            trailing={<HandleStatus status={handleStatus} />}
+            dir="ltr"
+            trailing={<HandleStatus status={handleStatus} locale={locale} />}
           />
         </GroupedList>
       </div>
       {cropSource && (
-        <AvatarCropper imageSrc={cropSource} onCancel={handleCropCancel} onCropped={handleCropped} />
+        <AvatarCropper imageSrc={cropSource} onCancel={handleCropCancel} onCropped={handleCropped} locale={locale} />
       )}
 
-      <GroupHeader>Role</GroupHeader>
+      <GroupHeader>{t(locale, "onboarding.role")}</GroupHeader>
       <div className="grid grid-cols-3 gap-2">
         {ROLE_GROUPS.map((g) => (
           <PictureTile
             key={g.id}
-            label={g.label}
+            label={roleGroupLabel(g, locale)}
             art={g.art}
             tint={g.tint}
             selected={group?.id === g.id}
@@ -225,8 +232,8 @@ export function OnboardingForm({
       {segmented && (
         <div className="mt-3">
           <SegmentedControl
-            label={`${group.label} type`}
-            options={group.options.map((o) => ({ value: o.role, label: o.short }))}
+            label={t(locale, "onboarding.roleType", { group: roleGroupLabel(group, locale) })}
+            options={group.options.map((o) => ({ value: o.role, label: roleOptionLabel(o, locale) }))}
             value={role || null}
             onChange={setRole}
           />
@@ -237,29 +244,33 @@ export function OnboardingForm({
         <GroupedList className="mt-3">
           {picker && (
             <SelectRow
-              label="Title"
-              display={group.options.find((o) => o.role === role)?.short ?? null}
+              label={t(locale, "onboarding.title")}
+              placeholder={t(locale, "flow.choose")}
+              display={(() => {
+                const picked = group.options.find((o) => o.role === role);
+                return picked ? roleOptionLabel(picked, locale) : null;
+              })()}
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
               <option value="" disabled>
-                Choose
+                {t(locale, "flow.choose")}
               </option>
               {group.options.map((o) => (
                 <option key={o.role} value={o.role}>
-                  {o.short}
+                  {roleOptionLabel(o, locale)}
                 </option>
               ))}
             </SelectRow>
           )}
           {role === "Other" && (
             <InputRow
-              label="Your role"
+              label={t(locale, "onboarding.yourRole")}
               labelWidth={96}
               name="role_other"
               value={roleOther}
               onChange={(e) => setRoleOther(e.target.value)}
-              placeholder="e.g. Research Coordinator"
+              placeholder={t(locale, "onboarding.yourRolePlaceholder")}
               required
             />
           )}
@@ -268,25 +279,25 @@ export function OnboardingForm({
 
       <GroupedList className="mt-4">
         <InputRow
-          label="Specialty"
+          label={t(locale, "onboarding.specialty")}
           labelWidth={96}
           name="specialty"
           list="specialty-options"
           defaultValue={profile.specialty ?? ""}
-          placeholder="Optional"
+          placeholder={t(locale, "flow.optional")}
         />
         <SelectRow
-          label="Country"
+          label={t(locale, "onboarding.country")}
           name="country_code"
           display={countryName(countryCode)}
-          placeholder="Prefer not to say"
+          placeholder={t(locale, "onboarding.preferNotToSay")}
           value={countryCode}
           onChange={(e) => {
             setCountryCode(e.target.value);
             setCityValue("");
           }}
         >
-          <option value="">Prefer not to say</option>
+          <option value="">{t(locale, "onboarding.preferNotToSay")}</option>
           {COUNTRIES.map((c) => (
             <option key={c.code} value={c.code}>
               {c.name}
@@ -294,30 +305,30 @@ export function OnboardingForm({
           ))}
         </SelectRow>
         <SelectRow
-          label="City"
+          label={t(locale, "onboarding.city")}
           name="city"
-          display={cityValue === "__other__" ? "Other" : cityValue || null}
-          placeholder={countryCode ? "Optional" : "Choose a country first"}
+          display={cityValue === "__other__" ? t(locale, "onboarding.cityOther") : cityValue || null}
+          placeholder={t(locale, countryCode ? "flow.optional" : "onboarding.chooseCountryFirst")}
           value={cityValue}
           disabled={!countryCode}
           onChange={(e) => setCityValue(e.target.value)}
         >
-          <option value="">Prefer not to say</option>
+          <option value="">{t(locale, "onboarding.preferNotToSay")}</option>
           {availableCities.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
           ))}
-          <option value="__other__">Other — type it in</option>
+          <option value="__other__">{t(locale, "onboarding.cityOtherOption")}</option>
         </SelectRow>
         {cityValue === "__other__" && (
           <InputRow
-            label="City name"
+            label={t(locale, "onboarding.cityName")}
             labelWidth={96}
             name="city_other"
             value={cityOther}
             onChange={(e) => setCityOther(e.target.value)}
-            placeholder="Type your city"
+            placeholder={t(locale, "onboarding.cityNamePlaceholder")}
           />
         )}
       </GroupedList>
@@ -326,15 +337,19 @@ export function OnboardingForm({
           <option key={s} value={s} />
         ))}
       </datalist>
-      <GroupFooter>Your country tags your cases in the Global Case Exchange.</GroupFooter>
+      <GroupFooter>{t(locale, "onboarding.countryFooter")}</GroupFooter>
 
       {children}
 
       {state?.error && <FormError>{state.error}</FormError>}
 
       <div className="mt-auto pt-8">
-        <CapsuleSubmit pending={isPending} disabled={!role || handleStatus === "taken"}>
-          {isEdit ? "Save" : "Continue"}
+        <CapsuleSubmit
+          pending={isPending}
+          disabled={!role || handleStatus === "taken"}
+          pendingLabel={t(locale, "flow.pleaseWait")}
+        >
+          {t(locale, isEdit ? "flow.save" : "flow.continue")}
         </CapsuleSubmit>
       </div>
     </form>

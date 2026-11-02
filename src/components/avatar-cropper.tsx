@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Area } from "react-easy-crop";
 import { cropImageToFile } from "@/lib/crop-image";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 
 // Dynamic + ssr:false for two reasons: it measures the DOM (can't run on
 // the server) and it's only ever needed the moment someone picks a photo —
@@ -22,10 +24,12 @@ export function AvatarCropper({
   imageSrc,
   onCancel,
   onCropped,
+  locale = "en",
 }: {
   imageSrc: string;
   onCancel: () => void;
   onCropped: (file: File) => void;
+  locale?: Locale;
 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -52,7 +56,7 @@ export function AvatarCropper({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Crop photo"
+      aria-label={t(locale, "cropper.title")}
       className="animate-enter fixed inset-0 z-50 flex items-center justify-center bg-[rgb(var(--shadow-tint)/0.6)] p-4"
     >
       <div className="w-full max-w-sm rounded-2xl bg-surface p-4 shadow-[0_16px_48px_-12px_rgb(var(--shadow-tint)/0.35)]">
@@ -83,7 +87,7 @@ export function AvatarCropper({
 
         <div className="mt-4 flex flex-col gap-3">
           <label className="flex flex-col gap-1.5 font-label text-xs text-muted">
-            Zoom
+            {t(locale, "cropper.zoom")}
             <input
               type="range"
               min={1}
@@ -95,7 +99,7 @@ export function AvatarCropper({
             />
           </label>
           <label className="flex flex-col gap-1.5 font-label text-xs text-muted">
-            Rotate
+            {t(locale, "cropper.rotate")}
             <input
               type="range"
               min={-180}
@@ -115,7 +119,7 @@ export function AvatarCropper({
             disabled={saving}
             className="rounded-full border border-line px-4 py-2 text-sm font-medium text-muted disabled:opacity-60"
           >
-            Cancel
+            {t(locale, "common.cancel")}
           </button>
           <button
             type="button"
@@ -123,7 +127,7 @@ export function AvatarCropper({
             disabled={saving || !croppedAreaPixels}
             className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save"}
+            {saving ? t(locale, "cropper.saving") : t(locale, "flow.save")}
           </button>
         </div>
       </div>

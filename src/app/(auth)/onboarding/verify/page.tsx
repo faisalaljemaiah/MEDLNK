@@ -11,6 +11,7 @@ import {
   StepProgress,
 } from "@/components/ui/ios";
 import { getVerificationAttemptStatus, LICENSE_VERIFICATION_ENABLED } from "@/lib/verification";
+import { t } from "@/lib/i18n";
 
 /**
  * Step 3 of sign-up ("Get verified"). Also the one place to come back to
@@ -39,6 +40,8 @@ export default async function VerifyPage({
   if (!profile) redirect("/login");
   if (!profile.handle) redirect("/onboarding");
 
+  const locale = profile.locale ?? "en";
+
   // Nothing to verify while the feature is off — everyone is auto-approved
   // on step 1 (updateProfileAction).
   if (!LICENSE_VERIFICATION_ENABLED) {
@@ -48,17 +51,17 @@ export default async function VerifyPage({
   const backHref = setup ? "/onboarding/interests?setup=1" : "/onboarding";
   const nav = (
     <>
-      <GlassBackLink href={backHref} />
-      {setup ? <StepProgress step={3} /> : null}
+      <GlassBackLink href={backHref} label={t(locale, "flow.back")} />
+      {setup ? <StepProgress step={3} label={t(locale, "flow.step", { n: "3", total: "3" })} /> : null}
       <span className="size-11" />
     </>
   );
 
   if (profile.verified) {
     return (
-      <FlowScreen nav={nav} footer={<CapsuleLink href={setup ? "/onboarding/done" : `/u/${profile.handle}`}>Done</CapsuleLink>}>
-        <StampTitle className="mt-1.5">You&rsquo;re verified.</StampTitle>
-        <Lede>Your license has been approved. You can post cases and message other clinicians.</Lede>
+      <FlowScreen nav={nav} footer={<CapsuleLink href={setup ? "/onboarding/done" : `/u/${profile.handle}`}>{t(locale, "flow.done")}</CapsuleLink>}>
+        <StampTitle className="mt-1.5">{t(locale, "verify.verifiedTitle")}</StampTitle>
+        <Lede>{t(locale, "verify.verifiedLede")}</Lede>
       </FlowScreen>
     );
   }
@@ -70,40 +73,34 @@ export default async function VerifyPage({
 
   return (
     <FlowScreen nav={nav}>
-      <StampTitle className="mt-1.5">Get verified.</StampTitle>
-      <Lede>
-        {inReview
-          ? "Your document is in review. You can read, save and follow now; posting unlocks once we approve it. Upload a new one only if you need to replace it."
-          : "A photo of your license or student ID. A person on our team reviews it."}
-      </Lede>
+      <StampTitle className="mt-1.5">{t(locale, "verify.title")}</StampTitle>
+      <Lede>{t(locale, inReview ? "verify.ledeInReview" : "verify.lede")}</Lede>
 
       {rejected && attemptStatus && (
         <div role="status" className="-mt-2 mb-4 rounded-[18px] bg-danger/10 px-4 py-3 text-[14px] leading-snug text-danger">
           {attemptStatus.attemptsRemaining > 0 ? (
             <>
-              Your last document wasn&rsquo;t approved. Upload a clearer one to resubmit.
+              {t(locale, "verify.rejected")}
               <span className="mt-1 block text-[12.5px]">
-                {attemptStatus.attemptsRemaining} of 3 resubmissions left this month.
+                {t(locale, "verify.attemptsLeft", { n: String(attemptStatus.attemptsRemaining) })}
               </span>
             </>
           ) : (
-            <>
-              You&rsquo;ve used all 3 resubmissions allowed in 30 days. You can try again on{" "}
-              {new Date(attemptStatus.nextEligibleAt!).toLocaleDateString(undefined, {
+            t(locale, "verify.locked", {
+              date: new Date(attemptStatus.nextEligibleAt!).toLocaleDateString(locale === "ar" ? "ar" : "en", {
                 month: "long",
                 day: "numeric",
-              })}
-              .
-            </>
+              }),
+            })
           )}
         </div>
       )}
 
-      <VerifyForm setup={setup} locked={locked} />
+      <VerifyForm setup={setup} locked={locked} locale={locale} />
 
       {setup && (
         <PlainLink href="/onboarding/done" className="mt-3.5">
-          I&rsquo;ll Do It Later
+          {t(locale, "verify.later")}
         </PlainLink>
       )}
     </FlowScreen>

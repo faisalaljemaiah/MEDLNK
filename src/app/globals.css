@@ -687,6 +687,12 @@ body {
   letter-spacing: -0.01em;
   line-height: 1.04;
 }
+/* Gloock has no Arabic glyphs, so Arabic falls back to the system face —
+   bold, so the strokes survive the ink-fleck mask. */
+[dir="rtl"] .font-stamp,
+.font-stamp:lang(ar) {
+  font-weight: 700;
+}
 .stamp-ink {
   -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.22' numOctaves='4' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -11 8.1'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
   mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.22' numOctaves='4' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -11 8.1'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
@@ -705,6 +711,7 @@ body {
 }
 @media (prefers-color-scheme: dark) {
   .picture-tile {
+    background: var(--surface-2); /* fallback where color-mix is unsupported */
     background: color-mix(in srgb, var(--tile) 16%, var(--surface));
   }
 }
@@ -739,8 +746,8 @@ body {
   content: "";
   position: absolute;
   top: 0;
-  left: 16px;
-  right: 0;
+  inset-inline-start: 16px;
+  inset-inline-end: 0;
   height: 1px;
   transform: scaleY(0.5);
   transform-origin: top;
@@ -748,5 +755,22 @@ body {
   pointer-events: none;
 }
 .ios-list > .ios-row-icon + .ios-row-icon::before {
-  left: 58px;
+  inset-inline-start: 58px;
+}
+
+/*
+ * Arabic is a connected script — any letter-spacing (positive or negative)
+ * pulls the joined letters apart or crushes them together. Tracking
+ * utilities are tuned for Latin text, so they're neutralized inside an RTL
+ * subtree. Scoped to the sign-up flow's own surfaces (.font-stamp and
+ * anything inside a FlowScreen) plus the app-wide headline/label classes.
+ */
+[dir="rtl"] .font-stamp,
+[dir="rtl"] .font-headline,
+[dir="rtl"] .font-label,
+[dir="rtl"] .flow-screen,
+[dir="rtl"] .flow-screen *,
+.flow-screen[dir="rtl"],
+.flow-screen[dir="rtl"] * {
+  letter-spacing: 0 !important;
 }

@@ -5,8 +5,11 @@ import { saveInterestsAction } from "@/app/actions/profile";
 import {
   INTEREST_CASE_TYPES,
   INTEREST_TOPICS,
+  interestLabel,
   MIN_INTERESTS,
 } from "@/lib/interests";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 import { CapsuleSubmit, FormError, GroupHeader, PictureTile } from "@/components/ui/ios";
 
 export function InterestsPicker({
@@ -14,12 +17,14 @@ export function InterestsPicker({
   setup,
   specialty,
   specialtyArt,
+  locale,
 }: {
   initial: string[];
   /** True during sign-up: needs MIN_INTERESTS to continue (or Skip). */
   setup: boolean;
   specialty: string | null;
   specialtyArt: string;
+  locale: Locale;
 }) {
   const [state, action] = useActionState(saveInterestsAction, undefined);
   const [selected, setSelected] = useState<Set<string>>(new Set(initial));
@@ -49,21 +54,21 @@ export function InterestsPicker({
             {specialtyArt}
           </span>
           <div className="min-w-0">
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.1em] opacity-70">Your specialty</p>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.1em] opacity-70">{t(locale, "interests.yourSpecialty")}</p>
             <p className="font-stamp stamp-ink truncate text-[23px] leading-tight">{specialty}</p>
           </div>
-          <span className="ml-auto shrink-0 rounded-full bg-accent-foreground/15 px-2.5 py-1 text-[11px]">
-            From your profile
+          <span className="ms-auto shrink-0 rounded-full bg-accent-foreground/15 px-2.5 py-1 text-[11px]">
+            {t(locale, "interests.fromProfile")}
           </span>
         </div>
       )}
 
-      <GroupHeader>Topics</GroupHeader>
+      <GroupHeader>{t(locale, "interests.topics")}</GroupHeader>
       <div className="grid grid-cols-3 gap-2">
         {INTEREST_TOPICS.map((i) => (
           <PictureTile
             key={i.slug}
-            label={i.label}
+            label={interestLabel(i, locale)}
             art={i.art}
             tint={i.tint}
             selected={selected.has(i.slug)}
@@ -73,12 +78,12 @@ export function InterestsPicker({
         ))}
       </div>
 
-      <GroupHeader>Case types</GroupHeader>
+      <GroupHeader>{t(locale, "interests.caseTypes")}</GroupHeader>
       <div className="grid grid-cols-4 gap-2">
         {INTEREST_CASE_TYPES.map((i) => (
           <PictureTile
             key={i.slug}
-            label={i.label}
+            label={interestLabel(i, locale)}
             art={i.art}
             tint={i.tint}
             selected={selected.has(i.slug)}
@@ -92,10 +97,12 @@ export function InterestsPicker({
 
       <div className="mt-auto flex flex-col gap-2.5 pt-8">
         <p aria-live="polite" className="text-center text-[13px] text-muted">
-          <span className="font-semibold text-text">{count} selected</span>
-          {setup && ` · pick at least ${MIN_INTERESTS}`}
+          <span className="font-semibold text-text">{t(locale, "interests.selected", { n: String(count) })}</span>
+          {setup && ` · ${t(locale, "interests.pickAtLeast", { n: String(MIN_INTERESTS) })}`}
         </p>
-        <CapsuleSubmit disabled={!enough}>{setup ? "Continue" : "Save"}</CapsuleSubmit>
+        <CapsuleSubmit disabled={!enough} pendingLabel={t(locale, "flow.pleaseWait")}>
+          {t(locale, setup ? "flow.continue" : "flow.save")}
+        </CapsuleSubmit>
       </div>
     </form>
   );

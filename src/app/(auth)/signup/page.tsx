@@ -19,7 +19,7 @@ import {
   Lede,
   StampTitle,
 } from "@/components/ui/ios";
-import { LOCALES } from "@/lib/i18n";
+import { LOCALES, localeDir, t } from "@/lib/i18n";
 import type { Locale } from "@/lib/database.types";
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -36,70 +36,93 @@ export default function SignUpPage() {
   const [state, action] = useActionState(signUpAction, undefined);
   const [agreed, setAgreed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  // No server-side signal to default this from yet — the account doesn't
-  // exist until this form submits. English first, since that's this list's
-  // first entry and the app's existing default everywhere else a locale is
-  // unset (0021).
+  // Signed-out, so there's no saved preference yet — English by default.
+  // Switching it re-renders this page in that language right away and is
+  // stored on the new profile (handle_new_user, 0035), so every step after
+  // this one follows it too.
   const [locale, setLocale] = useState<Locale>("en");
+  const ar = locale === "ar";
+  // Arabic labels run longer ("البريد الإلكتروني"); one shared width keeps
+  // every value in the two groups lined up.
+  const labelWidth = ar ? 140 : 108;
 
   return (
     <FlowScreen
+      dir={localeDir(locale)}
+      lang={locale}
       nav={
         <>
-          <Link href="/welcome" aria-label="Asyashare home">
+          <Link href="/welcome" aria-label={t(locale, "signup.home")}>
             <LogoMark size={30} />
           </Link>
-          <GlassPillLink href="/login">Sign In</GlassPillLink>
+          <GlassPillLink href="/login">{t(locale, "signup.signIn")}</GlassPillLink>
         </>
       }
     >
       <AnalyticsPageView event="signup_viewed" />
       <StampTitle className="mt-3">
-        Create your
+        {t(locale, "signup.titleLine1")}
         <br />
-        account.
+        {t(locale, "signup.titleLine2")}
       </StampTitle>
-      <Lede>A clinical knowledge network for verified medical professionals.</Lede>
+      <Lede>{t(locale, "signup.lede")}</Lede>
 
       <form action={action} className="flex flex-1 flex-col">
         <input type="hidden" name="locale" value={locale} />
         <GroupedList>
-          <InputRow label="First name" name="first_name" autoComplete="given-name" placeholder="Required" required />
-          <InputRow label="Last name" name="last_name" autoComplete="family-name" placeholder="Required" required />
+          <InputRow
+            label={t(locale, "signup.firstName")}
+            labelWidth={labelWidth}
+            name="first_name"
+            autoComplete="given-name"
+            placeholder={t(locale, "flow.required")}
+            required
+          />
+          <InputRow
+            label={t(locale, "signup.lastName")}
+            labelWidth={labelWidth}
+            name="last_name"
+            autoComplete="family-name"
+            placeholder={t(locale, "flow.required")}
+            required
+          />
         </GroupedList>
 
         <GroupedList className="mt-3.5">
           <InputRow
-            label="Email"
+            label={t(locale, "signup.email")}
+            labelWidth={labelWidth}
             name="email"
             type="email"
             inputMode="email"
             autoComplete="email"
             autoCapitalize="none"
+            dir="ltr"
             placeholder="name@example.com"
             required
           />
           <InputRow
-            label="Password"
+            label={t(locale, "signup.password")}
+            labelWidth={labelWidth}
             name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             minLength={8}
-            placeholder="Required"
+            placeholder={t(locale, "flow.required")}
             required
             trailing={
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="-mr-1 flex size-9 items-center justify-center rounded-full active:opacity-60"
+                aria-label={t(locale, showPassword ? "signup.hidePassword" : "signup.showPassword")}
+                className="-me-1 flex size-9 shrink-0 items-center justify-center rounded-full active:opacity-60"
               >
                 <EyeIcon open={showPassword} />
               </button>
             }
           />
         </GroupedList>
-        <GroupFooter>At least 8 characters.</GroupFooter>
+        <GroupFooter>{t(locale, "signup.passwordHint")}</GroupFooter>
 
         <GroupedList className="mt-4">
           <label className="flex cursor-pointer items-start gap-3 px-4 py-3 text-[15px] leading-[1.35] text-text focus-within:bg-accent-soft/40">
@@ -112,15 +135,16 @@ export default function SignUpPage() {
             />
             {agreed ? <CheckCircle /> : <EmptyCircle />}
             <span>
-              I agree to the{" "}
+              {t(locale, "signup.agreePrefix")}{" "}
               <Link href="/terms" className="font-semibold text-accent underline-offset-2 hover:underline">
-                Terms
+                {t(locale, "signup.terms")}
               </Link>{" "}
-              and{" "}
+              {t(locale, "signup.and")}
+              {ar ? "" : " "}
               <Link href="/privacy" className="font-semibold text-accent underline-offset-2 hover:underline">
-                Privacy Policy
+                {t(locale, "signup.privacy")}
               </Link>
-              , including that everything I post is fully de-identified.
+              {t(locale, "signup.agreeSuffix")}
             </span>
           </label>
         </GroupedList>
@@ -133,21 +157,27 @@ export default function SignUpPage() {
         )}
 
         <div className="mt-auto flex flex-col gap-3 pt-8">
-          <div className="flex justify-center gap-4 text-[12.5px] font-medium text-muted">
-            <span>🩺 Clinicians only</span>
-            <span>🔒 De-identified</span>
-            <span>✨ Free</span>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12.5px] font-medium text-muted">
+            <span>🩺 {t(locale, "signup.trustClinicians")}</span>
+            <span>🔒 {t(locale, "signup.trustDeidentified")}</span>
+            <span>✨ {t(locale, "signup.trustFree")}</span>
           </div>
-          <CapsuleSubmit disabled={!agreed}>Create Account</CapsuleSubmit>
+          <CapsuleSubmit disabled={!agreed} pendingLabel={t(locale, "flow.pleaseWait")}>
+            {t(locale, "signup.createAccount")}
+          </CapsuleSubmit>
           {/* A quiet utility control, not a decision the page leads with —
-              the language itself is what a signed-out visitor needs to read
-              everything above, so it only needs to be findable. */}
-          <div role="group" aria-label="Preferred language" className="flex items-center justify-center gap-2 text-[13px] text-muted">
+              it only needs to be findable. */}
+          <div
+            role="group"
+            aria-label={t(locale, "signup.language")}
+            className="flex items-center justify-center gap-2 text-[13px] text-muted"
+          >
             {LOCALES.map((l, i) => (
               <span key={l.value} className="flex items-center gap-2">
                 {i > 0 && <span aria-hidden="true">·</span>}
                 <button
                   type="button"
+                  lang={l.value}
                   onClick={() => setLocale(l.value)}
                   aria-pressed={locale === l.value}
                   className={clsx(locale === l.value ? "font-semibold text-text" : "hover:text-text")}

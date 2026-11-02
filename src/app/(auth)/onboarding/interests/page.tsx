@@ -9,7 +9,8 @@ import {
   StampTitle,
   StepProgress,
 } from "@/components/ui/ios";
-import { roleGroupFor } from "@/lib/roles";
+import { roleGroupFor, roleGroupLabel } from "@/lib/roles";
+import { t } from "@/lib/i18n";
 
 /**
  * Step 2 of sign-up ("Pick your interests"), and Edit Profile → Interests
@@ -38,6 +39,7 @@ export default async function InterestsPage({
   if (!profile) redirect("/login");
   if (!profile.handle) redirect("/onboarding");
 
+  const locale = profile.locale ?? "en";
   const group = roleGroupFor(profile.role);
 
   return (
@@ -45,34 +47,35 @@ export default async function InterestsPage({
       nav={
         setup ? (
           <>
-            <GlassBackLink href="/onboarding" />
-            <StepProgress step={2} />
+            <GlassBackLink href="/onboarding?setup=1" label={t(locale, "flow.back")} />
+            <StepProgress step={2} label={t(locale, "flow.step", { n: "2", total: "3" })} />
             <Link
               href="/onboarding/verify?setup=1"
               className="flex h-11 items-center px-1 text-base font-semibold text-muted active:opacity-60"
             >
-              Skip
+              {t(locale, "flow.skip")}
             </Link>
           </>
         ) : (
           <>
-            <GlassBackLink href="/onboarding" />
+            <GlassBackLink href="/onboarding" label={t(locale, "flow.back")} />
             <span className="size-11" />
           </>
         )
       }
     >
       <StampTitle className="mt-1.5">
-        Pick your
+        {t(locale, "interests.titleLine1")}
         <br />
-        interests.
+        {t(locale, "interests.titleLine2")}
       </StampTitle>
-      <Lede>This shapes your feed. Change it anytime.</Lede>
+      <Lede>{t(locale, "interests.lede")}</Lede>
       <InterestsPicker
         initial={Array.isArray(profile.interests) ? profile.interests : []}
         setup={setup}
-        specialty={profile.specialty || group?.label || null}
+        specialty={profile.specialty || (group ? roleGroupLabel(group, locale) : null)}
         specialtyArt={group?.art ?? "🩺"}
+        locale={locale}
       />
     </FlowScreen>
   );

@@ -10,6 +10,7 @@ import { validateImageUpload, validateDocumentUpload } from "@/lib/uploads";
 import { trackEventAction } from "@/app/actions/analytics";
 import { LICENSE_VERIFICATION_ENABLED } from "@/lib/verification";
 import { sanitizeInterests } from "@/lib/interests";
+import { t } from "@/lib/i18n";
 
 export type ProfileFormState = { error: string } | undefined;
 
@@ -46,6 +47,7 @@ export async function updateProfileAction(
     .eq("id", user.id)
     .maybeSingle();
 
+  const locale = existing?.locale ?? "en";
   const full_name = String(formData.get("full_name") ?? "").trim();
   const handle = normalizeHandle(String(formData.get("handle") ?? ""));
   const rawRole = String(formData.get("role") ?? "").trim();
@@ -61,7 +63,7 @@ export async function updateProfileAction(
     : null;
 
   if (!ROLES.includes(rawRole as (typeof ROLES)[number])) {
-    return { error: "Please choose your role." };
+    return { error: t(locale, "onboarding.errorRole") };
   }
   // "Other" stores whatever the member actually typed, not the literal word
   // "Other" — the column is plain text with no CHECK constraint.
@@ -75,13 +77,13 @@ export async function updateProfileAction(
       : rawCity;
 
   if (!full_name) {
-    return { error: "Your name is required." };
+    return { error: t(locale, "onboarding.errorName") };
   }
   if (!role) {
-    return { error: "Tell us your role." };
+    return { error: t(locale, "onboarding.errorRoleOther") };
   }
   if (handle.length < 3) {
-    return { error: "Handle must be at least 3 characters (letters, numbers, _)." };
+    return { error: t(locale, "onboarding.errorHandleLength") };
   }
 
   let avatar_url: string | undefined;
@@ -97,7 +99,7 @@ export async function updateProfileAction(
       .upload(path, avatar, { contentType: avatar.type });
 
     if (uploadError) {
-      return { error: `Photo upload failed: ${uploadError.message}` };
+      return { error: t(locale, "onboarding.errorPhoto", { reason: uploadError.message }) };
     }
     const { data: publicUrl } = supabase.storage
       .from("avatars")
@@ -131,7 +133,7 @@ export async function updateProfileAction(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: "That handle is already taken — try another." };
+      return { error: t(locale, "onboarding.errorHandleTaken") };
     }
     return { error: error.message };
   }
@@ -158,7 +160,9 @@ export async function updateProfileAction(
       .eq("id", user.id);
   }
 
-  redirect(firstTime ? "/onboarding/interests?setup=1" : `/u/${handle}`);
+  // Still in the sign-up pass (first save, or back from step 2) → step 2.
+  const inSetup = firstTime || formData.get("setup") === "1";
+  redirect(inSetup ? "/onboarding/interests?setup=1" : `/u/${handle}`);
 }
 
 export type HandleAvailability = "available" | "taken" | "invalid";
@@ -184,8 +188,9 @@ export async function checkHandleAction(raw: string): Promise<HandleAvailability
 }
 
 /**
- * Step 2 ("Pick your interests") and Settings → Interests. During setup it
- * continues to the verification step; from Settings it goes back there.
+ * Step 2 ("Pick your interests") and Edit Profile → Interests. During setup
+ * it continues to the verification step; otherwise it goes back to Edit
+ * Profile.
  * A project that hasn't applied 0044 yet just skips the save rather than
  * blocking sign-up on it.
  */
@@ -211,7 +216,8 @@ export async function saveInterestsAction(
     return { error: error.message };
   }
 
-  redirect(setup ? "/onboarding/verify?setup=1" : "/settings");
+  // Outside sign-up this is opened from Edit Profile, so go back there.
+  redirect(setup ? "/onboarding/verify?setup=1" : "/onboarding");
 }
 
 /**
@@ -240,15 +246,19 @@ export async function submitVerificationAction(
     .eq("id", user.id)
     .maybeSingle();
   if (!existing) redirect("/login");
+  const locale = existing.locale ?? "en";
   if (existing.verified) redirect(setup ? "/onboarding/done" : `/u/${existing.handle}`);
 
   const document = formData.get("license_document");
   if (!(document instanceof File) || document.size === 0) {
-    return { error: "Take a photo or choose a file first." };
+    return { error: t(locale, "verify.errorNoFile") };
   }
   const validated = validateDocumentUpload(document);
   if (!validated.ok) {
-    return { error: validated.error };
+    // validateDocumentUpload's messages are English; map its two cases.
+    return {
+      error: t(locale, validated.error.includes("8MB") ? "verify.errorFileSize" : "verify.errorFileType"),
+    };
   }
 
   const path = `${user.id}/${crypto.randomUUID()}.${validated.ext}`;
@@ -258,9 +268,9 @@ export async function submitVerificationAction(
 
   if (uploadError) {
     if (isMissingBucketError(uploadError)) {
-      return { error: "Document upload isn't available yet. Please try again later." };
+      return { error: t(locale, "verify.errorUnavailable") };
     }
-    return { error: `Upload failed: ${uploadError.message}` };
+    return { error: t(locale, "verify.errorUpload", { reason: uploadError.message }) };
   }
 
   const resubmitting = existing.verification_status === "rejected";

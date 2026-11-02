@@ -3,7 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { submitVerificationAction, type ProfileFormState } from "@/app/actions/profile";
 import { toUploadableImage } from "@/lib/heic";
+import { shrinkImageForUpload } from "@/lib/shrink-image";
 import { LogoMark } from "@/components/brand";
+import { t, type TranslationKey } from "@/lib/i18n";
+import type { Locale } from "@/lib/database.types";
 import {
   CapsuleSubmit,
   FormError,
@@ -21,14 +24,28 @@ function CameraGlyph() {
   );
 }
 
-const ACCEPTED = [
-  { label: "Professional license card", color: "#2f7d5b", glyph: "🪪" },
-  { label: "Student ID or enrollment letter", color: "#c8862d", glyph: "🎓" },
-  { label: "Photo or PDF, clear and readable", color: "#3b6fb6", glyph: "🖼️" },
+// Fixed Settings-style icon colors (not theme tokens) — same in light and
+// dark, like iOS's own colored icon tiles.
+const ACCEPTED: { key: TranslationKey; color: string; glyph: string }[] = [
+  { key: "verify.acceptLicense", color: "#2f7d5b", glyph: "🪪" },
+  { key: "verify.acceptStudent", color: "#c8862d", glyph: "🎓" },
+  { key: "verify.acceptFormat", color: "#3b6fb6", glyph: "🖼️" },
 ];
 
-/** Corner brackets + the sample card, or the picked document's preview. */
-function Viewfinder({ previewUrl, fileName }: { previewUrl: string | null; fileName: string | null }) {
+/**
+ * Corner brackets + the sample card, or the picked document's preview. A
+ * camera scene, so its colors are fixed rather than theme tokens — it reads
+ * the same in light and dark mode.
+ */
+function Viewfinder({
+  previewUrl,
+  fileName,
+  locale,
+}: {
+  previewUrl: string | null;
+  fileName: string | null;
+  locale: Locale;
+}) {
   return (
     <div className="relative flex h-[214px] items-center justify-center overflow-hidden rounded-[26px] bg-[radial-gradient(circle_at_50%_40%,#4a3f39,#231d1a_75%)]">
       {(["top-[18px] left-[22px] border-t-4 border-l-4 rounded-tl-[14px]", "top-[18px] right-[22px] border-t-4 border-r-4 rounded-tr-[14px]", "bottom-[18px] left-[22px] border-b-4 border-l-4 rounded-bl-[14px]", "bottom-[18px] right-[22px] border-b-4 border-r-4 rounded-br-[14px]"] as const).map((c) => (
@@ -37,7 +54,7 @@ function Viewfinder({ previewUrl, fileName }: { previewUrl: string | null; fileN
 
       {previewUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- a local blob: preview, not a remote image
-        <img src={previewUrl} alt="Your document" className="max-h-[150px] max-w-[240px] rounded-xl object-contain shadow-[0_18px_30px_-10px_rgba(0,0,0,0.6)]" />
+        <img src={previewUrl} alt={t(locale, "verify.yourDocument")} className="max-h-[150px] max-w-[240px] rounded-xl object-contain shadow-[0_18px_30px_-10px_rgba(0,0,0,0.6)]" />
       ) : fileName ? (
         <div className="flex max-w-[240px] flex-col items-center gap-2 rounded-xl bg-[#fbf8f4] px-6 py-5 text-center text-[#2b2420] shadow-[0_18px_30px_-10px_rgba(0,0,0,0.6)]">
           <span aria-hidden className="text-3xl">📄</span>
@@ -46,7 +63,7 @@ function Viewfinder({ previewUrl, fileName }: { previewUrl: string | null; fileN
       ) : (
         <div aria-hidden className="relative h-[140px] w-[226px] -translate-y-1.5 -rotate-[4deg] overflow-hidden rounded-[14px] bg-[#fbf8f4] shadow-[0_18px_30px_-10px_rgba(0,0,0,0.6)]">
           <div className="flex h-7 items-center bg-[#2b2420] px-3 text-[9px] font-bold tracking-[0.16em] text-[#f0ebe6]">
-            PROFESSIONAL LICENSE
+            {t(locale, "verify.sampleCard")}
           </div>
           <div className="absolute left-[13px] top-10 flex h-[74px] w-[58px] items-end justify-center overflow-hidden rounded-[9px] bg-[#e8e1da] text-[42px] leading-none">
             🧑‍⚕️
@@ -61,13 +78,13 @@ function Viewfinder({ previewUrl, fileName }: { previewUrl: string | null; fileN
       )}
 
       <span className="absolute bottom-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/18 px-3 py-1.5 text-[12.5px] font-semibold text-white shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.3)] backdrop-blur-md">
-        {previewUrl || fileName ? "Looks good? Submit below." : "Fit the card inside the corners"}
+        {t(locale, previewUrl || fileName ? "verify.looksGood" : "verify.fitCard")}
       </span>
     </div>
   );
 }
 
-export function VerifyForm({ setup, locked }: { setup: boolean; locked: boolean }) {
+export function VerifyForm({ setup, locked, locale }: { setup: boolean; locked: boolean; locale: Locale }) {
   const [state, setState] = useState<ProfileFormState>(undefined);
   const [isPending, startTransition] = useTransition();
   const [file, setFile] = useState<File | null>(null);
@@ -86,6 +103,14 @@ export function VerifyForm({ setup, locked }: { setup: boolean; locked: boolean 
     if (!picked) return;
     setState(undefined);
     if (picked.type === "application/pdf") {
+      // A PDF can't be shrunk client-side, and Vercel rejects request
+      // bodies over ~4.5MB before the action ever runs.
+      if (picked.size > 4_000_000) {
+        setFile(null);
+        setPreviewUrl(null);
+        setState({ error: t(locale, "verify.errorPdfSize") });
+        return;
+      }
       setFile(picked);
       setPreviewUrl(null);
       return;
@@ -94,7 +119,7 @@ export function VerifyForm({ setup, locked }: { setup: boolean; locked: boolean 
     // same conversion the profile photo picker already uses.
     setConverting(true);
     try {
-      const uploadable = await toUploadableImage(picked);
+      const uploadable = await shrinkImageForUpload(await toUploadableImage(picked));
       setFile(uploadable);
       setPreviewUrl(URL.createObjectURL(uploadable));
     } catch {
@@ -120,18 +145,20 @@ export function VerifyForm({ setup, locked }: { setup: boolean; locked: boolean 
     <form action={handleSubmit} className="flex flex-1 flex-col">
       {setup && <input type="hidden" name="setup" value="1" />}
 
-      <Viewfinder previewUrl={previewUrl} fileName={file && !previewUrl ? file.name : null} />
+      <Viewfinder previewUrl={previewUrl} fileName={file && !previewUrl ? file.name : null} locale={locale} />
 
       <div className="mt-3 grid grid-cols-2 gap-2.5" aria-disabled={locked}>
         <label className={`${PICK} bg-accent text-accent-foreground ${locked ? "pointer-events-none opacity-50" : ""}`}>
           <CameraGlyph />
-          {converting ? "Converting…" : file ? "Retake" : "Take Photo"}
+          {converting
+            ? t(locale, "onboarding.converting")
+            : t(locale, file ? "verify.retake" : "verify.takePhoto")}
           {/* capture opens the rear camera directly on phones; desktop
               browsers ignore it and show a file picker. */}
           <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={handlePicked} disabled={locked} />
         </label>
         <label className={`${PICK} bg-muted/15 text-accent ${locked ? "pointer-events-none opacity-50" : ""}`}>
-          Choose File
+          {t(locale, "verify.chooseFile")}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf"
@@ -142,24 +169,28 @@ export function VerifyForm({ setup, locked }: { setup: boolean; locked: boolean 
         </label>
       </div>
 
-      <GroupHeader>We accept</GroupHeader>
+      <GroupHeader>{t(locale, "verify.weAccept")}</GroupHeader>
       <GroupedList>
         {ACCEPTED.map((a) => (
-          <div key={a.label} className="ios-row-icon flex min-h-[50px] items-center gap-3 px-4 text-[17px] text-text">
+          <div key={a.key} className="ios-row-icon flex min-h-[50px] items-center gap-3 px-4 text-[17px] text-text">
             <span aria-hidden className="flex size-[30px] items-center justify-center rounded-lg text-[15px]" style={{ background: a.color }}>
               {a.glyph}
             </span>
-            {a.label}
+            {t(locale, a.key)}
           </div>
         ))}
       </GroupedList>
-      <GroupFooter>🔒 Never shown on your profile. Only our review team sees it.</GroupFooter>
+      <GroupFooter>{t(locale, "verify.privacy")}</GroupFooter>
 
       {state?.error && <FormError>{state.error}</FormError>}
 
       <div className="mt-auto pt-8">
-        <CapsuleSubmit pending={isPending} disabled={!file || converting || locked}>
-          Submit for Review
+        <CapsuleSubmit
+          pending={isPending}
+          disabled={!file || converting || locked}
+          pendingLabel={t(locale, "flow.pleaseWait")}
+        >
+          {t(locale, "verify.submit")}
         </CapsuleSubmit>
       </div>
     </form>

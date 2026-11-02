@@ -20,13 +20,19 @@ export function FlowScreen({
   nav,
   children,
   footer,
+  dir,
+  lang,
 }: {
   nav?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  /** Only needed where the page's language differs from <html dir> — the
+   *  signed-out sign-up page, whose language toggle is local state. */
+  dir?: "ltr" | "rtl";
+  lang?: string;
 }) {
   return (
-    <div className="relative z-0 min-h-dvh bg-bg">
+    <div dir={dir} lang={lang} className="flow-screen relative z-0 min-h-dvh bg-bg">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-[calc(0.5rem+env(safe-area-inset-top))]">
         {nav && <div className="flex h-[52px] items-center justify-between">{nav}</div>}
         <div className="flex flex-1 flex-col">{children}</div>
@@ -41,7 +47,7 @@ const GLASS_CIRCLE =
 
 export function ChevronLeft() {
   return (
-    <svg width="11" height="19" viewBox="0 0 11 19" aria-hidden>
+    <svg width="11" height="19" viewBox="0 0 11 19" aria-hidden className="rtl:-scale-x-100">
       <path d="M9.5 1.5 2 9.5l7.5 8" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -49,13 +55,13 @@ export function ChevronLeft() {
 
 export function ChevronRight() {
   return (
-    <svg width="8" height="13" viewBox="0 0 8 13" aria-hidden className="text-muted/60">
+    <svg width="8" height="13" viewBox="0 0 8 13" aria-hidden className="text-muted/60 rtl:-scale-x-100">
       <path d="M1.5 1.5 6.5 6.5l-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-export function GlassBackLink({ href, label = "Back" }: { href: string; label?: string }) {
+export function GlassBackLink({ href, label }: { href: string; label: string }) {
   return (
     <Link href={href} aria-label={label} className={GLASS_CIRCLE}>
       <ChevronLeft />
@@ -91,14 +97,14 @@ export function GlassPillLink({ href, children }: { href: string; children: Reac
   );
 }
 
-export function StepProgress({ step, total = 3 }: { step: number; total?: number }) {
+export function StepProgress({ step, total = 3, label }: { step: number; total?: number; label: string }) {
   return (
     <div
       role="progressbar"
       aria-valuemin={1}
       aria-valuemax={total}
       aria-valuenow={step}
-      aria-label={`Step ${step} of ${total}`}
+      aria-label={label}
       className="flex gap-[5px]"
     >
       {Array.from({ length: total }, (_, i) => (
@@ -152,7 +158,7 @@ export function InputRow({
 }) {
   return (
     <label className={clsx(ROW, "gap-2 focus-within:bg-accent-soft/40")}>
-      <span className="shrink-0" style={{ width: labelWidth }}>
+      <span className="shrink-0 whitespace-nowrap" style={{ minWidth: labelWidth }}>
         {label}
       </span>
       <input
@@ -181,9 +187,9 @@ export function SelectRow({
   placeholder?: string;
 }) {
   return (
-    <label className={clsx(ROW, "gap-3 focus-within:bg-accent-soft/40", props.disabled && "opacity-50")}>
+    <label className={clsx(ROW, "relative gap-3 focus-within:bg-accent-soft/40", props.disabled && "opacity-50")}>
       <span className="shrink-0">{label}</span>
-      <span className={clsx("ml-auto flex min-w-0 items-center gap-2", display ? "text-muted" : "text-muted/60")}>
+      <span className={clsx("ms-auto flex min-w-0 items-center gap-2", display ? "text-muted" : "text-muted/60")}>
         <span className="truncate">{display || placeholder}</span>
         <ChevronRight />
       </span>
@@ -280,7 +286,7 @@ export function PictureTile({
         selected && "ring-[2.5px] ring-inset ring-accent",
         compact
           ? "flex h-[78px] flex-col items-center justify-center gap-1 px-1 text-center"
-          : "h-[72px] px-2 py-2.5 text-left",
+          : "h-[72px] px-2 py-2.5 text-start",
         className,
       )}
     >
@@ -289,7 +295,7 @@ export function PictureTile({
           <span aria-hidden className="text-[26px] leading-none">{art}</span>
           <span className="text-[11.5px] font-semibold leading-tight tracking-[-0.01em] text-accent">{label}</span>
           {selected && (
-            <span className="absolute right-1.5 top-1.5">
+            <span className="absolute end-1.5 top-1.5">
               <CheckCircle size={17} />
             </span>
           )}
@@ -297,11 +303,11 @@ export function PictureTile({
       ) : (
         <>
           <span className="relative z-[2] block text-[13px] font-semibold leading-tight tracking-[-0.02em] text-accent">{label}</span>
-          <span aria-hidden className="absolute -right-0.5 bottom-0 z-[1] rotate-[-8deg] text-[28px] leading-none">
+          <span aria-hidden className="absolute -end-0.5 bottom-0 z-[1] rotate-[-8deg] text-[28px] leading-none">
             {art}
           </span>
           {selected && (
-            <span className="absolute bottom-2 left-2.5 z-[3]">
+            <span className="absolute bottom-2 start-2.5 z-[3]">
               <CheckCircle size={22} />
             </span>
           )}
@@ -320,16 +326,19 @@ export function CapsuleSubmit({
   children,
   pending: pendingOverride,
   disabled,
+  pendingLabel,
 }: {
   children: ReactNode;
   pending?: boolean;
   disabled?: boolean;
+  /** Shown while submitting, in the page's language. */
+  pendingLabel: string;
 }) {
   const status = useFormStatus();
   const pending = pendingOverride ?? status.pending;
   return (
     <button type="submit" disabled={pending || disabled} className={CAPSULE}>
-      {pending ? "Please wait…" : children}
+      {pending ? pendingLabel : children}
     </button>
   );
 }
