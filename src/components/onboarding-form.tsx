@@ -1,68 +1,134 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { updateProfileAction, type ProfileFormState } from "@/app/actions/profile";
-import { ROLES } from "@/lib/roles";
-import { COUNTRIES } from "@/lib/countries";
+import { useEffect, useState, useTransition } from "react";
+import {
+  checkHandleAction,
+  updateProfileAction,
+  type HandleAvailability,
+  type ProfileFormState,
+} from "@/app/actions/profile";
+import { ROLE_GROUPS, roleGroupFor, ROLES, type RoleGroup } from "@/lib/roles";
+import { COUNTRIES, countryName } from "@/lib/countries";
 import { citiesForCountry } from "@/lib/cities";
+import { SPECIALTIES } from "@/lib/specialties";
 import { toUploadableImage } from "@/lib/heic";
-import { TextField } from "@/components/ui/text-field";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { Avatar } from "@/components/avatar";
 import { AvatarCropper } from "@/components/avatar-cropper";
-import { LICENSE_VERIFICATION_ENABLED } from "@/lib/verification";
+import {
+  CapsuleSubmit,
+  FormError,
+  GroupFooter,
+  GroupHeader,
+  GroupedList,
+  InputRow,
+  PictureTile,
+  SegmentedControl,
+  SelectRow,
+} from "@/components/ui/ios";
 import type { Profile } from "@/lib/database.types";
+
+/** "Jane Doe, PharmD" → "jane_doe" — a starting point the member can edit. */
+function suggestHandle(fullName: string | null): string {
+  return (fullName ?? "")
+    .split(",")[0]
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 24);
+}
+
+function HandleStatus({ status }: { status: HandleAvailability | "checking" | null }) {
+  if (status === "available") {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" role="img" aria-label="Handle is available" className="shrink-0 text-positive">
+        <circle cx="12" cy="12" r="11" fill="currentColor" />
+        <path d="m7 12.3 3.3 3.2L17 8.8" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (status === "taken") {
+    return <span className="shrink-0 text-[13px] font-medium text-danger">Taken</span>;
+  }
+  return null;
+}
 
 export function OnboardingForm({
   profile,
-  documentUploadAvailable,
-  resubmissionLocked = false,
+  isEdit,
+  children,
 }: {
   profile: Profile;
-  /** False on a project that hasn't applied 0027 yet — hides the upload
-   *  section entirely rather than showing a control that would silently
-   *  no-op, and it reappears on its own once the migration lands. */
-  documentUploadAvailable: boolean;
-  /** True only when rejected and out of resubmission attempts (0033) — the
-   *  document upload is disabled so the only submit that can go through is
-   *  one that doesn't touch it, since the server-side trigger would reject
-   *  a resubmission attempt anyway. Everything else (name, handle,
-   *  specialty, photo) stays editable. */
-  resubmissionLocked?: boolean;
+  isEdit: boolean;
+  /** Extra rows shown under the form on Edit Profile (interests, verification). */
+  children?: React.ReactNode;
 }) {
   const [state, setState] = useState<ProfileFormState>(undefined);
   const [isPending, startTransition] = useTransition();
+
+  // --- Photo (pick → optional HEIC conversion → crop) ---
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  // The actual cropped photo to upload, held directly rather than pushed
-  // back into the file input's own .files — see handleSubmit for why.
+  // The cropped photo to upload, held directly rather than pushed back into
+  // the file input's .files — WebKit's support for writing .files via a
+  // DataTransfer is inconsistent and silently broke uploads before, so
+  // handleSubmit sets it on the FormData instead.
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [convertingAvatar, setConvertingAvatar] = useState(false);
-  // Set the moment a photo is picked (post-HEIC-conversion), cleared once the
-  // crop step finishes or is cancelled — this is what tells the cropper
-  // modal to open, and what it crops.
   const [cropSource, setCropSource] = useState<string | null>(null);
-  // Drives which cities the picker below offers — city is scoped to
-  // whichever country is currently selected, not a fixed list, so this has
-  // to be state rather than an uncontrolled defaultValue like the rest of
-  // this form's simpler fields.
+
+  // --- Handle ---
+  const [handle, setHandle] = useState(profile.handle ?? suggestHandle(profile.full_name));
+  // Result of the last live availability check, keyed by the handle it was
+  // for, so the badge never shows a stale answer for a different value.
+  const [checked, setChecked] = useState<{ handle: string; result: HandleAvailability } | null>(null);
+  const normalizedHandle = handle.trim().toLowerCase();
+  const handleNeedsCheck =
+    normalizedHandle.length >= 3 && !(profile.handle && normalizedHandle === profile.handle);
+  const handleStatus: HandleAvailability | "checking" | null = !handleNeedsCheck
+    ? null
+    : checked?.handle === normalizedHandle
+      ? checked.result
+      : "checking";
+
+  // --- Role: picture tile first, then the exact title inside it ---
+  const storedRoleIsListed = ROLES.includes(profile.role as (typeof ROLES)[number]);
+  const [group, setGroup] = useState<RoleGroup | null>(roleGroupFor(profile.role));
+  const [role, setRole] = useState<string>(
+    profile.role ? (storedRoleIsListed ? profile.role : "Other") : "",
+  );
+  const [roleOther, setRoleOther] = useState(profile.role && !storedRoleIsListed ? profile.role : "");
+
+  // --- Location ---
   const [countryCode, setCountryCode] = useState(profile.country_code ?? "");
   const availableCities = citiesForCountry(countryCode);
-  // A previously saved city that isn't in this country's curated list (typed
-  // before "Other" existed, or just a smaller city that isn't in the
-  // curated set) opens straight into "Other" with that value already
-  // filled in, rather than silently losing it.
   const isCustomCity = Boolean(profile.city) && !availableCities.includes(profile.city!);
   const [cityValue, setCityValue] = useState(isCustomCity ? "__other__" : (profile.city ?? ""));
-  // Same idea for role — the dropdown can never cover every healthcare
-  // title, so a stored value outside the list opens into "Other" with the
-  // real text preserved instead of just vanishing.
-  const isCustomRole = Boolean(profile.role) && !ROLES.includes(profile.role as (typeof ROLES)[number]);
-  const [roleValue, setRoleValue] = useState(isCustomRole ? "Other" : (profile.role ?? ""));
+  const [cityOther, setCityOther] = useState(isCustomCity ? (profile.city ?? "") : "");
+
+  useEffect(() => {
+    if (!handleNeedsCheck) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const result = await checkHandleAction(normalizedHandle);
+      if (!cancelled) setChecked({ handle: normalizedHandle, result });
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [normalizedHandle, handleNeedsCheck]);
+
+  function pickGroup(next: RoleGroup) {
+    setGroup(next);
+    // One option (Dentist): that's the role. Otherwise keep the current
+    // pick if it belongs to this group, else wait for the member to choose.
+    if (next.options.length === 1) setRole(next.options[0].role);
+    else if (!next.options.some((o) => o.role === role)) setRole("");
+  }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setConvertingAvatar(true);
     try {
       const uploadable = await toUploadableImage(file);
@@ -86,131 +152,139 @@ export function OnboardingForm({
     setCropSource(null);
   }
 
-  // A plain function passed as the form's action, not useActionState — the
-  // picked-and-cropped photo has to override whatever the hidden file
-  // input's own .files holds, and that input's .files can only be set two
-  // ways: the browser's own picker, or reassigning it via a DataTransfer.
-  // The DataTransfer route is exactly what the HEIC-conversion step already
-  // did before this, and it's what silently broke a real photo upload on at
-  // least one device — WebKit's support for writing to .files this way is
-  // inconsistent, so the safer fix is to never touch the input's .files at
-  // all and instead override the "avatar" entry directly on the FormData
-  // this function already receives (every other field's current value is
-  // still read the normal way, straight off the DOM).
   function handleSubmit(formData: FormData) {
-    if (avatarFile) {
-      formData.set("avatar", avatarFile, avatarFile.name);
-    }
+    if (avatarFile) formData.set("avatar", avatarFile, avatarFile.name);
     startTransition(async () => {
       const result = await updateProfileAction(state, formData);
       setState(result);
     });
   }
 
+  const hasPhoto = Boolean(avatarPreview ?? profile.avatar_url);
+  const segmented = group && group.options.length > 1 && group.options.length <= 4;
+  const picker = group && group.options.length > 4;
+
   return (
-    <form action={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col items-center gap-2">
-        <Avatar
-          avatarUrl={avatarPreview ?? profile.avatar_url}
-          name={profile.full_name}
-          size="lg"
-        />
-        <label
-          htmlFor="avatar-picker"
-          className="cursor-pointer text-sm font-medium text-accent"
-        >
-          {profile.avatar_url ? "Change photo" : "Add a photo"}
+    <form action={handleSubmit} className="flex flex-1 flex-col">
+      <input type="hidden" name="role" value={role} />
+
+      <div className="flex items-center gap-3.5">
+        <label className="flex shrink-0 cursor-pointer flex-col items-center gap-1.5">
+          <Avatar avatarUrl={avatarPreview ?? profile.avatar_url} name={profile.full_name} size="lg" />
+          <span className="text-[13px] font-semibold text-accent-2">
+            {convertingAvatar ? "Converting…" : hasPhoto ? "Change Photo" : "Add Photo"}
+          </span>
+          {/* No name — this only feeds the crop step; handleSubmit sets the
+              cropped file on the FormData itself. */}
+          <input type="file" accept="image/*,.heic,.heif" className="sr-only" onChange={handleAvatarChange} />
         </label>
-        {/* No name/required — this only ever feeds the crop step. The file
-            that actually gets submitted is whatever handleSubmit sets on
-            the FormData above, not this input's own value. */}
-        <input
-          id="avatar-picker"
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="hidden"
-          onChange={handleAvatarChange}
-        />
-        {convertingAvatar && (
-          <p className="text-xs text-muted">Converting photo…</p>
-        )}
-        {cropSource && (
-          <AvatarCropper
-            imageSrc={cropSource}
-            onCancel={handleCropCancel}
-            onCropped={handleCropped}
-          />
-        )}
-      </div>
-      <TextField
-        label="Full name"
-        name="full_name"
-        defaultValue={profile.full_name ?? ""}
-        placeholder="Jane Doe, PharmD"
-        required
-      />
-      <TextField
-        label="Handle"
-        name="handle"
-        defaultValue={profile.handle ?? ""}
-        placeholder="jane_pharmd"
-        pattern="[a-zA-Z0-9_]+"
-        minLength={3}
-        required
-      />
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="role"
-          className="font-label text-xs uppercase tracking-wide text-muted"
-        >
-          Role
-        </label>
-        <select
-          id="role"
-          name="role"
-          value={roleValue}
-          onChange={(e) => setRoleValue(e.target.value)}
-          required
-          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
-        >
-          <option value="" disabled>
-            Select a role
-          </option>
-          {ROLES.map((role) => (
-            <option key={role} value={role}>
-              {role}
-            </option>
-          ))}
-        </select>
-        {roleValue === "Other" && (
-          <TextField
-            label="What's your role?"
-            name="role_other"
-            defaultValue={isCustomRole ? (profile.role ?? "") : ""}
-            placeholder="e.g. Clinical Research Coordinator"
+        <GroupedList className="flex-1">
+          <InputRow
+            label="Name"
+            labelWidth={64}
+            name="full_name"
+            defaultValue={profile.full_name ?? ""}
+            placeholder="Jane Doe, PharmD"
+            autoComplete="name"
             required
           />
-        )}
+          <InputRow
+            label="Handle"
+            labelWidth={64}
+            name="handle"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+            placeholder="jane_pharmd"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            minLength={3}
+            required
+            trailing={<HandleStatus status={handleStatus} />}
+          />
+        </GroupedList>
       </div>
-      <TextField
-        label="Specialty"
-        name="specialty"
-        defaultValue={profile.specialty ?? ""}
-        placeholder="Internal Medicine"
-      />
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="country_code"
-          className="font-label text-xs uppercase tracking-wide text-muted"
-        >
-          Country
-        </label>
-        <select
-          id="country_code"
+      {cropSource && (
+        <AvatarCropper imageSrc={cropSource} onCancel={handleCropCancel} onCropped={handleCropped} />
+      )}
+
+      <GroupHeader>Role</GroupHeader>
+      <div className="grid grid-cols-3 gap-2">
+        {ROLE_GROUPS.map((g) => (
+          <PictureTile
+            key={g.id}
+            label={g.label}
+            art={g.art}
+            tint={g.tint}
+            selected={group?.id === g.id}
+            onClick={() => pickGroup(g)}
+          />
+        ))}
+      </div>
+
+      {segmented && (
+        <div className="mt-3">
+          <SegmentedControl
+            label={`${group.label} type`}
+            options={group.options.map((o) => ({ value: o.role, label: o.short }))}
+            value={role || null}
+            onChange={setRole}
+          />
+        </div>
+      )}
+
+      {(picker || role === "Other") && (
+        <GroupedList className="mt-3">
+          {picker && (
+            <SelectRow
+              label="Title"
+              display={group.options.find((o) => o.role === role)?.short ?? null}
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="" disabled>
+                Choose
+              </option>
+              {group.options.map((o) => (
+                <option key={o.role} value={o.role}>
+                  {o.short}
+                </option>
+              ))}
+            </SelectRow>
+          )}
+          {role === "Other" && (
+            <InputRow
+              label="Your role"
+              labelWidth={96}
+              name="role_other"
+              value={roleOther}
+              onChange={(e) => setRoleOther(e.target.value)}
+              placeholder="e.g. Research Coordinator"
+              required
+            />
+          )}
+        </GroupedList>
+      )}
+
+      <GroupedList className="mt-4">
+        <InputRow
+          label="Specialty"
+          labelWidth={96}
+          name="specialty"
+          list="specialty-options"
+          defaultValue={profile.specialty ?? ""}
+          placeholder="Optional"
+        />
+        <SelectRow
+          label="Country"
           name="country_code"
+          display={countryName(countryCode)}
+          placeholder="Prefer not to say"
           value={countryCode}
-          onChange={(e) => setCountryCode(e.target.value)}
-          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none"
+          onChange={(e) => {
+            setCountryCode(e.target.value);
+            setCityValue("");
+          }}
         >
           <option value="">Prefer not to say</option>
           {COUNTRIES.map((c) => (
@@ -218,94 +292,51 @@ export function OnboardingForm({
               {c.name}
             </option>
           ))}
-        </select>
-        <p className="text-xs text-muted">
-          Where you practice, not a hospital or unit — this is what tags
-          your cases in the Global Case Exchange, so it can&apos;t be
-          changed per post.
-        </p>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="city"
-          className="font-label text-xs uppercase tracking-wide text-muted"
-        >
-          City (optional)
-        </label>
-        <select
-          id="city"
+        </SelectRow>
+        <SelectRow
+          label="City"
           name="city"
+          display={cityValue === "__other__" ? "Other" : cityValue || null}
+          placeholder={countryCode ? "Optional" : "Choose a country first"}
           value={cityValue}
-          onChange={(e) => setCityValue(e.target.value)}
           disabled={!countryCode}
-          className="rounded-lg border border-line bg-surface px-3.5 py-2.5 text-text focus:border-accent focus:outline-none disabled:opacity-50"
+          onChange={(e) => setCityValue(e.target.value)}
         >
           <option value="">Prefer not to say</option>
-          {availableCities.map((city) => (
-            <option key={city} value={city}>
-              {city}
+          {availableCities.map((c) => (
+            <option key={c} value={c}>
+              {c}
             </option>
           ))}
           <option value="__other__">Other — type it in</option>
-        </select>
-        {!countryCode && (
-          <p className="text-xs text-muted">Choose a country first.</p>
-        )}
+        </SelectRow>
         {cityValue === "__other__" && (
-          <TextField
-            label="City"
+          <InputRow
+            label="City name"
+            labelWidth={96}
             name="city_other"
-            defaultValue={isCustomCity ? (profile.city ?? "") : ""}
+            value={cityOther}
+            onChange={(e) => setCityOther(e.target.value)}
             placeholder="Type your city"
           />
         )}
+      </GroupedList>
+      <datalist id="specialty-options">
+        {SPECIALTIES.map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
+      <GroupFooter>Your country tags your cases in the Global Case Exchange.</GroupFooter>
+
+      {children}
+
+      {state?.error && <FormError>{state.error}</FormError>}
+
+      <div className="mt-auto pt-8">
+        <CapsuleSubmit pending={isPending} disabled={!role || handleStatus === "taken"}>
+          {isEdit ? "Save" : "Continue"}
+        </CapsuleSubmit>
       </div>
-      {/* Already-verified members never see this — nothing left to verify,
-          so re-showing (and requiring) a document on a routine profile edit
-          would just be friction. Stays visible for first-time onboarding
-          and for a rejected member's resubmission, since both are still
-          verified === false. Hidden outright while LICENSE_VERIFICATION_ENABLED
-          is off (see src/lib/verification.ts). No license-number field — a
-          reviewed document is the only thing that actually verifies anyone;
-          a self-reported number next to it never did. */}
-      {LICENSE_VERIFICATION_ENABLED && !profile.verified && documentUploadAvailable && (
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="license_document"
-            className="font-label text-xs uppercase tracking-wide text-muted"
-          >
-            Proof of license or enrollment
-          </label>
-          <input
-            id="license_document"
-            name="license_document"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            // Lets a phone offer "Take Photo" alongside the usual file
-            // picker — the common case here is a license card or student ID
-            // nobody already has scanned, not a file sitting in storage.
-            capture="environment"
-            required={!profile.license_document_path}
-            disabled={resubmissionLocked}
-            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-text disabled:opacity-50"
-          />
-          <p className="text-xs text-muted">
-            {resubmissionLocked
-              ? "Locked until your next resubmission window opens — see above."
-              : profile.license_document_path
-                ? "Document on file — choose a new one only if you need to replace it."
-                : "A photo or PDF of your professional license or student ID. Reviewed manually, never shown publicly."}
-          </p>
-        </div>
-      )}
-      {state?.error && (
-        <p className="text-sm text-danger" role="alert">
-          {state.error}
-        </p>
-      )}
-      <SubmitButton disabled={convertingAvatar} pending={isPending}>
-        Save profile
-      </SubmitButton>
     </form>
   );
 }

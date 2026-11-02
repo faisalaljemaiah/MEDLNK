@@ -35,8 +35,20 @@ export default async function MessagesPage({
         <p className="mt-2 text-sm text-muted">
           {profile?.verification_status === "rejected"
             ? t(locale, "messages.verificationRejected")
-            : t(locale, "messages.verificationPending")}
+            : !profile?.license_document_path
+              ? t(locale, "messages.verificationNoDocument")
+              : t(locale, "messages.verificationPending")}
         </p>
+        {(profile?.verification_status === "rejected" || !profile?.license_document_path) && (
+          <Link
+            href="/onboarding/verify"
+            className="mt-5 inline-flex h-11 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-accent-foreground transition-transform duration-150 ease-out active:scale-[0.97]"
+          >
+            {profile?.verification_status === "rejected"
+              ? t(locale, "verification.resubmit")
+              : t(locale, "verification.getVerified")}
+          </Link>
+        )}
       </div>
     );
   }

@@ -144,6 +144,8 @@ export type Profile = {
   deleted_at: string | null;
   /** Set by api/cron/follower-digest after each send — see that route. */
   last_follower_digest_at: string | null;
+  /** Slugs from src/lib/interests.ts (0044). */
+  interests: string[];
   created_at: string;
 };
 

@@ -673,3 +673,80 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Stamped headline — Gloock (src/lib/fonts.ts, OFL) with the same sparse
+ * ink-fleck texture as the logo mark, cut out of the glyphs with a noise
+ * mask so it works in any text color and in dark mode. Big titles only
+ * (about 30px and up); at small sizes the flecks just read as broken
+ * letters. Used by the sign-up flow (StampTitle, src/components/ui/ios.tsx).
+ */
+.font-stamp {
+  font-family: var(--font-stamp), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.04;
+}
+.stamp-ink {
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.22' numOctaves='4' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -11 8.1'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.22' numOctaves='4' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -11 8.1'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  -webkit-mask-size: 260px;
+  mask-size: 260px;
+}
+
+/*
+ * Picture tiles on the sign-up role and interest pickers. --tile is the
+ * light-mode wash from src/lib/interests.ts / ROLE_GROUPS; dark mode keeps
+ * the hue but drops it to a low-opacity tint over --surface so the tiles
+ * don't glow on a dark background.
+ */
+.picture-tile {
+  background: var(--tile);
+}
+@media (prefers-color-scheme: dark) {
+  .picture-tile {
+    background: color-mix(in srgb, var(--tile) 16%, var(--surface));
+  }
+}
+
+/* Frosted round control (back button, Sign In) — Apple's glass material. */
+.glass-control {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 90%, transparent),
+    0 2px 10px rgb(var(--shadow-tint) / 0.1),
+    0 0 0 0.5px rgb(var(--shadow-tint) / 0.08);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-control {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * iOS inset grouped list (src/components/ui/ios.tsx) — hairline separators
+ * inset from the leading edge, like Settings. Rows with a leading icon tile
+ * inset the separator past the icon instead.
+ */
+.ios-list > * {
+  position: relative;
+}
+.ios-list > * + *::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 0;
+  height: 1px;
+  transform: scaleY(0.5);
+  transform-origin: top;
+  background: var(--line);
+  pointer-events: none;
+}
+.ios-list > .ios-row-icon + .ios-row-icon::before {
+  left: 58px;
+}

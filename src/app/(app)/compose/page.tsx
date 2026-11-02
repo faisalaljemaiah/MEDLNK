@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getViewer, getViewerProfile } from "@/lib/auth";
 import { ComposeForm } from "@/components/compose-form";
 import { caseTypeMeta } from "@/lib/case-types";
@@ -25,8 +26,20 @@ export default async function ComposePage({
         <p className="mt-2 text-sm text-muted">
           {profile?.verification_status === "rejected"
             ? t(locale, "messages.verificationRejected")
-            : t(locale, "compose.verificationPendingCase")}
+            : !profile?.license_document_path
+              ? t(locale, "compose.verificationNoDocument")
+              : t(locale, "compose.verificationPendingCase")}
         </p>
+        {(profile?.verification_status === "rejected" || !profile?.license_document_path) && (
+          <Link
+            href="/onboarding/verify"
+            className="mt-5 inline-flex h-11 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-accent-foreground transition-transform duration-150 ease-out active:scale-[0.97]"
+          >
+            {profile?.verification_status === "rejected"
+              ? t(locale, "verification.resubmit")
+              : t(locale, "verification.getVerified")}
+          </Link>
+        )}
       </div>
     );
   }

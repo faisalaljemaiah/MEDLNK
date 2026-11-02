@@ -181,6 +181,10 @@ async function VerificationQueue({
     .from("profiles")
     .select("*")
     .eq("verification_status", "pending")
+    // Members who tapped "I'll Do It Later" on sign-up are pending with no
+    // document yet — nothing to review until they upload one from
+    // /onboarding/verify.
+    .not("license_document_path", "is", null)
     .order("created_at", { ascending: true });
 
   if (!pending || pending.length === 0) {

@@ -18,7 +18,14 @@ export async function signUpAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const fullName = String(formData.get("full_name") ?? "").trim();
+  // The sign-up form asks for first and last name separately; profiles
+  // still has a single full_name column, so they're joined here. full_name
+  // is still accepted for any older client that posts it directly.
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const lastName = String(formData.get("last_name") ?? "").trim();
+  const fullName =
+    [firstName, lastName].filter(Boolean).join(" ") ||
+    String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const rawLocale = String(formData.get("locale") ?? "");
@@ -30,7 +37,7 @@ export async function signUpAction(
   const locale = LOCALES.some((l) => l.value === rawLocale) ? rawLocale : "en";
 
   if (!fullName) {
-    return { error: "Your name is required." };
+    return { error: "Your first and last name are required." };
   }
   if (!email || !password) {
     return { error: "Email and password are required." };
