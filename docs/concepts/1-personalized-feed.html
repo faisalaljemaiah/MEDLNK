@@ -1,0 +1,300 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f6f8fc; --surface: #fff; --line: #e3e8f0; --text: #10203a;
+    --muted: #8792a3; --muted-2: #5b6576; --accent: #0f766e; --accent-soft: #e4f3f1;
+    --purple: #7c3aed; --amber: #b45309;
+  }
+  html, body {
+    width: 1320px; height: 1000px; background: #e9edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text); overflow: hidden;
+  }
+  .canvas { display: flex; gap: 44px; justify-content: center; align-items: center; height: 100%; }
+  .phone {
+    width: 393px; height: 852px; background: var(--bg); border-radius: 46px; overflow: hidden;
+    position: relative; box-shadow: 0 30px 60px -20px rgba(16,32,58,0.28), 0 0 0 8px #fff;
+  }
+  .phone.mid { transform: translateY(-24px); }
+  .status { height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; font-size: 15px; font-weight: 600; }
+  .label { position: absolute; bottom: -34px; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--muted-2); font-weight: 600; }
+
+  /* shared bits */
+  .wordmark { font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; font-size: 13px; }
+  .circle-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(16,32,58,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 14px rgba(16,32,58,0.22); }
+  .circle-btn svg { width: 18px; height: 18px; }
+  .dot { position: absolute; top: 8px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 0; }
+  .mark { background: linear-gradient(transparent 58%, #bfe6e0 58%); padding: 0 2px; }
+  .av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; }
+  .vb { width: 13px; height: 13px; margin-left: 4px; }
+  .nav { position: absolute; left: 16px; right: 16px; bottom: 24px; height: 56px; background: rgba(255,255,255,0.55); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.7); border-radius: 999px; display: flex; align-items: center; justify-content: space-around; box-shadow: 0 10px 30px -10px rgba(16,32,58,0.25); }
+  .nav .i { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--text); opacity: 0.45; }
+  .nav .i.on { opacity: 1; color: var(--accent); }
+  .nav .i svg { width: 21px; height: 21px; }
+  .nav .fab { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+  .nav .me { width: 22px; height: 22px; border-radius: 7px; background: #0b7c44; }
+
+  /* ---------- screen 1: interest picker ---------- */
+  .s1 { padding: 8px 22px 0; }
+  .steps { display: flex; gap: 6px; margin: 6px 0 22px; }
+  .steps span { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
+  .steps span.on { background: var(--accent); }
+  .s1 .kicker { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  .s1 h1 { font-size: 27px; line-height: 1.18; font-weight: 800; letter-spacing: -0.02em; margin: 6px 0 8px; }
+  .s1 .sub { font-size: 13.5px; color: var(--muted-2); line-height: 1.45; margin-bottom: 18px; }
+  .s1 h4 { font-size: 12px; font-weight: 700; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 9px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .chip.lock { background: var(--accent-soft); border-color: #bfe6e0; color: var(--accent); font-weight: 600; }
+  .s1 h1 { font-size: 25px; margin-bottom: 4px; }
+  .s1 .sub { margin-bottom: 14px; }
+  .s1 h4 { margin: 14px 0 8px; }
+  .spec { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 18px; background: linear-gradient(120deg, #0f766e, #14937f); color: #fff; }
+  .spec-art { width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .spec-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; font-weight: 600; }
+  .spec-n { font-size: 16px; font-weight: 700; }
+  .spec-lock { margin-left: auto; font-size: 11px; background: rgba(255,255,255,0.18); padding: 4px 9px; border-radius: 999px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile, .ct { position: relative; border-radius: 18px; background: linear-gradient(160deg, var(--t), var(--t2, var(--t))); border: 2px solid transparent; overflow: hidden; }
+  .tile { height: 88px; padding: 8px 10px; }
+  .tile .art { position: absolute; right: -4px; bottom: 8px; font-size: 40px; transform: rotate(-8deg); filter: drop-shadow(0 4px 6px rgba(16,32,58,0.15)); }
+  .tile .tl { position: relative; font-size: 12.5px; font-weight: 700; color: var(--text); }
+  .tile.on, .ct.on { border-color: var(--accent); box-shadow: 0 6px 16px -8px rgba(15,118,110,0.55); }
+  .ck { position: absolute; left: 9px; bottom: 9px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; z-index: 2; }
+  .ctypes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .ct { height: 76px; padding: 8px 6px; text-align: center; }
+  .ct .art { font-size: 26px; margin-top: 2px; }
+  .ct .tl { font-size: 10.5px; font-weight: 700; line-height: 1.2; margin-top: 3px; }
+  .ct .ck { left: auto; right: 5px; top: 5px; bottom: auto; width: 16px; height: 16px; font-size: 9px; }
+  .itiles { display: flex; gap: 9px; padding: 0 16px; overflow: hidden; }
+  .it { width: 112px; flex-shrink: 0; height: 128px; border-radius: 18px; position: relative; padding: 10px; background: linear-gradient(160deg, var(--t), var(--t2)); overflow: hidden; border: 2px solid transparent; }
+  .it.on { border-color: var(--accent); }
+  .it .art { position: absolute; right: -8px; bottom: 30px; font-size: 42px; transform: rotate(-8deg); filter: drop-shadow(0 4px 6px rgba(16,32,58,0.15)); }
+  .it .tl { font-size: 13px; font-weight: 700; position: relative; }
+  .it .tc { font-size: 10.5px; color: var(--muted-2); position: relative; margin-top: 1px; max-width: 70px; line-height: 1.25; }
+  .it .add { position: absolute; left: 10px; bottom: 10px; font-size: 11.5px; font-weight: 700; color: var(--accent); background: #fff; border-radius: 999px; padding: 4px 10px; }
+  .it.on .add { background: var(--accent); color: #fff; }
+  .s1 .foot { position: absolute; left: 22px; right: 22px; bottom: 30px; }
+  .s1 .count { font-size: 12.5px; color: var(--muted-2); text-align: center; margin-bottom: 10px; }
+  .s1 .count b { color: var(--accent); }
+  .btn { height: 50px; border-radius: 999px; background: var(--text); color: #fff; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+
+  /* ---------- screen 2: personalized home ---------- */
+  .greet { padding: 16px 16px 0; }
+  .greet .hi { font-size: 13px; color: var(--muted-2); }
+  .greet h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; margin-top: 2px; }
+  .continue { margin: 14px 16px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 11px; }
+  .continue .thumb { width: 42px; height: 42px; border-radius: 11px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+  .continue .t1 { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .continue .t2 { font-size: 13.5px; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .bar { height: 4px; border-radius: 4px; background: var(--line); margin-top: 7px; width: 220px; }
+  .bar i { display: block; height: 100%; width: 62%; background: var(--accent); border-radius: 4px; }
+  .filters { display: flex; gap: 7px; padding: 14px 16px 4px; overflow: hidden; }
+  .filters span { white-space: nowrap; font-size: 12.5px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted-2); }
+  .filters span.on { background: var(--text); border-color: var(--text); color: #fff; font-weight: 600; }
+  .row { border-bottom: 1px solid var(--line); padding: 14px 16px; }
+  .why { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--accent); font-weight: 600; margin-bottom: 9px; }
+  .why svg { width: 12px; height: 12px; }
+  .top { display: flex; align-items: center; gap: 8px; }
+  .nm { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; }
+  .mt { font-size: 11.5px; color: var(--muted); }
+  .cn { margin-left: auto; font-size: 11px; color: var(--muted); }
+  .row h3 { font-size: 15.5px; font-weight: 700; line-height: 1.3; margin-top: 9px; letter-spacing: -0.01em; }
+  .row p { font-size: 13px; color: var(--muted-2); line-height: 1.45; margin-top: 3px; }
+  .dive { font-size: 13px; font-weight: 600; color: var(--purple); margin-top: 8px; }
+  .rx { display: flex; gap: 6px; margin-top: 10px; }
+  .rx span { font-size: 11px; color: var(--muted-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 9px; }
+
+  /* ---------- screen 3: in-feed suggestion modules ---------- */
+  .module { margin: 0; padding: 16px 0 14px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .module .mh { display: flex; align-items: baseline; justify-content: space-between; padding: 0 16px; }
+  .module .mh b { font-size: 15px; font-weight: 700; }
+  .module .mh span { font-size: 12px; color: var(--accent); font-weight: 600; }
+  .module .ms { font-size: 12px; color: var(--muted); padding: 2px 16px 12px; }
+  .people { display: flex; gap: 10px; padding: 0 16px; overflow: hidden; }
+  .person { width: 128px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 16px; padding: 14px 10px 12px; text-align: center; background: var(--bg); }
+  .person .av { width: 46px; height: 46px; border-radius: 13px; margin: 0 auto 8px; font-size: 15px; }
+  .person .pn { font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .person .pr { font-size: 11px; color: var(--muted); margin: 2px 0 4px; }
+  .person .mutual { font-size: 10.5px; color: var(--muted-2); margin-bottom: 9px; }
+  .follow { height: 30px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .topics { display: flex; flex-direction: column; padding: 0 16px; }
+  .topic { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .topic:first-child { border-top: none; }
+  .topic .em { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .topic .tn { font-size: 13.5px; font-weight: 600; }
+  .topic .tc { font-size: 11.5px; color: var(--muted); }
+  .topic .add { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); border: 1px solid #bfe6e0; border-radius: 999px; padding: 5px 11px; }
+  .topic .add.on { background: var(--accent-soft); }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- ================= 1. INTEREST PICKER ================= -->
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+    <div class="s1">
+      <div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+      <div class="kicker">Step 2 of 3</div>
+      <h1>What do you want to <span class="mark">learn</span> from?</h1>
+      <div class="sub">This shapes your feed. Change it anytime.</div>
+
+      <div class="spec">
+        <div class="spec-art">&#128138;</div>
+        <div><div class="spec-k">Your specialty</div><div class="spec-n">Pharmacy</div></div>
+        <div class="spec-lock">From your profile</div>
+      </div>
+
+      <h4>Topics</h4>
+      <div class="tiles">
+        <div class="tile on" style="--t:#fff4e0;--t2:#ffe2b0"><span class="ck">&#10003;</span><div class="art">&#9888;&#65039;</div><div class="tl">Patient safety</div></div>
+        <div class="tile on" style="--t:#e8f6f3;--t2:#c4ebe3"><span class="ck">&#10003;</span><div class="art">&#128138;</div><div class="tl">Pharmacology</div></div>
+        <div class="tile" style="--t:#fdecee;--t2:#f9cdd3"><div class="art">&#129728;</div><div class="tl">Cardiology</div></div>
+        <div class="tile on" style="--t:#eaf1fe;--t2:#cddcfb"><span class="ck">&#10003;</span><div class="art">&#128172;</div><div class="tl">Communication</div></div>
+        <div class="tile" style="--t:#fff0ec;--t2:#fdd3c7"><div class="art">&#128657;</div><div class="tl">Emergency</div></div>
+        <div class="tile" style="--t:#effaea;--t2:#d3f0c6"><div class="art">&#129440;</div><div class="tl">Infectious</div></div>
+        <div class="tile" style="--t:#f3eefe;--t2:#ddd0fb"><div class="art">&#129504;</div><div class="tl">Neurology</div></div>
+        <div class="tile" style="--t:#fef6e6;--t2:#fbe6b8"><div class="art">&#128118;</div><div class="tl">Pediatrics</div></div>
+        <div class="tile on" style="--t:#e9f5fb;--t2:#c8e6f5"><span class="ck">&#10003;</span><div class="art">&#128300;</div><div class="tl">Diagnostics</div></div>
+      </div>
+
+      <h4>Case types</h4>
+      <div class="ctypes">
+        <div class="ct on" style="--t:#fff4e0"><span class="ck">&#10003;</span><div class="art">&#128680;</div><div class="tl">Near misses</div></div>
+        <div class="ct" style="--t:#f3eefe"><div class="art">&#128142;</div><div class="tl">Rare cases</div></div>
+        <div class="ct" style="--t:#eaf1fe"><div class="art">&#129300;</div><div class="tl">What would you do?</div></div>
+        <div class="ct" style="--t:#e8f6f3"><div class="art">&#9889;</div><div class="tl">Quick lessons</div></div>
+      </div>
+    </div>
+    <div class="foot s1">
+      <div class="count"><b>5 selected</b> &middot; pick at least 3</div>
+      <div class="btn">Continue</div>
+    </div>
+  </div>
+
+  <!-- ================= 2. PERSONALIZED HOME ================= -->
+  <div class="phone mid">
+    <div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+    <div class="header">
+      <div class="circle-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="wordmark">Asyashare</div>
+      <div class="circle-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="dot"></span></div>
+    </div>
+
+    <div class="greet">
+      <div class="hi">Good morning, Faisal</div>
+      <h2>Your <span class="mark">cases</span> for today</h2>
+    </div>
+
+    <div class="continue">
+      <div class="thumb">&#128214;</div>
+      <div>
+        <div class="t1">Continue reading</div>
+        <div class="t2">Anticoagulant dosing in renal impairment</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <span class="on">For you</span><span>Following</span><span>Pharmacology</span><span>Patient safety</span><span>Near misses</span>
+    </div>
+
+    <div class="row">
+      <div class="why"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Because you follow Patient safety</div>
+      <div class="top">
+        <div class="av" style="background:#b45309">SK</div>
+        <div><div class="nm">Sara Khalid<svg class="vb" viewBox="0 0 20 20" fill="#1d9bf0"><circle cx="10" cy="10" r="10"/><path d="M6 10.3l2.4 2.4L14 7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div><div class="mt">Clinical Pharmacist &middot; 3h</div></div>
+        <div class="cn">CASE-0092</div>
+      </div>
+      <h3>Look-alike vials almost reached the wrong patient</h3>
+      <p>Two potassium chloride concentrations stored side by side in the same drawer&hellip;</p>
+      <div class="dive">Let&rsquo;s dive deep &rarr;</div>
+      <div class="rx"><span>&#128161; 21</span><span>&#129504; 9</span><span>&#9888;&#65039; 14</span></div>
+    </div>
+
+    <div class="row">
+      <div class="why"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Dana R., who you follow, posted</div>
+      <div class="top">
+        <div class="av" style="background:#7c3aed">DR</div>
+        <div><div class="nm">Dana R.<svg class="vb" viewBox="0 0 20 20" fill="#1d9bf0"><circle cx="10" cy="10" r="10"/><path d="M6 10.3l2.4 2.4L14 7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div><div class="mt">Internal Medicine &middot; 1d</div></div>
+        <div class="cn">CASE-0071</div>
+      </div>
+      <h3>A Diagnostic Puzzle: The Early-Return Patient</h3>
+    </div>
+
+    <div class="nav">
+      <div class="i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></div>
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/></svg></div>
+      <div class="fab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2.5-7.5L3 11Z"/></svg></div>
+      <div class="i"><div class="me"></div></div>
+    </div>
+  </div>
+
+  <!-- ================= 3. IN-FEED SUGGESTIONS ================= -->
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+
+    <div class="row" style="padding-top:6px">
+      <div class="why"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg>Trending in Pharmacy this week</div>
+      <h3 style="margin-top:0">Vancomycin trough or AUC? What changed our practice</h3>
+      <div class="dive">Let&rsquo;s dive deep &rarr;</div>
+    </div>
+
+    <div class="module">
+      <div class="mh"><b>Clinicians you might know</b><span>See all</span></div>
+      <div class="ms">Based on your specialty and who you follow</div>
+      <div class="people">
+        <div class="person">
+          <div class="av" style="background:#0e7490">MA</div>
+          <div class="pn">Mohammed A.<svg class="vb" viewBox="0 0 20 20" fill="#1d9bf0"><circle cx="10" cy="10" r="10"/><path d="M6 10.3l2.4 2.4L14 7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+          <div class="pr">PharmD &middot; Riyadh</div>
+          <div class="mutual">Followed by Dana R.</div>
+          <div class="follow">Follow</div>
+        </div>
+        <div class="person">
+          <div class="av" style="background:#be185d">NH</div>
+          <div class="pn">Noura H.</div>
+          <div class="pr">Pharmacy Student</div>
+          <div class="mutual">Same university</div>
+          <div class="follow">Follow</div>
+        </div>
+        <div class="person">
+          <div class="av" style="background:#4338ca">AT</div>
+          <div class="pn">Ahmad T.</div>
+          <div class="pr">ICU Pharmacist</div>
+          <div class="mutual">3 mutuals</div>
+          <div class="follow">Follow</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module" style="background:var(--bg)">
+      <div class="mh"><b>Add to your interests</b><span>Edit</span></div>
+      <div class="ms">You&rsquo;ve been reading a lot about these</div>
+      <div class="itiles">
+        <div class="it" style="--t:#fdecee;--t2:#f9cdd3"><div class="tl">Cardiology</div><div class="tc">4 read this week</div><div class="art">&#129728;</div><div class="add">+ Add</div></div>
+        <div class="it" style="--t:#effaea;--t2:#d3f0c6"><div class="tl">Infectious</div><div class="tc">Popular now</div><div class="art">&#129440;</div><div class="add">+ Add</div></div>
+        <div class="it on" style="--t:#e9f5fb;--t2:#c8e6f5"><div class="tl">Diagnostics</div><div class="tc">In your feed</div><div class="art">&#128300;</div><div class="add">&#10003; Added</div></div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></div>
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/></svg></div>
+      <div class="fab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2.5-7.5L3 11Z"/></svg></div>
+      <div class="i"><div class="me"></div></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

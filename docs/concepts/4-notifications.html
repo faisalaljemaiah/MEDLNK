@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #f6f8fc; --surface: #fff; --line: #e3e8f0; --text: #10203a; --muted: #8792a3; --muted-2: #5b6576; --accent: #0f766e; --accent-soft: #e4f3f1; --purple: #7c3aed; }
+  html, body { width: 900px; height: 1000px; background: #e9edf3; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--text); overflow: hidden; }
+  .canvas { display: flex; gap: 44px; justify-content: center; align-items: center; height: 100%; }
+  .phone { width: 393px; height: 852px; background: var(--bg); border-radius: 46px; overflow: hidden; position: relative; box-shadow: 0 30px 60px -20px rgba(16,32,58,0.28), 0 0 0 8px #fff; }
+  .phone.mid { transform: translateY(-24px); }
+  .status { height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; font-size: 15px; font-weight: 600; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 0; }
+  .circle-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(16,32,58,0.55); border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16,32,58,0.22); }
+  .circle-btn svg { width: 18px; height: 18px; }
+  .ttl { text-align: center; }
+  .ttl b { display: block; font-size: 17px; font-weight: 700; }
+  .ttl span { font-size: 12px; color: var(--accent); font-weight: 600; }
+
+  .tabs { display: flex; gap: 7px; padding: 14px 16px 2px; overflow: hidden; }
+  .tabs span { white-space: nowrap; font-size: 12.5px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted-2); }
+  .tabs span.on { background: var(--text); border-color: var(--text); color: #fff; font-weight: 600; }
+  .tabs span i { font-style: normal; margin-left: 4px; background: var(--accent); color: #fff; font-size: 10px; padding: 0 5px; border-radius: 999px; }
+
+  .group { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 14px 18px 7px; }
+  .list { display: flex; flex-direction: column; gap: 7px; padding: 0 12px; }
+  .n { position: relative; display: flex; gap: 11px; padding: 11px 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+  .n.unread { background: #eef8f6; border-color: #cdeae4; }
+  .n.unread::before { content: ""; position: absolute; left: -5px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--accent); }
+  .avwrap { position: relative; flex-shrink: 0; width: 42px; height: 42px; }
+  .av { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; }
+  .badge { position: absolute; right: -5px; bottom: -5px; width: 21px; height: 21px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 800; }
+  .badge svg { width: 11px; height: 11px; }
+  .stack { position: relative; width: 42px; height: 42px; }
+  .stack .av { position: absolute; width: 30px; height: 30px; font-size: 10px; border-radius: 9px; border: 2px solid #fff; }
+  .stack .av:nth-child(1) { left: 0; top: 0; }
+  .stack .av:nth-child(2) { right: 0; bottom: 0; }
+  .body { min-width: 0; flex: 1; }
+  .line1 { font-size: 13.5px; line-height: 1.35; color: var(--muted-2); padding-right: 36px; }
+  .line1 b { color: var(--text); font-weight: 600; }
+  .time { position: absolute; right: 12px; top: 11px; font-size: 11px; color: var(--muted); }
+  .quote { margin-top: 6px; font-size: 12.5px; color: var(--text); line-height: 1.4; border-left: 2px solid #9fd9cf; padding-left: 8px; }
+  .quote .at { color: var(--purple); font-weight: 600; }
+  .case-ref { margin-top: 5px; font-size: 11.5px; color: var(--muted); }
+  .actions { display: flex; gap: 7px; margin-top: 8px; }
+  .btn { height: 28px; padding: 0 13px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
+  .btn.solid { background: var(--accent); color: #fff; }
+  .btn.ghost { border: 1px solid var(--line); color: var(--text); background: var(--surface); }
+  .thumb { width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(150deg, var(--a), var(--b)); align-self: center; }
+  .thumb span { position: absolute; right: -4px; bottom: -5px; font-size: 30px; transform: rotate(-10deg); }
+  .rxsum { display: flex; gap: 5px; margin-top: 6px; }
+  .rxsum span { font-size: 11px; color: var(--muted-2); border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 8px; }
+
+  .nav { position: absolute; left: 16px; right: 16px; bottom: 24px; height: 56px; background: rgba(255,255,255,0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.9); border-radius: 999px; display: flex; align-items: center; justify-content: space-around; box-shadow: 0 10px 30px -10px rgba(16,32,58,0.3); z-index: 10; }
+  .nav .i { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--text); opacity: 0.45; }
+  .nav .i svg { width: 21px; height: 21px; }
+  .nav .fab { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+  .nav .me { width: 22px; height: 22px; border-radius: 7px; background: #0b7c44; }
+
+  /* ---------- settings ---------- */
+  .stitle { padding: 14px 18px 2px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+  .ssub { padding: 0 18px; font-size: 13px; color: var(--muted-2); }
+  .card { margin: 12px 14px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  .card h5 { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 14px 4px; }
+  .opt { display: flex; align-items: center; gap: 11px; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .card h5 + .opt { border-top: none; }
+  .ic { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .ic svg { width: 17px; height: 17px; }
+  .ot { flex: 1; min-width: 0; }
+  .ot b { display: block; font-size: 13.5px; font-weight: 600; }
+  .ot span { font-size: 11.5px; color: var(--muted); }
+  .tg { width: 44px; height: 26px; border-radius: 999px; background: #d4dae4; position: relative; flex-shrink: 0; }
+  .tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .tg.on { background: var(--accent); }
+  .tg.on::after { left: 21px; }
+  .seg { display: flex; background: #eef1f6; border-radius: 10px; padding: 2px; flex-shrink: 0; }
+  .seg span { font-size: 11px; font-weight: 600; color: var(--muted-2); padding: 5px 8px; border-radius: 8px; }
+  .seg span.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(16,32,58,0.12); }
+  .topics { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 14px 12px 59px; margin-top: -4px; }
+  .topics span { font-size: 11.5px; padding: 4px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .topics span.add { background: transparent; border: 1px dashed #9fd9cf; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- ================= NOTIFICATIONS LIST ================= -->
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+    <div class="topbar">
+      <div class="circle-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></div>
+      <div class="ttl"><b>Notifications</b><span>4 new</span></div>
+      <div class="circle-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg></div>
+    </div>
+
+    <div class="tabs"><span class="on">All</span><span>Replies <i>2</i></span><span>Mentions</span><span>Follows</span><span>Topics</span></div>
+
+    <div class="group">Today</div>
+    <div class="list">
+      <div class="n unread">
+        <div class="avwrap"><div class="av" style="background:#7c3aed">DR</div><div class="badge" style="background:#0f766e"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5Z"/></svg></div></div>
+        <div class="body">
+          <div class="line1"><b>Dana R.</b> replied to your case</div>
+          <div class="quote">We saw the same thing in our ED &mdash; an interpreter line at triage fixed most of it.</div>
+          <div class="case-ref">CASE-0058 &middot; When Communication Becomes&hellip;</div>
+          <div class="actions"><span class="btn solid">Reply</span><span class="btn ghost">View case</span></div>
+        </div>
+        <div class="time">2m</div>
+      </div>
+
+      <div class="n unread">
+        <div class="avwrap"><div class="av" style="background:#0e7490">MA</div><div class="badge" style="background:#7c3aed">@</div></div>
+        <div class="body">
+          <div class="line1"><b>Mohammed A.</b> mentioned you in a comment</div>
+          <div class="quote"><span class="at">@faisal</span> you&rsquo;d have a view on this dosing question</div>
+        </div>
+        <div class="time">15m</div>
+      </div>
+
+      <div class="n unread">
+        <div class="avwrap"><div class="av" style="background:#be185d">NH</div><div class="badge" style="background:#0b7c44"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+        <div class="body">
+          <div class="line1"><b>Noura H.</b> started following you</div>
+          <div class="actions"><span class="btn solid">Follow back</span></div>
+        </div>
+        <div class="time">1h</div>
+      </div>
+
+      <div class="n unread">
+        <div class="thumb" style="--a:#fde2c4;--b:#f7b77a"><span>&#9888;&#65039;</span></div>
+        <div class="body">
+          <div class="line1">New in <b>Patient safety</b>, a topic you follow</div>
+          <div class="line1" style="color:var(--text);font-weight:600;margin-top:2px">Look-alike vials almost reached the wrong patient</div>
+          <div class="case-ref">Sara Khalid &middot; Clinical Pharmacist</div>
+        </div>
+        <div class="time">3h</div>
+      </div>
+    </div>
+
+    <div class="group">This week</div>
+    <div class="list">
+      <div class="n">
+        <div class="stack"><div class="av" style="background:#b45309">SK</div><div class="av" style="background:#4338ca">AT</div></div>
+        <div class="body">
+          <div class="line1"><b>Sara K.</b>, <b>Ahmad T.</b> and 6 others reacted to your case</div>
+          <div class="rxsum"><span>&#128161; 5</span><span>&#129504; 2</span><span>&#9888;&#65039; 1</span></div>
+        </div>
+        <div class="time">2d</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></div>
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/></svg></div>
+      <div class="fab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2.5-7.5L3 11Z"/></svg></div>
+      <div class="i"><div class="me"></div></div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div class="phone mid">
+    <div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+    <div class="topbar">
+      <div class="circle-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></div>
+      <div></div><div style="width:40px"></div>
+    </div>
+    <div class="stitle">What you hear about</div>
+    <div class="ssub">Only the things that matter to your practice.</div>
+
+    <div class="card">
+      <h5>Your cases</h5>
+      <div class="opt"><div class="ic" style="background:#e4f3f1;color:#0f766e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5Z"/></svg></div><div class="ot"><b>Replies</b><span>When someone responds to your case</span></div><div class="tg on"></div></div>
+      <div class="opt"><div class="ic" style="background:#fff4e0">&#128161;</div><div class="ot"><b>Reactions</b><span>Grouped, so you&rsquo;re not pinged for each one</span></div><div class="seg"><span>Off</span><span class="on">Daily</span><span>All</span></div></div>
+    </div>
+
+    <div class="card">
+      <h5>People</h5>
+      <div class="opt"><div class="ic" style="background:#f3eefe;color:#7c3aed;font-weight:800">@</div><div class="ot"><b>Mentions</b><span>When someone tags you</span></div><div class="tg on"></div></div>
+      <div class="opt"><div class="ic" style="background:#effaea;color:#0b7c44"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/></svg></div><div class="ot"><b>New followers</b><span>Plus a weekly email digest</span></div><div class="tg on"></div></div>
+    </div>
+
+    <div class="card">
+      <h5>Topics you follow</h5>
+      <div class="opt"><div class="ic" style="background:#eaf1fe">&#128240;</div><div class="ot"><b>New cases in your topics</b><span>Top cases only, not every post</span></div><div class="tg on"></div></div>
+      <div class="topics"><span>&#9888;&#65039; Patient safety</span><span>&#128138; Pharmacology</span><span class="add">+ Add topic</span></div>
+    </div>
+
+    <div class="card">
+      <h5>Delivery</h5>
+      <div class="opt"><div class="ic" style="background:#eef1f6">&#127769;</div><div class="ot"><b>Quiet hours</b><span>10:00 PM &ndash; 7:00 AM, no push</span></div><div class="tg on"></div></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
