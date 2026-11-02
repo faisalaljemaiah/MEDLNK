@@ -7,6 +7,15 @@ Nothing here is wired into the app.
 Images are emoji on colored tiles, not stock photos (licensing). Custom
 illustrations could replace them later in the same slots.
 
+**Theme correction:** concepts 0, 1, 2 and 4 use teal (#0f766e), which is the
+app's old accent. The real theme (src/app/theme.css) is the "stamped document"
+look: ink #2b2420 and cream #f0ebe6. Build with the real tokens, as in
+`1b-interests-stamped.png`.
+
+**Stamped headlines:** EricaOne (OFL, free for commercial use; same font as the
+"It's live." launch post) with a sparse ink-fleck mask matching the logo mark.
+Big headlines only (about 30px and up). Everything else stays on the system font.
+
 ## 0. Header and nav (`0-header-nav.png`)
 - Transparent header, no bar background.
 - `+` compose circle on the left, `ASYASHARE` wordmark centered (real
@@ -26,6 +35,12 @@ illustrations could replace them later in the same slots.
 - Ranking idea: followed people, then their topics, then specialty, then
   trending. Reading history drives topic suggestions.
 - Build first: the signup interest step, since the feed depends on it.
+- Latest version of the signup step: `1b-interests-stamped.png` (real ink
+  theme, stamped headline, logo, warm paper-toned tiles, plus a "You're in."
+  confirmation screen that previews the first personalized case).
+- Tile pictures are swappable: one image per tile. Use one consistent set
+  (same illustrator or icon pack), square, transparent background, about
+  512px.
 
 ## 2. Explore and discover (`2-discover.png`)
 - **Discover home:** search, Browse by specialty (Clinical Pharmacy, Internal
